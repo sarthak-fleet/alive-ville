@@ -2,53 +2,75 @@
   "id": "ashbend",
   "name": "Ashbend Village",
   "tick": 0,
-  "player": { "locationId": "square" },
+  "player": { "locationId": "square", "name": "Wanderer" },
+  "clock": { "hoursPerTick": 2, "hour": 8, "day": 1 },
   "locations": [
-    { "id": "square", "name": "Village Square" },
-    { "id": "forge", "name": "Old Forge" },
-    { "id": "garden", "name": "Herb Garden" },
-    { "id": "inn", "name": "Lantern Inn" }
+    { "id": "square", "name": "Village Square",  "x": 240, "y": 180, "w": 180, "h": 120 },
+    { "id": "forge",  "name": "Old Forge",       "x":  40, "y":  40, "w": 160, "h": 110 },
+    { "id": "garden", "name": "Herb Garden",     "x": 460, "y":  40, "w": 160, "h": 110 },
+    { "id": "inn",    "name": "Lantern Inn",     "x": 240, "y": 340, "w": 180, "h": 110 },
+    { "id": "bridge", "name": "Old Bridge",      "x":  40, "y": 340, "w": 160, "h": 110 },
+    { "id": "wood",   "name": "Hollow Wood",     "x": 460, "y": 340, "w": 160, "h": 110 }
+  ],
+  "exits": [
+    { "from": "square", "to": "forge",  "bidirectional": true, "label": "north-west path" },
+    { "from": "square", "to": "garden", "bidirectional": true, "label": "north-east path" },
+    { "from": "square", "to": "inn",    "bidirectional": true, "label": "south path" },
+    { "from": "square", "to": "bridge", "bidirectional": true, "label": "south-west path" },
+    { "from": "square", "to": "wood",   "bidirectional": true, "label": "south-east path" },
+    { "from": "bridge", "to": "wood",   "bidirectional": true, "label": "river crossing" }
+  ],
+  "items": [
+    { "id": "shears",  "name": "Pruning shears", "description": "Mira's missing tool.", "holderId": "tomas" },
+    { "id": "lantern", "name": "Brass lantern",  "description": "Bright in the dark.", "locationId": "inn" },
+    { "id": "rumor_note", "name": "Crumpled note", "description": "Mentions scratching beneath the bridge.", "locationId": "bridge" }
   ],
   "npcs": [
     {
-      "id": "mira",
-      "name": "Mira",
+      "id": "mira", "name": "Mira",
       "locationId": "garden",
       "goals": ["protect the herb garden"],
       "relationships": { "tomas": 0, "lena": 1 },
       "memories": [{ "tick": 0, "text": "Tomas borrowed pruning shears and forgot to return them." }]
     },
     {
-      "id": "tomas",
-      "name": "Tomas",
+      "id": "tomas", "name": "Tomas",
       "locationId": "forge",
       "goals": ["repair broken tools"],
       "relationships": { "mira": 0, "orrin": 1 },
       "memories": [{ "tick": 0, "text": "The forge bellows need dry leather before nightfall." }]
     },
     {
-      "id": "lena",
-      "name": "Lena",
+      "id": "lena", "name": "Lena",
       "locationId": "inn",
       "goals": ["keep travelers calm"],
       "relationships": { "mira": 1, "pax": 0 },
       "memories": [{ "tick": 0, "text": "A traveler heard scratching beneath the old bridge." }]
     },
     {
-      "id": "orrin",
-      "name": "Orrin",
+      "id": "orrin", "name": "Orrin",
       "locationId": "square",
       "goals": ["collect rumors"],
       "relationships": { "tomas": 1, "pax": -1 },
       "memories": [{ "tick": 0, "text": "Pax keeps hiding shiny things behind the notice board." }]
     },
     {
-      "id": "pax",
-      "name": "Pax",
+      "id": "pax", "name": "Pax",
       "locationId": "square",
       "goals": ["avoid chores"],
       "relationships": { "orrin": -1, "lena": 0 },
       "memories": [{ "tick": 0, "text": "Orrin blamed Pax for a missing spoon." }]
+    }
+  ],
+  "quests": [
+    {
+      "id": "return_shears",
+      "title": "Return the pruning shears",
+      "description": "Mira wants Tomas's missing tools brought back to the herb garden.",
+      "giverId": "mira",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "mira": 2 } },
+      "consequences": { "relationshipDelta": { "mira": -2 } }
     }
   ],
   "eventLog": []
