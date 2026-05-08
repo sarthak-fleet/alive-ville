@@ -11,24 +11,46 @@ interface DotState {
   flashUntil: number;
 }
 
+export interface SceneHandlers {
+  onNpcClick?: (id: string) => void;
+  onLocationClick?: (id: string) => void;
+}
+
 export class VillageScene extends Phaser.Scene {
   private world: World | null = null;
+  private pendingWorld: World | null = null;
+  private ready = false;
   private locationLabels = new Map<string, Phaser.GameObjects.Container>();
   private exitGraphics?: Phaser.GameObjects.Graphics;
   private dots = new Map<string, DotState>();
   private tintRect?: Phaser.GameObjects.Rectangle;
   private bubbleTexts = new Map<string, Phaser.GameObjects.Text>();
+  private handlers: SceneHandlers = {};
 
   constructor() {
     super("village");
   }
 
+  setHandlers(handlers: SceneHandlers) {
+    this.handlers = handlers;
+  }
+
   create() {
     this.exitGraphics = this.add.graphics();
     this.tintRect = this.add.rectangle(0, 0, 660, 500, 0x000000, 0).setOrigin(0).setDepth(50);
+    this.ready = true;
+    if (this.pendingWorld) {
+      const world = this.pendingWorld;
+      this.pendingWorld = null;
+      this.setWorld(world);
+    }
   }
 
   setWorld(world: World) {
+    if (!this.ready) {
+      this.pendingWorld = world;
+      return;
+    }
     const first = !this.world;
     this.world = world;
     this.redrawLocations();
@@ -88,7 +110,7 @@ export class VillageScene extends Phaser.Scene {
       const stroke = isCurrent ? 0x3b4a66 : 0x232a36;
       const rect = this.add.rectangle(loc.x, loc.y, loc.w, loc.h, fill).setOrigin(0).setStrokeStyle(isCurrent ? 2 : 1, stroke);
       rect.setInteractive({ cursor: "pointer" });
-      rect.on("pointerup", () => this.events.emit(LOCATION_CLICK, loc.id));
+      rect.on("pointerup", () => this.handlers.onLocationClick?.(loc.id));
       const label = this.add.text(loc.x + 10, loc.y + 6, loc.name, {
         fontFamily: "ui-sans-serif, system-ui",
         fontSize: "12px",
@@ -151,7 +173,7 @@ export class VillageScene extends Phaser.Scene {
       const container = this.add.container(target.x, target.y, [arc, text]).setDepth(20);
       container.setSize(radius * 2, radius * 2);
       container.setInteractive({ useHandCursor: true });
-      container.on("pointerup", () => this.events.emit(NPC_CLICK, id));
+      container.on("pointerup", () => this.handlers.onNpcClick?.(id));
       dot = { graphic: container, bubble: null, flashUntil: 0 };
       this.dots.set(id, dot);
       if (!initial) container.setAlpha(0).setScale(0.6);

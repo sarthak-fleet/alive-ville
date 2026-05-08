@@ -1,5 +1,6 @@
 import { ActionBar } from "../organisms/ActionBar.tsx";
 import { AppHeader } from "../organisms/AppHeader.tsx";
+import { ErrorBoundary } from "../organisms/ErrorBoundary.tsx";
 import { EventLog } from "../organisms/EventLog.tsx";
 import { InventoryPanel } from "../organisms/InventoryPanel.tsx";
 import { NpcDrawer } from "../organisms/NpcDrawer.tsx";
@@ -14,7 +15,11 @@ export function AppShell() {
       <AppHeader />
       <main>
         <section id="map">
-          <PhaserGame />
+          <ErrorBoundary fallback={(error) => (
+            <div className="banner error">Map failed: {error.message}</div>
+          )}>
+            <PhaserGame />
+          </ErrorBoundary>
         </section>
         <aside>
           <ActionBar />

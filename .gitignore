@@ -10,3 +10,5 @@ build/
 !.env.example
 *.log
 logs/
+test-results/
+tmp/
