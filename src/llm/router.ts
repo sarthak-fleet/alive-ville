@@ -4,12 +4,12 @@ import { ACTION_SCHEMA_PROMPT, parseActionJson } from "./schema.ts";
 
 const TIER_MODEL: Record<Tier, () => string | null> = {
   background: () => null,
-  normal: () => process.env.LLM_MODEL_NORMAL ?? "deepseek-chat",
-  quest: () => process.env.LLM_MODEL_QUEST ?? "deepseek-reasoner",
+  normal: () => process.env["LLM_MODEL_NORMAL"] ?? "deepseek-chat",
+  quest: () => process.env["LLM_MODEL_QUEST"] ?? "deepseek-reasoner",
 };
 
 export function isLlmEnabled(): boolean {
-  return Boolean(process.env.LLM_API_KEY) && Boolean(process.env.LLM_BASE_URL);
+  return Boolean(process.env["LLM_API_KEY"]) && Boolean(process.env["LLM_BASE_URL"]);
 }
 
 export async function proposeAction({ tier = "normal", system, user, signal }: ProposeRequest): Promise<ProposeResult> {
@@ -19,8 +19,8 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
   const model = TIER_MODEL[tier]?.();
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
 
-  const url = `${process.env.LLM_BASE_URL!.replace(/\/$/, "")}/chat/completions`;
-  const timeoutMs = Number(process.env.LLM_TIMEOUT_MS ?? 8000);
+  const url = `${process.env["LLM_BASE_URL"]!.replace(/\/$/, "")}/chat/completions`;
+  const timeoutMs = Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   signal?.addEventListener("abort", () => ac.abort(), { once: true });
@@ -46,7 +46,7 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${process.env.LLM_API_KEY}`,
+        authorization: `Bearer ${process.env["LLM_API_KEY"]}`,
       },
       body: JSON.stringify(body),
       signal: ac.signal,

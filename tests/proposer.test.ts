@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vitest";
+
 import { createLlmProposer, type ProposeFn } from "../src/llm/proposer.ts";
 import type { World } from "../src/types.ts";
 

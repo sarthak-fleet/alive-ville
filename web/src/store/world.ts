@@ -1,4 +1,5 @@
 import { create } from "zustand";
+
 import type { PlayerAction, TickSummary, World } from "../../../src/types.ts";
 import { fetchState, postTick } from "../api/client.ts";
 

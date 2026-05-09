@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vitest";
+
 import { applyAction, createEngine, getItem, hasExit, itemsHeldBy } from "../src/simulation.ts";
 import { isNight, timeOfDay, type World } from "../src/types.ts";
 

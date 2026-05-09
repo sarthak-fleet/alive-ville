@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vitest";
+
 import { applyAction, getQuest, validateAction } from "../src/simulation.ts";
 import type { World } from "../src/types.ts";
 

@@ -1,7 +1,7 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-const DEFAULT_PATH = process.env.LLM_LOG_PATH ?? `${process.env.LOG_DIR ?? "logs"}/llm.jsonl`;
+const DEFAULT_PATH = process.env["LLM_LOG_PATH"] ?? `${process.env["LOG_DIR"] ?? "logs"}/llm.jsonl`;
 
 export interface LlmLogEntry {
   kind?: string;

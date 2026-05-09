@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { AppShell } from "../templates/AppShell.tsx";
+
 import { useWorldStore } from "../store/world.ts";
+import { AppShell } from "../templates/AppShell.tsx";
 
 export function App() {
   const init = useWorldStore((s) => s.init);

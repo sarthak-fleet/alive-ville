@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
+
 import { describe, expect, test } from "vitest";
+
 import { createDirector, findHighestTension } from "../src/director.ts";
 import { createEngine } from "../src/simulation.ts";
 import type { Action, World } from "../src/types.ts";

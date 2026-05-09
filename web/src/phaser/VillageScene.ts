@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+
 import type { World } from "../../../src/types.ts";
 import { isNight, timeOfDay } from "../../../src/types.ts";
 

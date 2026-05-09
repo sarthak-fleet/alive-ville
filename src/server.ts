@@ -1,16 +1,17 @@
 import { readFileSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, normalize } from "node:path";
+
 import { createDirector } from "./director.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, proposeAction } from "./llm/router.ts";
 import { createEngine } from "./simulation.ts";
 import type { PlayerAction, World } from "./types.ts";
 
-const PORT = Number(process.env.PORT ?? 5174);
+const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;
-const WEB_ROOT = new URL(process.env.WEB_ROOT ?? "./web/", CWD);
-const WORLD_PATH = new URL(process.env.WORLD_FILE ?? "./worlds/village.json", CWD);
+const WEB_ROOT = new URL(process.env["WEB_ROOT"] ?? "./web/", CWD);
+const WORLD_PATH = new URL(process.env["WORLD_FILE"] ?? "./worlds/village.json", CWD);
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -84,5 +85,5 @@ function readJson(req: IncomingMessage): Promise<unknown> {
 }
 
 server.listen(PORT, () => {
-  console.log(`Ashbend running at http://localhost:${PORT} (${isLlmEnabled() ? "LLM" : "scripted"} mode)`);
+  console.info(`Ashbend running at http://localhost:${PORT} (${isLlmEnabled() ? "LLM" : "scripted"} mode)`);
 });

@@ -1,9 +1,9 @@
-import { defineConfig } from "vitest/config";
+import { defineVitestConfig } from "@saas-maker/test-config/vitest";
 
-export default defineConfig({
+export default defineVitestConfig({
+  include: ["tests/**/*.test.ts"],
+  environment: "node",
   test: {
-    include: ["tests/**/*.test.ts"],
-    environment: "node",
     pool: "forks",
     reporters: process.env.CI ? "default" : ["default"],
     testTimeout: 10000,

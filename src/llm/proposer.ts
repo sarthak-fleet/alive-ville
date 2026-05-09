@@ -1,4 +1,4 @@
-import { getNpc, locationName, retrieveMemories, validateAction } from "../simulation.ts";
+import { locationName, retrieveMemories, validateAction } from "../simulation.ts";
 import type { Action, Npc, ProposeRequest, ProposeResult, Tier, World } from "../types.ts";
 import { logLlmCall } from "./log.ts";
 import { isLlmEnabled, proposeAction } from "./router.ts";

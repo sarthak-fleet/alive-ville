@@ -1,4 +1,5 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess,spawn } from "node:child_process";
+
 import { describe, expect, test } from "vitest";
 
 const SERVER = new URL("../src/server.ts", import.meta.url).pathname;

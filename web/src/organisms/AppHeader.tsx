@@ -1,7 +1,7 @@
+import { timeOfDay } from "../../../src/types.ts";
 import { Badge } from "../atoms/Badge.tsx";
 import { Button } from "../atoms/Button.tsx";
 import { useWorldStore } from "../store/world.ts";
-import { timeOfDay } from "../../../src/types.ts";
 
 export function AppHeader() {
   const world = useWorldStore((s) => s.world);

@@ -1,7 +1,7 @@
+import { inspectReplay } from "../../../src/replay.ts";
 import { Badge } from "../atoms/Badge.tsx";
 import { Panel } from "../atoms/Panel.tsx";
 import { useWorldStore } from "../store/world.ts";
-import { inspectReplay } from "../../../src/replay.ts";
 
 export function ReplayInspector() {
   const world = useWorldStore((state) => state.world);

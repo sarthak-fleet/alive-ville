@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import { useWorldStore } from "../store/world.ts";
+
 import { LOCATION_CLICK, NPC_CLICK, VillageScene } from "../phaser/VillageScene.ts";
+import { useWorldStore } from "../store/world.ts";
 
 const GAME_WIDTH = 660;
 const GAME_HEIGHT = 500;
