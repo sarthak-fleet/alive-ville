@@ -1,0 +1,72 @@
+{
+  "identifier": "ashbend_village",
+  "tileSize": 32,
+  "width": 50,
+  "height": 33,
+  "tiles": {
+    "grass": 0,
+    "grassAlt": 1,
+    "path": 2,
+    "pathEdge": 3,
+    "water": 4,
+    "bridge": 5,
+    "plaza": 6,
+    "garden": 7,
+    "forest": 8
+  },
+  "proceduralGround": {
+    "baseTile": "grass",
+    "variantTile": "grassAlt",
+    "variantModulo": 7,
+    "variantXMultiplier": 17,
+    "variantYMultiplier": 23
+  },
+  "paint": [
+    { "kind": "line", "from": [805, 520], "to": [315, 320], "radius": 2, "tile": "pathEdge" },
+    { "kind": "line", "from": [805, 520], "to": [1250, 335], "radius": 2, "tile": "pathEdge" },
+    { "kind": "line", "from": [805, 520], "to": [740, 755], "radius": 2, "tile": "pathEdge" },
+    { "kind": "line", "from": [740, 755], "to": [430, 830], "radius": 2, "tile": "pathEdge" },
+    { "kind": "line", "from": [740, 755], "to": [1130, 830], "radius": 2, "tile": "pathEdge" },
+    { "kind": "line", "from": [805, 520], "to": [315, 320], "radius": 1, "tile": "path" },
+    { "kind": "line", "from": [805, 520], "to": [1250, 335], "radius": 1, "tile": "path" },
+    { "kind": "line", "from": [805, 520], "to": [740, 755], "radius": 1, "tile": "path" },
+    { "kind": "line", "from": [740, 755], "to": [430, 830], "radius": 1, "tile": "path" },
+    { "kind": "line", "from": [740, 755], "to": [1130, 830], "radius": 1, "tile": "path" },
+    { "kind": "rect", "x": 1, "y": 27, "w": 48, "h": 3, "tile": "water" },
+    { "kind": "rect", "x": 13, "y": 26, "w": 4, "h": 5, "tile": "bridge" },
+    { "kind": "rect", "x": 20, "y": 12, "w": 10, "h": 7, "tile": "plaza" },
+    { "kind": "rect", "x": 35, "y": 4, "w": 9, "h": 7, "tile": "garden" },
+    { "kind": "rect", "x": 35, "y": 22, "w": 10, "h": 8, "tile": "forest" }
+  ],
+  "entities": {
+    "locations": [
+      { "id": "square", "x": 650, "y": 390, "w": 310, "h": 230, "door": { "x": 805, "y": 610 } },
+      { "id": "forge", "x": 185, "y": 135, "w": 260, "h": 180, "door": { "x": 315, "y": 320 } },
+      { "id": "garden", "x": 1110, "y": 125, "w": 280, "h": 205, "door": { "x": 1250, "y": 335 } },
+      { "id": "inn", "x": 585, "y": 760, "w": 310, "h": 185, "door": { "x": 740, "y": 755 } },
+      { "id": "bridge", "x": 150, "y": 745, "w": 280, "h": 170, "door": { "x": 430, "y": 830 } },
+      { "id": "wood", "x": 1130, "y": 730, "w": 270, "h": 190, "door": { "x": 1130, "y": 830 } }
+    ],
+    "items": [
+      { "id": "shears", "locationId": "forge", "x": 382, "y": 264 },
+      { "id": "lantern", "locationId": "inn", "x": 690, "y": 884 },
+      { "id": "rumor_note", "locationId": "bridge", "x": 314, "y": 875 },
+      { "id": "bellows_leather", "locationId": "wood", "x": 1243, "y": 840 },
+      { "id": "blue_ember", "locationId": "bridge", "x": 352, "y": 860 }
+    ],
+    "collisions": [
+      { "id": "square-fountain", "x": 748, "y": 470, "w": 112, "h": 74 },
+      { "id": "square-notice-board", "x": 728, "y": 427, "w": 154, "h": 58 },
+      { "id": "seed-stall", "x": 558, "y": 610, "w": 112, "h": 88 },
+      { "id": "tonic-stall", "x": 912, "y": 548, "w": 120, "h": 82 },
+      { "id": "fish-stall", "x": 452, "y": 772, "w": 116, "h": 82 },
+      { "id": "forge-furnace", "x": 205, "y": 184, "w": 86, "h": 108 },
+      { "id": "forge-anvil", "x": 324, "y": 248, "w": 88, "h": 62 },
+      { "id": "garden-beds-a", "x": 1160, "y": 205, "w": 134, "h": 54 },
+      { "id": "garden-beds-b", "x": 1160, "y": 258, "w": 134, "h": 54 },
+      { "id": "inn-table", "x": 666, "y": 808, "w": 150, "h": 58 },
+      { "id": "bridge-rail", "x": 204, "y": 820, "w": 226, "h": 28 },
+      { "id": "wood-campfire", "x": 976, "y": 914, "w": 72, "h": 62 }
+    ]
+  }
+}

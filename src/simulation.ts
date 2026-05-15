@@ -1,3 +1,4 @@
+import { ensureAgentStateDefaults, memoryMetaFromText, refreshAgentIntents, retrieveRelevantMemories } from "./agents.ts";
 import type {
   Action,
   ActionResult,
@@ -55,6 +56,7 @@ function ensureWorldDefaults(world: World): void {
   world.items ??= [];
   world.clock ??= { hoursPerTick: 1, hour: 8, day: 1 };
   world.eventLog ??= [];
+  ensureAgentStateDefaults(world);
 }
 
 export async function runTick(
@@ -89,6 +91,7 @@ export async function runTick(
 
   world.tick += 1;
   advanceClock(world);
+  refreshAgentIntents(world);
   const summary = summarizeTick(world, actions, rejected);
   world.eventLog.push(summary);
   return summary;
@@ -158,7 +161,9 @@ export function applyAction(world: World, action: Action): ActionResult {
       delete item.locationId;
       remember(world, action.targetId, `${nameOf(world, action.actorId)} gave you ${item.name}.`);
       remember(world, action.actorId, `Gave ${item.name} to ${nameOf(world, action.targetId)}.`);
-      return applied(action, `${nameOf(world, action.actorId)} gave ${item.name} to ${nameOf(world, action.targetId)}.`);
+      const completed = completeQuestForGift(world, action.actorId, action.targetId, action.itemId);
+      const questText = completed ? ` ${completed.title} is complete.` : "";
+      return applied(action, `${nameOf(world, action.actorId)} gave ${item.name} to ${nameOf(world, action.targetId)}.${questText}`);
     }
     case "offer_quest": {
       const quest = mustQuest(world, action.questId);
@@ -201,6 +206,24 @@ function applyQuestDeltas(world: World, deltas: Record<string, number> | undefin
     adjustRelationship(world, npcId, completerId, delta);
     adjustRelationship(world, completerId, npcId, delta);
   }
+}
+
+function completeQuestForGift(world: World, giverId: string, targetId: string, itemId: string): Quest | null {
+  const questByGift: Record<string, { targetId: string; questId: string }> = {
+    shears: { targetId: "mira", questId: "return_shears" },
+    bellows_leather: { targetId: "tomas", questId: "rekindle_forge" },
+    blue_ember: { targetId: "lena", questId: "bridge_whisper" },
+    rumor_note: { targetId: "lena", questId: "bridge_whisper" },
+  };
+  const match = questByGift[itemId];
+  if (!match || match.targetId !== targetId) return null;
+  const quest = getQuest(world, match.questId);
+  if (!quest || quest.status !== "active" || quest.acceptedBy !== giverId) return null;
+  quest.status = "done";
+  applyQuestDeltas(world, quest.rewards?.relationshipDelta, giverId);
+  if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, giverId)} finished: ${quest.title}`);
+  remember(world, giverId, `Completed "${quest.title}" by giving ${getItem(world, itemId)?.name ?? itemId} to ${nameOf(world, targetId)}.`);
+  return quest;
 }
 
 export function getQuest(world: World, id: string): Quest | undefined {
@@ -314,17 +337,7 @@ export function validateAction(world: World, action: Action | unknown): Validati
 }
 
 export function retrieveMemories(world: World, npcId: string, query: string, limit = 3) {
-  const npc = getNpc(world, npcId);
-  if (!npc) return [];
-  const terms = String(query).toLowerCase().split(/\W+/).filter(Boolean);
-  return [...npc.memories]
-    .map((memory) => ({
-      ...memory,
-      score: terms.reduce((score, term) => score + (memory.text.toLowerCase().includes(term) ? 1 : 0), 0),
-    }))
-    .filter((memory) => memory.score > 0)
-    .sort((a, b) => b.score - a.score || b.tick - a.tick)
-    .slice(0, limit);
+  return retrieveRelevantMemories(world, npcId, query, limit);
 }
 
 export function proposeNpcActions(world: World): Action[] {
@@ -367,7 +380,7 @@ function invalid(reason: string): { ok: false; reason: string } {
 function remember(world: World, npcId: string, text: string): void {
   const npc = getNpc(world, npcId);
   if (!npc) return;
-  npc.memories.push({ tick: world.tick, text });
+  npc.memories.push({ tick: world.tick, text, meta: memoryMetaFromText(text) });
 }
 
 function adjustRelationship(world: World, fromId: string, toId: string, delta: number): void {
@@ -392,6 +405,7 @@ function checksum(world: World): string {
     npcs: world.npcs.map((npc) => ({
       id: npc.id,
       locationId: npc.locationId,
+      currentIntent: npc.plan?.currentIntent?.kind ?? null,
       relationships: Object.fromEntries(Object.entries(npc.relationships).sort()),
       memoryCount: npc.memories.length,
     })),

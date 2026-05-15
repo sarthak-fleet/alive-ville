@@ -59,4 +59,18 @@ describe("quests", () => {
     expect(offer.applied).toBe(true);
     expect(getQuest(world, "return_shears")!.status).toBe("open");
   });
+
+  test("giving quest item completes accepted quest", () => {
+    const world = fixture();
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "bridge_whisper" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "bridge" });
+    applyAction(world, { type: "pickup", actorId: "player", itemId: "blue_ember" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "square" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "inn" });
+    const give = applyAction(world, { type: "give", actorId: "player", itemId: "blue_ember", targetId: "lena" });
+
+    expect(give.applied).toBe(true);
+    expect(getQuest(world, "bridge_whisper")!.status).toBe("done");
+    expect(world.npcs.find((n) => n.id === "lena")!.relationships["player"]).toBe(2);
+  });
 });

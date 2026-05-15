@@ -1,9 +1,54 @@
 {
   "id": "ashbend",
   "name": "Ashbend Village",
+  "story": {
+    "title": "The Ember Beneath Ashbend",
+    "premise": "Ashbend is a riverside village built around an old forge, a herb garden, and a bridge that hums at night. For years the forge flame kept the river fog away. This week the flame guttered out, tools began vanishing, and something under the bridge started scratching back.",
+    "opening": "The Wanderer arrives at dawn after seeing a pale blue glow from the old bridge. The villagers are trying to act normal, but every small errand points back to the same worry: the forge, the bridge, and the sealed hollow in the wood are connected.",
+    "currentObjective": "Earn the villagers' trust, recover the missing tools, and learn why the bridge is whispering before the next nightfall.",
+    "mysteries": [
+      "Who has been moving shiny metal objects behind the notice board?",
+      "Why does the bridge scratch only after the forge bellows go cold?",
+      "What is sealed beneath the oldest tree in Hollow Wood?"
+    ],
+    "beats": [
+      "Mira needs her pruning shears back before the moonmint wilts.",
+      "Tomas can repair the forge bellows, but he is hiding why he went to the bridge.",
+      "Lena heard a traveler describe the same blue glow the Wanderer saw.",
+      "Orrin suspects Pax, but his rumor may be covering a larger pattern.",
+      "Pax knows where the trinkets are hidden and is scared to admit why."
+    ]
+  },
   "tick": 0,
   "player": { "locationId": "square", "name": "Wanderer" },
   "clock": { "hoursPerTick": 2, "hour": 8, "day": 1 },
+  "rules": [
+    { "id": "forge_flame", "kind": "magic", "text": "The old forge flame keeps river fog and bridge whispers weak while it burns." },
+    { "id": "bright_metal", "kind": "magic", "text": "Cold blue embers pull small bright metal objects toward the bridge unless hidden in wood or cloth." },
+    { "id": "village_trust", "kind": "social", "text": "Ashbend villagers cooperate faster with people who return tools, keep promises, and do not spread cruel rumors." }
+  ],
+  "factions": [
+    { "id": "village", "name": "Ashbend villagers", "goals": ["keep the village calm", "restore the forge flame"], "resources": ["notice board", "shared stores"], "reputation": 0 },
+    { "id": "bridge_whisper", "name": "The Bridge Whisper", "goals": ["draw bright metal to the river", "keep villagers divided"], "resources": ["cold blue ember", "night fog"], "reputation": -3 }
+  ],
+  "tensions": [
+    { "id": "missing_metal", "title": "Metal objects are disappearing", "pressure": 42, "status": "active", "involvedIds": ["mira", "tomas", "pax", "bridge"] },
+    { "id": "forge_unlit", "title": "The forge flame is out", "pressure": 55, "status": "escalating", "involvedIds": ["tomas", "bridge", "wood"] }
+  ],
+  "villainPlans": [
+    {
+      "id": "bridge_whisper_plan",
+      "actorId": "pax",
+      "title": "Feed the bridge bright pieces",
+      "objective": "Keep hiding shiny objects until the cold blue ember wakes fully at nightfall.",
+      "stage": 1,
+      "hidden": true,
+      "pressure": 38,
+      "nextTrigger": "If the forge is not rekindled by dusk, the bridge whisper grows louder.",
+      "knownFacts": ["Pax hears the whisper", "wooden cups muffle the blue ember"]
+    }
+  ],
+  "directorState": { "pressure": 18, "quietTicks": 0, "pendingReveals": ["The missing metal follows the bridge pattern."] },
   "locations": [
     { "id": "square", "name": "Village Square",  "x": 240, "y": 180, "w": 180, "h": 120 },
     { "id": "forge",  "name": "Old Forge",       "x":  40, "y":  40, "w": 160, "h": 110 },
@@ -21,56 +66,191 @@
     { "from": "bridge", "to": "wood",   "bidirectional": true, "label": "river crossing" }
   ],
   "items": [
-    { "id": "shears",  "name": "Pruning shears", "description": "Mira's missing tool.", "holderId": "tomas" },
-    { "id": "lantern", "name": "Brass lantern",  "description": "Bright in the dark.", "locationId": "inn" },
-    { "id": "rumor_note", "name": "Crumpled note", "description": "Mentions scratching beneath the bridge.", "locationId": "bridge" }
+    { "id": "shears",  "name": "Pruning shears", "description": "Mira's missing moonmint shears, left on the forge bench after Tomas found them near the bridge.", "locationId": "forge" },
+    { "id": "lantern", "name": "Brass lantern",  "description": "Lena keeps it trimmed for travelers who arrive after dusk.", "locationId": "inn" },
+    { "id": "rumor_note", "name": "Crumpled note", "description": "Mentions scratching beneath the bridge and a blue ember under the river stones.", "locationId": "bridge" },
+    { "id": "bellows_leather", "name": "Dry bellows leather", "description": "A stiff leather patch that could help Tomas restart the old forge flame.", "locationId": "wood" },
+    { "id": "blue_ember", "name": "Cold blue ember", "description": "A small ember that glows without heat. It pulses near the bridge.", "locationId": "bridge" }
   ],
   "npcs": [
     {
       "id": "mira", "name": "Mira",
       "locationId": "garden",
-      "goals": ["protect the herb garden"],
+      "tier": "quest",
+      "role": "gardener and early ally",
+      "factionId": "village",
+      "description": "A practical gardener trying to keep the moonmint alive while the village blames the wrong people.",
+      "traits": {
+        "personality": ["kind", "direct", "observant"],
+        "values": ["care", "honesty", "usefulness"],
+        "flaws": ["impatient when tools vanish"],
+        "fears": ["the moonmint dying before nightfall"],
+        "speechStyle": "warm but brisk"
+      },
+      "needs": { "safety": 54, "trust": 64, "resources": 38, "curiosity": 67, "duty": 82 },
+      "mood": { "emotion": "worried", "stress": 58, "confidence": 62, "suspicion": 44 },
+      "goals": ["protect the herb garden", "keep the moonmint alive until nightfall", "find out why metal tools are being drawn toward the bridge"],
+      "ambitions": [
+        { "id": "mira_keep_moonmint_alive", "title": "Keep the moonmint alive until nightfall", "kind": "protect", "priority": 86, "status": "active", "targetId": "garden" },
+        { "id": "mira_trace_metal_dew", "title": "Trace the silver dew trail toward the bridge", "kind": "investigate", "priority": 70, "status": "active", "targetId": "bridge" }
+      ],
+      "relationshipAxes": { "tomas": { "trust": 0, "affection": 0, "respect": 1, "suspicion": 3 }, "lena": { "trust": 2, "affection": 1, "respect": 2 } },
       "relationships": { "tomas": 0, "lena": 1 },
-      "memories": [{ "tick": 0, "text": "Tomas borrowed pruning shears and forgot to return them." }]
+      "memories": [
+        { "tick": 0, "text": "Tomas borrowed pruning shears and forgot to return them.", "meta": { "importance": 7, "tags": ["tomas", "shears", "missing"], "visibility": "private", "emotionalWeight": 5, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The moonmint leaves curled inward after the forge flame went out.", "meta": { "importance": 8, "tags": ["moonmint", "forge", "flame"], "visibility": "shared", "emotionalWeight": 4, "sourceActorId": "world" } },
+        { "tick": 0, "text": "A trail of silver dew led from the herb beds toward the old bridge.", "meta": { "importance": 8, "tags": ["silver", "dew", "bridge"], "visibility": "private", "emotionalWeight": 3, "sourceActorId": "world" } }
+      ]
     },
     {
       "id": "tomas", "name": "Tomas",
       "locationId": "forge",
-      "goals": ["repair broken tools"],
+      "tier": "quest",
+      "role": "blacksmith with a guilty secret",
+      "factionId": "village",
+      "description": "A strong blacksmith who wants to fix the forge before anyone learns how scared the bridge made him.",
+      "traits": {
+        "personality": ["stubborn", "protective", "ashamed"],
+        "values": ["craft", "responsibility", "strength"],
+        "flaws": ["hides fear until it becomes a problem"],
+        "fears": ["being seen as a coward"],
+        "speechStyle": "short, blunt, defensive"
+      },
+      "needs": { "safety": 42, "trust": 38, "resources": 74, "status": 56, "curiosity": 45, "duty": 80 },
+      "mood": { "emotion": "guilty", "stress": 72, "confidence": 47, "suspicion": 32 },
+      "goals": ["repair broken tools", "restart the forge flame", "avoid admitting he heard a voice under the bridge"],
+      "ambitions": [
+        { "id": "tomas_rekindle_forge", "title": "Restart the forge flame before dusk", "kind": "repair", "priority": 88, "status": "active", "targetId": "forge", "blocker": "needs dry bellows leather" },
+        { "id": "tomas_hide_bridge_voice", "title": "Avoid admitting he heard a voice under the bridge", "kind": "hide", "priority": 74, "status": "active", "targetId": "bridge" }
+      ],
+      "secrets": [
+        { "id": "heard_bridge_voice", "text": "Tomas heard the bridge whisper his name when he found Mira's shears.", "risk": 78, "knownBy": ["tomas"] }
+      ],
+      "relationshipAxes": { "mira": { "trust": 0, "affection": 0, "respect": 1, "debt": 1, "suspicion": 1 }, "orrin": { "trust": 1, "respect": 2 } },
       "relationships": { "mira": 0, "orrin": 1 },
-      "memories": [{ "tick": 0, "text": "The forge bellows need dry leather before nightfall." }]
+      "memories": [
+        { "tick": 0, "text": "The forge bellows need dry leather before nightfall.", "meta": { "importance": 8, "tags": ["forge", "bellows", "leather"], "visibility": "shared", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The old anvil rang by itself when the blue glow flashed under the bridge.", "meta": { "importance": 7, "tags": ["anvil", "blue", "bridge"], "visibility": "private", "emotionalWeight": 5, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Tomas found Mira's shears near the bridge, panicked, and left them on the forge bench.", "meta": { "importance": 8, "tags": ["mira", "shears", "bridge", "forge"], "visibility": "private", "emotionalWeight": 6, "sourceActorId": "world" } }
+      ]
     },
     {
       "id": "lena", "name": "Lena",
       "locationId": "inn",
-      "goals": ["keep travelers calm"],
+      "tier": "quest",
+      "role": "innkeeper and witness collector",
+      "factionId": "village",
+      "description": "A calm innkeeper who turns rumors into useful witness accounts.",
+      "traits": {
+        "personality": ["patient", "social", "strategic"],
+        "values": ["hospitality", "truth", "safety"],
+        "flaws": ["waits for proof too long"],
+        "fears": ["someone crossing the bridge alone after dusk"],
+        "speechStyle": "measured, reassuring, curious"
+      },
+      "needs": { "safety": 66, "trust": 70, "resources": 58, "status": 48, "curiosity": 72, "duty": 76 },
+      "mood": { "emotion": "watchful", "stress": 45, "confidence": 68, "suspicion": 39 },
+      "goals": ["keep travelers calm", "collect useful witness stories", "make sure no one crosses the bridge alone after dusk"],
+      "ambitions": [
+        { "id": "lena_collect_witnesses", "title": "Collect enough witness stories to prove the bridge danger", "kind": "investigate", "priority": 82, "status": "active", "targetId": "bridge" },
+        { "id": "lena_keep_travelers_safe", "title": "Keep travelers away from the bridge after dusk", "kind": "protect", "priority": 78, "status": "active", "targetId": "inn" }
+      ],
+      "relationshipAxes": { "mira": { "trust": 2, "affection": 1, "respect": 2 }, "pax": { "trust": 0, "affection": 1, "suspicion": 2 } },
       "relationships": { "mira": 1, "pax": 0 },
-      "memories": [{ "tick": 0, "text": "A traveler heard scratching beneath the old bridge." }]
+      "memories": [
+        { "tick": 0, "text": "A traveler heard scratching beneath the old bridge.", "meta": { "importance": 7, "tags": ["traveler", "scratching", "bridge"], "visibility": "shared", "emotionalWeight": 4, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The brass lantern burned blue for three seconds when pointed at Hollow Wood.", "meta": { "importance": 8, "tags": ["lantern", "blue", "wood"], "visibility": "private", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Lena promised the Wanderer a room if they help calm Ashbend before nightfall.", "meta": { "importance": 6, "tags": ["wanderer", "promise", "nightfall"], "visibility": "shared", "emotionalWeight": 2, "sourceActorId": "world" } }
+      ]
     },
     {
       "id": "orrin", "name": "Orrin",
       "locationId": "square",
-      "goals": ["collect rumors"],
+      "tier": "normal",
+      "role": "merchant elder and rumor broker",
+      "factionId": "village",
+      "description": "An experienced elder who sees patterns but sometimes turns suspicion into rumor.",
+      "traits": {
+        "personality": ["experienced", "proud", "pattern-seeking"],
+        "values": ["evidence", "reputation", "preparedness"],
+        "flaws": ["accuses before checking"],
+        "fears": ["being dismissed as old and dramatic"],
+        "speechStyle": "dry, precise, slightly theatrical"
+      },
+      "needs": { "safety": 62, "trust": 52, "resources": 46, "status": 74, "curiosity": 80, "duty": 58 },
+      "mood": { "emotion": "vindicated", "stress": 40, "confidence": 75, "suspicion": 70 },
+      "goals": ["collect rumors", "protect the notice board", "prove the village pattern before anyone laughs"],
+      "ambitions": [
+        { "id": "orrin_prove_pattern", "title": "Prove the village pattern before anyone laughs", "kind": "investigate", "priority": 84, "status": "active", "targetId": "square" }
+      ],
+      "relationshipAxes": { "tomas": { "trust": 1, "respect": 1 }, "pax": { "trust": -1, "suspicion": 5, "affection": 0 } },
       "relationships": { "tomas": 1, "pax": -1 },
-      "memories": [{ "tick": 0, "text": "Pax keeps hiding shiny things behind the notice board." }]
+      "memories": [
+        { "tick": 0, "text": "Pax keeps hiding shiny things behind the notice board.", "meta": { "importance": 7, "tags": ["pax", "shiny", "notice"], "visibility": "private", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Every missing object has been metal: shears, spoons, nails, hinges, and the inn's spare key.", "meta": { "importance": 9, "tags": ["metal", "missing", "shears", "key"], "visibility": "shared", "emotionalWeight": 4, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The notice board map has a faded mark where the bridge, forge, and Hollow Wood form a triangle.", "meta": { "importance": 8, "tags": ["notice", "bridge", "forge", "wood"], "visibility": "shared", "emotionalWeight": 2, "sourceActorId": "world" } }
+      ]
     },
     {
       "id": "pax", "name": "Pax",
       "locationId": "square",
-      "goals": ["avoid chores"],
+      "tier": "quest",
+      "role": "frightened child and accidental antagonist",
+      "factionId": "bridge_whisper",
+      "description": "A nervous child hiding shiny things because the bridge whisper scares him into obeying.",
+      "traits": {
+        "personality": ["playful", "secretive", "scared"],
+        "values": ["belonging", "safety", "forgiveness"],
+        "flaws": ["lies when cornered"],
+        "fears": ["the bridge whisper saying his name"],
+        "speechStyle": "quick, evasive, small bursts of honesty"
+      },
+      "needs": { "safety": 28, "trust": 34, "resources": 42, "status": 22, "curiosity": 74, "revenge": 8, "duty": 20 },
+      "mood": { "emotion": "scared", "stress": 82, "confidence": 24, "suspicion": 58 },
+      "goals": ["avoid chores", "keep the hidden trinket pile secret", "work up the courage to tell someone about the whisper"],
+      "ambitions": [
+        { "id": "pax_hide_trinkets", "title": "Keep the hidden trinket pile secret", "kind": "hide", "priority": 90, "status": "active", "targetId": "square" },
+        { "id": "pax_confess_whisper", "title": "Work up the courage to tell someone about the whisper", "kind": "reveal", "priority": 62, "status": "blocked", "targetId": "lena", "blocker": "too scared of being blamed" }
+      ],
+      "secrets": [
+        { "id": "hidden_trinket_pile", "text": "Pax hid a pile of shiny objects behind the notice board after the bridge whispered to bring bright pieces.", "risk": 92, "knownBy": ["pax"] }
+      ],
+      "relationshipAxes": { "orrin": { "trust": -2, "fear": 2, "suspicion": 4 }, "lena": { "trust": 0, "affection": 1, "fear": 1 } },
       "relationships": { "orrin": -1, "lena": 0 },
-      "memories": [{ "tick": 0, "text": "Orrin blamed Pax for a missing spoon." }]
+      "memories": [
+        { "tick": 0, "text": "Orrin blamed Pax for a missing spoon.", "meta": { "importance": 5, "tags": ["orrin", "blamed", "spoon"], "visibility": "private", "emotionalWeight": 6, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Pax did hide some shiny things, but only after hearing the bridge whisper 'bring bright pieces'.", "meta": { "importance": 10, "tags": ["secret", "shiny", "bridge", "whisper"], "visibility": "private", "emotionalWeight": 8, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The cold blue ember stopped humming when Pax covered it with a wooden cup.", "meta": { "importance": 9, "tags": ["blue", "ember", "wooden", "cup"], "visibility": "private", "emotionalWeight": 5, "sourceActorId": "world" } }
+      ]
     }
   ],
   "quests": [
     {
       "id": "return_shears",
       "title": "Return the pruning shears",
-      "description": "Mira wants Tomas's missing tools brought back to the herb garden.",
+      "description": "Mira needs the moonmint shears back before dusk. Tomas left them on the forge bench, but the real question is why they were near the bridge.",
       "giverId": "mira",
       "status": "open",
       "rewards": { "relationshipDelta": { "mira": 2 } },
       "consequences": { "relationshipDelta": { "mira": -2 } }
+    },
+    {
+      "id": "rekindle_forge",
+      "title": "Rekindle the old forge",
+      "description": "Tomas needs dry bellows leather from Hollow Wood to restart the forge flame and test whether it quiets the bridge.",
+      "giverId": "tomas",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "tomas": 2, "mira": 1 } },
+      "consequences": { "relationshipDelta": { "tomas": -1 } }
+    },
+    {
+      "id": "bridge_whisper",
+      "title": "Listen at the old bridge",
+      "description": "Lena wants proof before she bars the bridge at night. Find the crumpled note or the cold blue ember near the crossing.",
+      "giverId": "lena",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "lena": 2, "pax": 1 } },
+      "consequences": { "relationshipDelta": { "lena": -1 } }
     }
   ],
   "eventLog": []

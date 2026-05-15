@@ -50,6 +50,9 @@ describe("items", () => {
 
   test("give rejected when target elsewhere", () => {
     const world = fixture();
+    const shears = getItem(world, "shears")!;
+    delete shears.locationId;
+    shears.holderId = "tomas";
     const result = applyAction(world, { type: "give", actorId: "tomas", itemId: "shears", targetId: "mira" });
     expect(result.applied).toBe(false);
     if (!result.applied) expect(result.reason).toBe("Target is not here.");

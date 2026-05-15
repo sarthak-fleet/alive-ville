@@ -11,11 +11,9 @@ export function AppHeader() {
   return (
     <header>
       <h1>Ashbend Village</h1>
-      <Badge>engine</Badge>
       <Badge>Day {world.clock.day} · {world.clock.hour.toString().padStart(2, "0")}:00 · {tod}</Badge>
-      <Badge>tick {world.tick}</Badge>
       <span className="grow" />
-      <Button variant="primary" onClick={() => void send(null)}>Skip tick</Button>
+      <Button variant="primary" onClick={() => void send(null)}>Wait</Button>
     </header>
   );
 }

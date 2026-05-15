@@ -305,6 +305,30 @@ Arin remembers and changes behavior later.
 - save/log trail for debugging prompts, actions, and rejected actions
 - cost/latency/JSON-validity/action-rejection metrics
 
+### Current Implementation Status
+
+Done:
+
+- TypeScript world/action schemas with validation.
+- Ashbend Village world JSON with 5 NPCs, locations, exits, items, one quest, clock, and event log.
+- Simulation engine for ticks, player actions, NPC actions, movement, memory, relationships, items, quests, checksums, and time.
+- Scripted NPC proposer that proves gossip/confront/remember loops without requiring an LLM.
+- OpenAI-compatible LLM router with normal/quest model tiers, JSON action parsing, timeout handling, and per-call logging.
+- LLM proposer that retrieves relevant NPC memories, builds scoped prompts, validates proposed actions, and rejects invalid output.
+- Narrative director that pushes unresolved relationship tension using either a quest-tier LLM call or a scripted fallback.
+- Replay support and server endpoints for state/tick interaction.
+- React + Phaser shell with village map, player/NPC presentation, event log, inventory, quests, relationships, and replay inspector.
+- Test coverage for simulation, world validation, quests, replay, LLM parsing/routing, proposer behavior, director behavior, and server API.
+
+Still missing / next:
+
+- Run a real LLM-backed playtest and tune prompts against rejection rate and repetitive behavior.
+- Add local model support as a first-class model backend, starting with a local 30B model.
+- Add richer emotion/personality state instead of goals + relationship scores only.
+- Add clearer NPC dialogue bubbles / status affordances in the 2D shell.
+- Add durable save/load sessions beyond in-memory server state.
+- Add scene cards only after the village loop is consistently interesting.
+
 ### First Model Policy
 
 - background NPCs: templates or no LLM
@@ -313,36 +337,494 @@ Arin remembers and changes behavior later.
 - gateway logs must track latency, token usage, JSON failure rate, and action rejection rate
 - do not send the whole world every turn; retrieve only relevant state and memory
 
+### Local 30B Model Plan
+
+Goal:
+
+> Make a local ~30B model usable for normal NPC decisions while keeping the same validated action pipeline.
+
+Assumption:
+
+- Use an OpenAI-compatible local server so the existing `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL_NORMAL`, and `LLM_MODEL_QUEST` router can stay mostly unchanged.
+- First runtime: Ollama's OpenAI-compatible endpoint at `http://localhost:11434/v1`.
+- First normal-tier model target: `qwen3:30b-a3b`.
+- Candidate fallback runtimes: LM Studio, llama.cpp server, or vLLM if Ollama latency or JSON reliability is not good enough.
+
+First integration:
+
+```text
+local 30B model → normal NPC tier
+scripted fallback → background / no-key mode
+remote stronger model or local larger reasoning model → quest/director tier, optional
+```
+
+Checklist:
+
+1. Confirm available local runtime and exact model name.
+2. Start local OpenAI-compatible endpoint.
+3. Set `.env` locally, without committing secrets:
+   `LLM_BASE_URL=http://localhost:11434/v1`
+   `LLM_API_KEY=ollama`
+   `LLM_MODEL_NORMAL=qwen3:30b-a3b`
+4. Start with `LLM_MAX_NPCS=1` for local smoke tests, then raise it after latency and JSON validity are acceptable.
+5. Run one LLM-backed tick from the server and inspect `logs/` for latency, JSON validity, and rejected actions.
+6. Tune timeout, temperature, and prompts for short valid actions.
+7. Decide whether quest/director stays remote, moves to the same local 30B, or gets a separate local reasoning model.
+
+Baseline eval command:
+
+```bash
+LLM_BASE_URL=http://localhost:11434/v1 \
+LLM_API_KEY=ollama \
+LLM_MODEL_NORMAL=qwen3:30b-a3b \
+LLM_TIMEOUT_MS=180000 \
+LLM_MAX_NPCS=1 \
+EVAL_TICKS=3 \
+pnpm eval:llm
+```
+
+The eval rotates NPC order by default so `LLM_MAX_NPCS=1` can cover more than the first NPC without parallel local calls. Set `EVAL_ROTATE_NPCS=0` to preserve world order. Compare future models by changing only `LLM_MODEL_NORMAL`, then checking JSON validity, action rejection rate, skip rate, action variety, and latency.
+
 ## 9. Sequential Steps
 
-1. Define character/world/event/action schemas.
-2. Build text-only event log and world state.
-3. Add NPC decision loop.
-4. Add memory stream and relationship updates.
-5. Add action validation.
-6. Add model routing and logging.
-7. Add NPC-to-NPC gossip.
-8. Add simple quests/consequences.
-9. Move into Phaser 2D shell.
-10. Add director triggers.
-11. Add still scene cards.
-12. Add manual world JSON import.
-13. Add wiki/fandom import.
-14. Add subtitle/anime ingestion.
-15. Consider Godot/Unity/3D/video only after the 2D simulation is fun.
+Current priority lock:
 
-## 10. Parallel Work Tracks
+> Do not move to story import, media, voice, packaging, or broader world-authoring until tracks 1 and 2 are right.
+
+Track 1 is **agent interaction, working behavior, and memory**. This is collaborative design work: we will decide what kinds of agents we want, how they remember, how they plan, and what makes them feel alive.
+
+Track 2 is **actual gameplay**. Codex owns this track proactively: make the thing playable, responsive, visible, and closer to a real top-down RPG instead of a dashboard.
+
+Near-term sequence:
+
+1. Make the game runtime full-screen and player-first.
+2. Replace hardcoded scene drawing with a reusable tilemap/asset workflow.
+3. Use existing top-down RPG patterns for movement, collision, doors, prompts, depth sorting, and dialogue UI.
+4. Make player controls obvious: WASD/arrows, click-to-walk, interact key, doors, NPC interactions.
+5. Make basic verbs visible and satisfying: move, talk, pick up, give, inspect, complete task.
+6. Keep AI/local model work behind responsive gameplay so model latency never blocks movement.
+7. Strengthen agent memory and relationship behavior.
+8. Add repeatable playtests/evals for agents and gameplay.
+9. Only after tracks 1 and 2 are fun enough, resume story import and media.
+
+## 10. Program Roadmap
+
+This is not one feature. It is a stack of linked products that need to mature together without letting later layers distract from the core loop.
+
+### A. Agent Simulation / Living World
+
+Goal:
+
+> NPCs behave like persistent characters, not chat endpoints.
+
+Includes:
+
+- agent state: goals, needs, mood, personality, relationships, inventory, location, schedule
+- memory: raw memories, summaries, importance, retrieval, decay, contradiction handling
+- interaction: talk, gossip, confront, trade, ask, help, refuse, join, avoid
+- planning: short-term intent, daily plan, reactive interruption
+- world adjudication: LLM proposes, engine validates, state mutates only through rules
+- social propagation: secrets, rumors, reputation, trust, fear, favors, grudges
+- observability: action logs, prompt logs, rejection reasons, model latency, replay
+
+Done enough when:
+
+- the player can change an NPC's future behavior through prior actions
+- NPCs can affect each other without the player
+- repeated playthroughs create different but understandable social outcomes
+- invalid or weird model output is contained by validation
+
+#### Agent State v1
+
+Goal:
+
+> A world starts with characters thrown into it, then keeps moving through goals, memories, relationships, ambitions, secrets, and conflict.
+
+Core idea:
+
+- the world has rules: magic/tech/social constraints, factions, locations, danger, economy, tone
+- characters have initial state: backstory, personality, memories, relationships, inventory, secrets, needs, goals
+- some characters are simple NPCs, some are quest-givers, some are smarter long-term actors, and some are villains
+- the player enters as a character, not a floating cursor
+- the story advances even if the player waits, because agents and factions keep acting
+
+Agent tiers:
+
+- **background**: schedule, barks, local reactions, no LLM by default
+- **local NPC**: memory-aware dialogue, small goals, can give/help/refuse simple tasks
+- **major character**: plans, ambitions, relationship strategy, secrets, can change future behavior
+- **villain / antagonist**: long-term agenda, hidden moves, manipulation, escalation, limited by what they know and can do
+- **director**: outside-the-world pacing system; reveals pressure, rumors, events, and consequences without giving villains unfair omniscience
+
+State shape v1:
+
+- identity: id, name, role, tier, faction, public description
+- traits: personality tags, values, flaws, fears, speech style
+- needs: safety, trust, money/resources, status, rest, curiosity, revenge, duty
+- mood: current emotion, stress, confidence, suspicion
+- goals: short-term goal, long-term ambition, blockers, priority
+- plans: current intent, next planned action, daily schedule, fallback action
+- relationships: trust, affection, fear, respect, debt/favor, suspicion
+- memories: raw memory, importance, recency, source, visibility, emotional weight, summary tags
+- knowledge: facts known, rumors believed, secrets known, lies believed
+- inventory/capabilities: items, skills, permissions, access, magic/tools if the world supports them
+- constraints: morality, taboos, faction rules, physical limits, local laws, story/world rules
+
+World state v1:
+
+- world rules: what is possible/impossible, genre tone, special systems such as magic
+- factions: goals, resources, reputation, conflicts
+- clocks: day/time, event deadlines, villain plan stage
+- public facts vs private facts
+- active tensions: unresolved conflicts that can produce quests or drama
+- director pressure: quietness, repetition, unresolved danger, player confusion, pending reveals
+
+Behavior loop v1:
+
+1. Gather local context: location, nearby characters/items, active quests, recent events, relevant memories.
+2. Retrieve memories and facts for the agent's current goal/relationship/scene.
+3. Choose a valid intent: help, ask, avoid, confront, gossip, trade, investigate, move, wait, hide, escalate.
+4. Propose one structured action.
+5. Engine validates against world rules and current state.
+6. Apply consequences: memories, relationships, quest state, inventory, faction/world changes.
+7. Summarize what changed so future agents and the UI can explain it.
+
+Implementation sequence:
+
+1. Extend schemas for agent traits, needs, mood, ambitions, secrets, current intent, and relationship axes.
+2. Add memory metadata: importance, tags, source actor, visibility, emotional weight.
+3. Add retrieval helpers for "what should this agent remember right now?"
+4. Add an intent planner that works scripted first and LLM-backed second.
+5. Add villain plan state: stage, objective, hidden actions, next trigger, known facts.
+6. Add director pressure state separate from villain plans.
+7. Add eval scenarios for gossip, refusal, quest help, villain escalation, and player-caused relationship change.
+
+Done enough when:
+
+- a character's prior memories and relationships change what they do later
+- a villain can advance a plan while still obeying world knowledge and constraints
+- the director can create pressure without railroading outcomes
+- player action can help, harm, reveal, delay, or redirect an agent's goal
+- evals can catch invalid actions, repetitive behavior, hallucinated knowledge, and ignored memories
+
+### B. Actual Gameplay / 2D Runtime
+
+Goal:
+
+> It should feel like a small playable RPG, not a dashboard over a simulation.
+
+Reuse-first rule:
+
+> Do not hand-roll standard game systems when proven 2D game tooling, asset workflows, or open-source patterns can carry them.
+
+Preferred reuse:
+
+- Phaser for runtime, camera, input, scene lifecycle, animation, tweens, and collision.
+- Tiled or LDtk-style map workflow for real maps instead of hardcoded rectangles.
+- Existing open/paid top-down asset packs for tiles, props, characters, UI frames, and animation sheets.
+- Established RPG patterns: tile layers, object layers, collision layers, spawn points, interaction zones, doors, depth sorting, and dialogue boxes.
+- Open-source Phaser RPG examples as architecture references, with license review before copying code/assets.
+
+Hand-roll only:
+
+- the AI/world-state bridge
+- action validation hooks
+- memory/relationship consequences
+- custom game verbs unique to this project
+
+Includes:
+
+- controllable player character with movement, camera, collision, interact key, and click-to-walk
+- explorable locations with doors, interiors/exteriors, usable objects, pickups, and NPC placement
+- dialogue UI with choices, short barks, memory-aware responses, and visible consequences
+- quest and task loops: fetch, help, investigate, mediate, escort, repair, persuade
+- time loop: day/night, schedules, openings/closings, events by time
+- feedback: animations, speech bubbles, relationship deltas, quest updates, item changes
+- save/load and replay of meaningful sessions
+
+Done enough when:
+
+- the player always knows what they can do next
+- moving, talking, picking up, giving, and resolving a quest are visible and responsive
+- the first village has at least one 10-minute playable loop
+- the AI enhances play instead of blocking basic responsiveness
+
+### B2. 2D Scale + Guidance
+
+Goal:
+
+> Bigger worlds should feel explorable without making the player lost or turning the UI into a quest spreadsheet.
+
+Includes:
+
+- much larger maps split into zones, regions, interiors, roads, and wilderness edges
+- LDtk/Tiled levels for exterior zones and separate interior rooms
+- transitions: doors, roads, world-map edges, room portals, hidden entrances
+- map streaming or room-based loading when the world becomes too large for one Phaser scene
+- upgraded minimap/world map with current region, known places, discovered doors, and quest-relevant areas
+- task hints: quest compass, subtle objective pins, interact glow, "last seen at" clues, NPC rumor hints, and journal hints
+- learned hints: UI should show clues only after the player heard, saw, or discovered them
+- hint sources: dialogue, memories, item descriptions, event log, world facts, and director nudges
+- path guidance: highlight reachable doors/regions without hard-locking exploration
+
+Done enough when:
+
+- a player can navigate a larger map without opening debug panels
+- tasks tell the player what they know, not omniscient spoilers
+- the map supports multiple interiors and zones without rewriting the engine
+- hints can be produced from agent/world knowledge instead of only hardcoded quest text
+
+### C. Story / Lore Import
+
+Goal:
+
+> Turn source material into a playable world bible and structured game state.
+
+Includes:
+
+- manual world editor first: characters, locations, factions, items, events, canon timeline
+- importer sources later: wiki/fandom pages, markdown notes, subtitles/transcripts, episode summaries
+- extraction: entities, relationships, locations, recurring objects, timeline events, character traits
+- canon graph: who knows what, when events happened, what is public/private, what is mutable
+- human review: accept/reject extracted facts before they become game state
+- playable compiler: convert lore into locations, NPC cards, memories, quests, constraints, starting state
+
+Done enough when:
+
+- a user can paste or write a small world bible and get a playable village draft
+- imported facts are inspectable and editable
+- the game can preserve canon constraints while allowing player divergence
+
+### D. Narrative Director / Fun Engine
+
+Goal:
+
+> Keep the world interesting without railroading the player.
+
+Includes:
+
+- dramatic beats: rumor, conflict, request, mystery, danger, reconciliation, consequence
+- pacing model: detect quiet stretches, repeated actions, unresolved tension, player goals
+- event injection: director creates opportunities, not forced outcomes
+- quest weaving: turn social/world state into optional tasks
+- escalation/de-escalation: conflicts can grow, resolve, or transform
+
+Done enough when:
+
+- quiet play naturally produces something worth investigating
+- the director can explain why it nudged the world
+- generated events are valid, local, and grounded in current state
+
+### E. Model Backend / Evals / AI Ops
+
+Goal:
+
+> Make model choice empirical and swappable.
+
+Includes:
+
+- local baseline: Ollama + `qwen3:30b-a3b`
+- model router: background/scripted, normal NPC, quest/director, import/extraction
+- eval harness: JSON validity, rejection rate, latency, skip rate, action diversity, memory usage
+- prompt/version tracking
+- fallback strategy: scripted action, smaller local model, stronger remote model, timeout handling
+- cost/performance dashboard later
+
+Done enough when:
+
+- changing `LLM_MODEL_NORMAL` is enough to compare models
+- evals catch regressions before playtesting
+- local model latency does not make player input feel broken
+
+### F. Authoring / Creator Tools
+
+Goal:
+
+> Let worlds be built, debugged, and repaired without editing raw JSON forever.
+
+Includes:
+
+- world editor: locations, exits, NPCs, items, quests, relationships
+- memory/event inspector
+- prompt/action/rejection log viewer
+- replay timeline
+- import review queue
+- character card editor
+- balance/debug tools: force event, teleport NPC, inspect memories, reset branch
+
+Done enough when:
+
+- creating a second small world does not require touching engine code
+- broken imports/actions can be diagnosed from UI
+
+### G. Persistence / Branching / Multiplayer-Later
+
+Goal:
+
+> Sessions should survive, branch, and be debuggable.
+
+Includes:
+
+- durable saves
+- deterministic-ish replay from event log plus snapshots
+- branch points for player choices
+- world snapshots and migrations
+- later: shared worlds, async multiplayer, spectators, creator publishing
+
+Done enough when:
+
+- a session can be saved, resumed, replayed, and branched
+
+### H. Character Design / Media / Voice
+
+Goal:
+
+> Make characters memorable after the simulation works.
+
+Includes:
+
+- character portraits and sprites
+- location art and item cards
+- scene cards for major events
+- dialogue styling and personality-specific speech patterns
+- voice barks / TTS later
+- music, ambience, weather, VFX
+- generated video or comic panels much later
+
+Done enough when:
+
+- major NPCs are visually and vocally distinct
+- media is cached, consistent, and never blocks the core loop
+
+### I. Quality / Safety / Product Packaging
+
+Goal:
+
+> Make the thing shippable, not just impressive in a demo.
+
+Includes:
+
+- test coverage for state transitions, imports, model failures, saves, and UI smoke flows
+- content safety boundaries for imported worlds and generated dialogue
+- performance budgets for local models and browser runtime
+- licensing checks for borrowed code/assets
+- onboarding: sample worlds, templates, quickstart
+- packaging: local desktop app or hosted web app later
+
+Done enough when:
+
+- a new user can run it, load a sample world, play, and understand what happened
+
+## 11. Phase Plan
+
+### Phase 0 — Current Baseline
+
+Status:
+
+- Ashbend world JSON exists.
+- State engine, validation, memory, relationships, quests, replay, server, React shell, and local model path exist.
+- Phaser scene exists but is still prototype-quality.
+
+Exit criteria:
+
+- local model eval baseline recorded
+- one visible playable loop works end-to-end
+- user can move, talk, pick up, give, and see consequences
+
+### Phase 1 — Alive Village Vertical Slice
+
+Build:
+
+- proper full-screen top-down village runtime with readable movement/interactions
+- richer NPC memory and relationship model
+- Agent State v1: traits, needs, mood, ambitions, secrets, current intent, richer relationship axes
+- villain plan state and director pressure state as separate systems
+- dialogue choices and short NPC responses
+- one quest with multiple resolutions
+- learned task hints from dialogue/world knowledge
+- director event when the world goes quiet
+- save/load for one session
+
+Exit criteria:
+
+- 10-minute Ashbend playtest is understandable and at least somewhat fun
+- NPC behavior references prior events without hallucinating world state
+- player can intentionally improve or damage a relationship
+- at least one antagonist or pressure source advances a valid plan if ignored
+- the player gets non-spoilery hints for the current task
+- no player movement or camera action waits on an LLM call
+- debug panels are optional overlays, not the primary experience
+
+### Phase 2 — Model + Agent Evals
+
+Build:
+
+- repeatable NPC eval scenarios
+- model comparison matrix for local models
+- prompt/version logs
+- social behavior tests: gossip, refusal, apology, trade, quest help
+
+Exit criteria:
+
+- we can say why one model is better than another for this game
+- regressions show up in evals before manual playtest
+
+### Phase 3 — Authoring + Manual Import
+
+Build:
+
+- world editor for manual input
+- character/world bible schema
+- importer from markdown/JSON notes
+- review UI for extracted facts
+
+Exit criteria:
+
+- create a second playable world from a human-authored world bible
+
+### Phase 4 — Lore Import
+
+Build:
+
+- wiki/fandom import
+- subtitle/transcript import
+- entity graph and canon timeline
+- canon divergence model
+
+Exit criteria:
+
+- import a small public-domain or user-provided story into a playable draft with review
+
+### Phase 5 — Presentation Layer
+
+Build:
+
+- sprite/portrait pipeline
+- consistent character design
+- location art
+- event scene cards
+- voice experiments
+
+Exit criteria:
+
+- the first village has a cohesive visual/audio identity
+
+## 12. Parallel Work Tracks
 
 | Track | Can Start Now? | Output |
 |---|---:|---|
-| Agent core | Yes | schemas, loop, memory, validation |
-| Model gateway / AI ops | Yes | routing, cost/latency logs, fallbacks |
-| Research audit | Yes | steal patterns, not dependencies |
-| Phaser client | After schema exists | map, sprites, dialogue UI |
-| Media experiments | Lightly | portrait/scene-card tests only |
-| Lore import research | Lightly | API notes, not implementation |
+| Agent core | Active | Agent State v1: traits, needs, mood, ambitions, secrets, current intent, relationship axes, memory metadata, planning, social propagation |
+| Gameplay runtime | Active, Codex-owned | reuse-first top-down runtime: tilemap workflow, asset packs, collision, interactions, quest loop, responsive UI |
+| 2D scale + guidance | Support now, active after Agent State v1 | larger zones/interiors, LDtk/Tiled level expansion, clue-based quest hints, minimap/world-map upgrades |
+| Model backend / evals | Support only | local baseline and regression checks for agent/gameplay work |
+| Narrative director | Support now | director pressure separate from villain plans; quiet-world nudges, reveals, consequences, grounded hints |
+| Persistence / replay | Hold except debug support | save/load after the first playable loop is clearer |
+| Authoring tools | Hold | no editor until Ashbend proves the model |
+| Story import | Frozen | no wiki/fandom/subtitle work until tracks 1 and 2 are right |
+| Media / character design | Frozen | no voice/cards/video until gameplay and agents work |
+| Packaging / onboarding | Frozen | no packaging until there is a playable vertical slice |
 
-## 11. Double-Advocate View
+## 13. Double-Advocate View
 
 ### Case For
 
@@ -381,7 +863,7 @@ Risk controls:
 - no 100 NPCs before 5 NPCs are good
 - no freeform model control of world state
 
-## 12. Non-Negotiable Build Rules
+## 14. Non-Negotiable Build Rules
 
 1. The database/world state is source of truth.
 2. The LLM never directly mutates the world.
@@ -394,7 +876,7 @@ Risk controls:
 9. The first version must be fun in text before visuals matter.
 10. The project is “AI Town + RPG consequences,” not “import anime first.”
 
-## 13. Research Links
+## 15. Research Links
 
 Primary research / docs:
 
@@ -434,7 +916,7 @@ Audit-only references:
 - WhisperX: https://github.com/m-bain/whisperX
 - PySceneDetect: https://github.com/Breakthrough/PySceneDetect
 
-## 14. Bottom Line
+## 16. Bottom Line
 
 Build this first:
 

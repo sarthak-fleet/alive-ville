@@ -12,6 +12,7 @@ const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;
 const WEB_ROOT = new URL(process.env["WEB_ROOT"] ?? "./web/", CWD);
 const WORLD_PATH = new URL(process.env["WORLD_FILE"] ?? "./worlds/village.json", CWD);
+const LLM_MAX_NPCS = Number(process.env["LLM_MAX_NPCS"] ?? 5);
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -19,11 +20,12 @@ const MIME: Record<string, string> = {
   ".ts": "application/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
   ".svg": "image/svg+xml",
 };
 
 const world = JSON.parse(readFileSync(WORLD_PATH, "utf8")) as World;
-const propose = isLlmEnabled() ? createLlmProposer({ tier: "normal" }) : undefined;
+const propose = isLlmEnabled() ? createLlmProposer({ tier: "normal", maxNpcs: LLM_MAX_NPCS }) : undefined;
 const director = createDirector({ propose: isLlmEnabled() ? proposeAction : undefined });
 const engine = createEngine(world, { propose, director });
 

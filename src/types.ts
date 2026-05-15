@@ -56,13 +56,108 @@ export type PlayerAction =
   | WithoutActor<CompleteQuestAction>
   | WithoutActor<FailQuestAction>;
 
-export interface Memory { tick: TickIndex; text: string; }
+export type MemoryVisibility = "private" | "shared" | "public";
+export interface MemoryMeta {
+  importance?: number;
+  tags?: string[];
+  sourceActorId?: ActorId | "world" | "director";
+  visibility?: MemoryVisibility;
+  emotionalWeight?: number;
+}
+
+export type AgentNeedKey = "safety" | "trust" | "resources" | "status" | "rest" | "curiosity" | "revenge" | "duty";
+export type AgentGoalKind = "survive" | "protect" | "investigate" | "repair" | "hide" | "reveal" | "help" | "harm" | "gain_status";
+export type AgentGoalStatus = "active" | "blocked" | "satisfied" | "abandoned";
+export type AgentIntentKind =
+  | "wait"
+  | "help"
+  | "ask"
+  | "avoid"
+  | "confront"
+  | "gossip"
+  | "trade"
+  | "investigate"
+  | "move"
+  | "hide"
+  | "escalate";
+
+export interface AgentTraits {
+  personality?: string[];
+  values?: string[];
+  flaws?: string[];
+  fears?: string[];
+  speechStyle?: string;
+}
+
+export interface AgentMood {
+  emotion: string;
+  stress: number;
+  confidence: number;
+  suspicion: number;
+}
+
+export interface AgentGoal {
+  id: string;
+  title: string;
+  kind: AgentGoalKind;
+  priority: number;
+  status?: AgentGoalStatus;
+  targetId?: ActorId | LocationId | ItemId;
+  blocker?: string;
+}
+
+export interface AgentSecret {
+  id: string;
+  text: string;
+  risk: number;
+  knownBy?: Array<ActorId | "player">;
+}
+
+export interface AgentIntent {
+  kind: AgentIntentKind;
+  targetId?: ActorId | LocationId | ItemId;
+  reason: string;
+  updatedTick: TickIndex;
+}
+
+export interface ScheduleBlock {
+  hour: number;
+  locationId: LocationId;
+  intent: string;
+}
+
+export interface AgentPlan {
+  currentIntent?: AgentIntent;
+  nextActionHint?: string;
+  schedule?: ScheduleBlock[];
+}
+
+export interface RelationshipAxes {
+  trust?: number;
+  affection?: number;
+  fear?: number;
+  respect?: number;
+  debt?: number;
+  suspicion?: number;
+}
+
+export interface Memory { tick: TickIndex; text: string; meta?: MemoryMeta; }
 export interface Npc {
   id: ActorId;
   name: string;
   locationId: LocationId;
+  role?: string;
+  factionId?: string;
+  description?: string;
+  traits?: AgentTraits;
+  needs?: Partial<Record<AgentNeedKey, number>>;
+  mood?: AgentMood;
   goals?: string[];
+  ambitions?: AgentGoal[];
+  plan?: AgentPlan;
+  secrets?: AgentSecret[];
   relationships: Record<ActorId, number>;
+  relationshipAxes?: Record<ActorId | "player", RelationshipAxes>;
   memories: Memory[];
   tier?: "background" | "normal" | "quest";
 }
@@ -114,6 +209,56 @@ export interface Player {
   name?: string;
 }
 
+export interface Story {
+  title: string;
+  premise: string;
+  opening: string;
+  currentObjective?: string;
+  mysteries?: string[];
+  beats?: string[];
+}
+
+export interface WorldRule {
+  id: string;
+  text: string;
+  kind?: "physical" | "magic" | "social" | "story" | "safety";
+}
+
+export interface Faction {
+  id: string;
+  name: string;
+  goals?: string[];
+  resources?: string[];
+  reputation?: number;
+}
+
+export interface WorldTension {
+  id: string;
+  title: string;
+  pressure: number;
+  status?: "quiet" | "active" | "escalating" | "resolved";
+  involvedIds?: string[];
+}
+
+export interface VillainPlan {
+  id: string;
+  actorId: ActorId;
+  title: string;
+  objective: string;
+  stage: number;
+  hidden: boolean;
+  pressure: number;
+  nextTrigger?: string;
+  knownFacts?: string[];
+}
+
+export interface DirectorState {
+  pressure: number;
+  quietTicks: number;
+  lastNudgeTick?: TickIndex;
+  pendingReveals?: string[];
+}
+
 export interface AppliedAction { applied: true; action: Action; text: string; fromDirector?: boolean; }
 export interface RejectedAction { applied: false; action: Action; reason: string; fromDirector?: boolean; }
 export type ActionResult = AppliedAction | RejectedAction;
@@ -131,9 +276,15 @@ export interface TickSummary {
 export interface World {
   id: string;
   name: string;
+  story?: Story;
   tick: TickIndex;
   player: Player;
   clock: Clock;
+  rules?: WorldRule[];
+  factions?: Faction[];
+  tensions?: WorldTension[];
+  villainPlans?: VillainPlan[];
+  directorState?: DirectorState;
   locations: Location[];
   exits: Exit[];
   npcs: Npc[];

@@ -12,9 +12,11 @@
     "build": "tsc -p tsconfig.build.json && vite build",
     "dev": "vite",
     "dev:server": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "eval:llm": "tsx --env-file-if-exists=.env src/eval.ts",
     "start": "tsx --env-file-if-exists=.env src/index.ts",
     "serve": "tsx --env-file-if-exists=.env src/server.ts",
     "test": "vitest run",
+    "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },

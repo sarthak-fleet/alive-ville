@@ -1,11 +1,14 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 
-import { LOCATION_CLICK, NPC_CLICK, VillageScene } from "../phaser/VillageScene.ts";
+import type { Location, World } from "../../../src/types.ts";
+import { VillageScene } from "../phaser/VillageScene.ts";
 import { useWorldStore } from "../store/world.ts";
 
-const GAME_WIDTH = 660;
-const GAME_HEIGHT = 500;
+const INITIAL_GAME_WIDTH = 1280;
+const INITIAL_GAME_HEIGHT = 720;
+const MIN_GAME_WIDTH = 320;
+const MIN_GAME_HEIGHT = 240;
 
 export function PhaserGame() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,27 +16,42 @@ export function PhaserGame() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const scene = new VillageScene();
-    sceneRef.current = scene;
-    const game = new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: containerRef.current,
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
-      backgroundColor: "#0a0d12",
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-      scene,
-    });
-
     const onNpc = (npcId: string) => useWorldStore.getState().openDrawer(npcId);
+    const onItem = (itemId: string) => {
+      const world = useWorldStore.getState().world;
+      const item = world?.items.find((candidate) => candidate.id === itemId);
+      if (!world || item?.locationId !== world.player.locationId) return;
+      void useWorldStore.getState().send({ type: "pickup", itemId } as never);
+    };
     const onLoc = (locationId: string) => {
       const world = useWorldStore.getState().world;
       if (!world || world.player.locationId === locationId) return;
+      sceneRef.current?.previewPlayerMove(locationId);
       void useWorldStore.getState().send({ type: "move", locationId } as never);
     };
-
-    scene.events.on(NPC_CLICK, onNpc);
-    scene.events.on(LOCATION_CLICK, onLoc);
+    const container = containerRef.current;
+    const initialWidth = Math.max(MIN_GAME_WIDTH, Math.round(container.clientWidth || INITIAL_GAME_WIDTH));
+    const initialHeight = Math.max(MIN_GAME_HEIGHT, Math.round(container.clientHeight || INITIAL_GAME_HEIGHT));
+    const scene = new VillageScene({ onNpcClick: onNpc, onLocationClick: onLoc, onItemClick: onItem });
+    sceneRef.current = scene;
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: container,
+      width: initialWidth,
+      height: initialHeight,
+      backgroundColor: "#0a0d12",
+      scale: { mode: Phaser.Scale.RESIZE },
+      scene,
+    });
+    const resizeGame = () => {
+      const rect = container.getBoundingClientRect();
+      const width = Math.max(MIN_GAME_WIDTH, Math.round(rect.width));
+      const height = Math.max(MIN_GAME_HEIGHT, Math.round(rect.height));
+      game.scale.resize(width, height);
+    };
+    const resizeObserver = new ResizeObserver(resizeGame);
+    resizeObserver.observe(container);
+    requestAnimationFrame(resizeGame);
 
     const unsub = useWorldStore.subscribe((state, prev) => {
       if (state.world && state.world !== prev.world) scene.setWorld(state.world);
@@ -47,14 +65,76 @@ export function PhaserGame() {
     const initialWorld = useWorldStore.getState().world;
     if (initialWorld) scene.setWorld(initialWorld);
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || isTypingTarget(event.target)) return;
+      const direction = keyDirection(event.key);
+      if (!direction) return;
+      const world = useWorldStore.getState().world;
+      const target = world ? locationInDirection(world, direction) : null;
+      if (!target) return;
+      event.preventDefault();
+      onLoc(target);
+    };
+    window.addEventListener("keydown", onKeyDown);
+
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("keydown", onKeyDown);
       unsub();
-      scene.events.off(NPC_CLICK, onNpc);
-      scene.events.off(LOCATION_CLICK, onLoc);
       game.destroy(true);
       sceneRef.current = null;
     };
   }, []);
 
   return <div ref={containerRef} className="phaser-host" aria-label="Village map" />;
+}
+
+function keyDirection(key: string): "up" | "down" | "left" | "right" | null {
+  if (key === "ArrowUp" || key.toLowerCase() === "w") return "up";
+  if (key === "ArrowDown" || key.toLowerCase() === "s") return "down";
+  if (key === "ArrowLeft" || key.toLowerCase() === "a") return "left";
+  if (key === "ArrowRight" || key.toLowerCase() === "d") return "right";
+  return null;
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+}
+
+function locationInDirection(world: World, direction: "up" | "down" | "left" | "right"): string | null {
+  const current = world.locations.find((loc) => loc.id === world.player.locationId);
+  if (!current) return null;
+  const from = centerOf(current);
+  const candidates = reachableLocations(world)
+    .map((id) => world.locations.find((loc) => loc.id === id))
+    .filter((loc): loc is Location => Boolean(loc))
+    .map((loc) => ({ loc, center: centerOf(loc) }))
+    .filter(({ center }) => {
+      const dx = center.x - from.x;
+      const dy = center.y - from.y;
+      if (direction === "up") return dy < -20 && Math.abs(dy) >= Math.abs(dx) * 0.6;
+      if (direction === "down") return dy > 20 && Math.abs(dy) >= Math.abs(dx) * 0.6;
+      if (direction === "left") return dx < -20 && Math.abs(dx) >= Math.abs(dy) * 0.6;
+      return dx > 20 && Math.abs(dx) >= Math.abs(dy) * 0.6;
+    })
+    .sort((a, b) => distance(from, a.center) - distance(from, b.center));
+  return candidates[0]?.loc.id ?? null;
+}
+
+function reachableLocations(world: World): string[] {
+  const here = world.player.locationId;
+  const reachable = new Set<string>();
+  for (const exit of world.exits) {
+    if (exit.from === here) reachable.add(exit.to);
+    if (exit.bidirectional && exit.to === here) reachable.add(exit.from);
+  }
+  return [...reachable];
+}
+
+function centerOf(location: Location) {
+  return { x: location.x + location.w / 2, y: location.y + location.h / 2 };
+}
+
+function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
