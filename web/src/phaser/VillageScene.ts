@@ -104,6 +104,7 @@ export class VillageScene extends Phaser.Scene {
   private interactionCard?: Phaser.GameObjects.Container;
   private minimap?: MinimapState;
   private tintRect?: Phaser.GameObjects.Rectangle;
+  private lamps: Phaser.GameObjects.Container[] = [];
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys?: Record<string, Phaser.Input.Keyboard.Key>;
 
@@ -445,11 +446,13 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private drawLampPost(x: number, y: number) {
-    const glow = this.add.circle(x, y - 25, 34, 0xf7c76a, 0.12).setDepth(20);
-    this.add.rectangle(x, y, 4, 34, 0x422817).setDepth(21);
-    const lamp = this.add.circle(x, y - 20, 7, 0xf8d44e, 0.88)
-      .setStrokeStyle(2, 0x3a2719)
-      .setDepth(22);
+    // Build a self-contained container so updateTint can vary the whole
+    // lamp's intensity by time-of-day without fighting the pulse tween.
+    const glow = this.add.circle(0, -25, 34, 0xf7c76a, 0.12);
+    const post = this.add.rectangle(0, 0, 4, 34, 0x422817);
+    const lamp = this.add.circle(0, -20, 7, 0xf8d44e, 0.88).setStrokeStyle(2, 0x3a2719);
+    const container = this.add.container(x, y, [glow, post, lamp]).setDepth(21);
+    this.lamps.push(container);
     this.tweens.add({
       targets: [glow, lamp],
       alpha: { from: 0.45, to: 0.9 },
@@ -575,6 +578,27 @@ export class VillageScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.InOut",
     });
+    // Smoke puffs rise out of the campfire on a slow cadence. Each puff
+    // is a short-lived circle that drifts up and right while fading.
+    this.time.addEvent({
+      delay: 420,
+      loop: true,
+      callback: () => {
+        const puff = this.add
+          .circle(x + Phaser.Math.Between(-3, 3), y - 12, 3.5, 0xdce5ec, 0.45)
+          .setDepth(30);
+        this.tweens.add({
+          targets: puff,
+          y: puff.y - 64,
+          x: puff.x + Phaser.Math.Between(-14, 18),
+          alpha: { from: 0.45, to: 0 },
+          scale: { from: 0.9, to: 1.7 },
+          duration: 2200,
+          ease: "Sine.Out",
+          onComplete: () => puff.destroy(),
+        });
+      },
+    });
   }
 
   private drawCratesAndBarrels(g: Phaser.GameObjects.Graphics) {
@@ -597,6 +621,24 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private drawWaterSparkles() {
+    // Continuous river-flow ripples — thin lines drifting left → right,
+    // wrapping back at the river's end. Sits beneath sparkles + tilemap.
+    for (let i = 0; i < 8; i += 1) {
+      const startX = 60 + i * 200;
+      const y = 878 + ((i * 23) % 60);
+      const ripple = this.add.rectangle(startX, y, 26, 1, 0xbcdcef, 0.32).setDepth(-6);
+      this.tweens.add({
+        targets: ripple,
+        x: WORLD_W - 80,
+        alpha: { from: 0.32, to: 0.08 },
+        duration: 9000 + i * 450,
+        repeat: -1,
+        onRepeat: () => {
+          ripple.x = 60;
+          ripple.alpha = 0.32;
+        },
+      });
+    }
     for (let i = 0; i < 18; i += 1) {
       const sparkle = this.add.rectangle(80 + i * 78, 870 + ((i * 19) % 48), 18, 2, 0x9ec8e6, 0.28)
         .setDepth(-5);
@@ -1755,6 +1797,14 @@ export class VillageScene extends Phaser.Scene {
     const color = isNight(this.world.clock) ? 0x10264d : tod === "dusk" ? 0xff8c50 : tod === "dawn" ? 0xffd88c : 0xffffff;
     const alpha = isNight(this.world.clock) ? 0.28 : tod === "dusk" || tod === "dawn" ? 0.08 : 0;
     this.tintRect.setFillStyle(color, alpha);
+    // Lamps pulse on at night, fade out during the day. Container alpha
+    // multiplies with the internal pulse tween on glow/lamp.
+    const lampFactor = isNight(this.world.clock)
+      ? 1
+      : tod === "dusk" || tod === "dawn"
+        ? 0.55
+        : 0.15;
+    for (const lamp of this.lamps) lamp.setAlpha(lampFactor);
   }
 
   private npcTarget(npc: Npc) {
