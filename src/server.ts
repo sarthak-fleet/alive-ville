@@ -35,6 +35,28 @@ const server = createServer(async (req, res) => {
   if (url.pathname === "/api/state" && req.method === "GET") {
     return json(res, 200, engine.state);
   }
+  if (url.pathname === "/api/save" && req.method === "GET") {
+    // Snapshot — same shape as /api/state, distinct route so future
+    // metadata (saveName, capturedAt) can attach without breaking clients.
+    return json(res, 200, {
+      capturedAt: new Date().toISOString(),
+      world: engine.state,
+    });
+  }
+  if (url.pathname === "/api/restore" && req.method === "POST") {
+    const body = await readJson(req).catch(() => null);
+    try {
+      const snapshot = body && typeof body === "object" ? body as { world?: World } : null;
+      const incoming = snapshot?.world ?? (body as World | null);
+      if (!incoming || typeof incoming !== "object" || !("npcs" in incoming)) {
+        return json(res, 400, { error: "invalid_snapshot" });
+      }
+      engine.setState(incoming);
+      return json(res, 200, { ok: true, state: engine.state });
+    } catch (error) {
+      return json(res, 400, { error: (error as Error).message });
+    }
+  }
   if (url.pathname === "/api/tick" && req.method === "POST") {
     const body = await readJson(req).catch(() => null);
     try {

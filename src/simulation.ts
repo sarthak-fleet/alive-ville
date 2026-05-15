@@ -35,6 +35,9 @@ export interface Engine {
   state: World;
   tick(playerAction?: PlayerAction): Promise<TickSummary>;
   npc(id: string): Npc | undefined;
+  /** Replace world state from a snapshot. Mutates the existing state
+   *  object so existing closures keep working. */
+  setState(world: World): void;
 }
 
 export function createEngine(world: World, { propose, director }: EngineOptions = {}): Engine {
@@ -47,6 +50,13 @@ export function createEngine(world: World, { propose, director }: EngineOptions 
     },
     npc(id) {
       return getNpc(state, id);
+    },
+    setState(next) {
+      const cloned = cloneWorld(next);
+      ensureWorldDefaults(cloned);
+      const bag = state as unknown as Record<string, unknown>;
+      for (const k of Object.keys(bag)) delete bag[k];
+      Object.assign(state, cloned);
     },
   };
 }

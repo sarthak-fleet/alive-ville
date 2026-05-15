@@ -63,4 +63,24 @@ describe("simulation", () => {
     expect(event.actions.length).toBe(1);
     expect(event.actions[0]!.action.type).toBe("remember");
   });
+
+  test("setState restores a snapshot, including tick + clock + memories", async () => {
+    const engine = createEngine(fixture());
+    await engine.tick({ type: "talk", targetId: "lena", text: "save-checkpoint" });
+    const advancedTick = engine.state.tick;
+    expect(advancedTick).toBeGreaterThan(0);
+
+    const snapshot = JSON.parse(JSON.stringify(engine.state)) as World;
+
+    // Mutate forward — then restore — then verify we're back where we were.
+    await engine.tick();
+    await engine.tick();
+    expect(engine.state.tick).toBeGreaterThan(advancedTick);
+
+    engine.setState(snapshot);
+    expect(engine.state.tick).toBe(advancedTick);
+
+    const memories = retrieveMemories(engine.state, "lena", "save-checkpoint");
+    expect(memories.some((m) => /save-checkpoint/.test(m.text))).toBe(true);
+  });
 });

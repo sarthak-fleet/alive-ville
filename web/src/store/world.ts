@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import type { PlayerAction, TickSummary, World } from "../../../src/types.ts";
-import { fetchState, postTick } from "../api/client.ts";
+import { fetchSnapshot, fetchState, postTick, restoreSnapshot, type Snapshot } from "../api/client.ts";
 
 export interface BubbleEvent {
   id: number;
@@ -20,6 +20,8 @@ interface WorldStore {
   bubbles: BubbleEvent[];
   init: () => Promise<void>;
   send: (action: PlayerAction | null) => Promise<void>;
+  saveSnapshot: () => Promise<Snapshot>;
+  restoreFromJson: (text: string) => Promise<void>;
   openDrawer: (npcId: string) => void;
   closeDrawer: () => void;
   pruneBubbles: (now: number) => void;
@@ -64,6 +66,24 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     } catch (error) {
       set({ error: (error as Error).message });
     }
+  },
+
+  async saveSnapshot() {
+    return fetchSnapshot();
+  },
+
+  async restoreFromJson(text) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("Save file is not valid JSON");
+    }
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Save file is empty or malformed");
+    }
+    const world = await restoreSnapshot(parsed as Snapshot);
+    set({ world, error: null, bubbles: [], lastSummary: null });
   },
 
   openDrawer(npcId) {

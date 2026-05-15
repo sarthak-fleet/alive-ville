@@ -21,3 +21,25 @@ export async function postTick(action: PlayerAction | null): Promise<TickRespons
   if ("error" in data) throw new Error(data.error);
   return data;
 }
+
+export interface Snapshot {
+  capturedAt: string;
+  world: World;
+}
+
+export async function fetchSnapshot(): Promise<Snapshot> {
+  const res = await fetch("/api/save");
+  if (!res.ok) throw new Error(`fetchSnapshot failed: ${res.status}`);
+  return (await res.json()) as Snapshot;
+}
+
+export async function restoreSnapshot(snapshot: Snapshot | World): Promise<World> {
+  const res = await fetch("/api/restore", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(snapshot),
+  });
+  const data = (await res.json()) as { ok: true; state: World } | { error: string };
+  if ("error" in data) throw new Error(data.error);
+  return data.state;
+}
