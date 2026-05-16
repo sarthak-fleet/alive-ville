@@ -49,4 +49,20 @@ describe("director", () => {
     const director = createDirector();
     expect(await director(world)).toBeNull();
   });
+
+  test("hidden plan pressure can create a grounded reveal after quiet time", async () => {
+    const world = fixture();
+    for (const npc of world.npcs) npc.relationships = {};
+    world.clock.hour = 16;
+    const director = createDirector();
+    const engine = createEngine(world, { propose: async () => [], director });
+
+    await engine.tick();
+    await engine.tick();
+    expect(engine.state.villainPlans?.[0]?.stage).toBeGreaterThanOrEqual(2);
+    expect(engine.state.directorState?.pendingReveals?.length).toBeGreaterThan(0);
+
+    const reveal = await engine.tick();
+    expect(reveal.actions.some((entry) => entry.fromDirector && /Director clue/.test(entry.text))).toBe(true);
+  });
 });

@@ -4,6 +4,8 @@ import { ErrorBoundary } from "../organisms/ErrorBoundary.tsx";
 import { EventLog } from "../organisms/EventLog.tsx";
 import { InventoryPanel } from "../organisms/InventoryPanel.tsx";
 import { NpcDrawer } from "../organisms/NpcDrawer.tsx";
+import { ObjectiveTracker } from "../organisms/ObjectiveTracker.tsx";
+import { OutcomeToast } from "../organisms/OutcomeToast.tsx";
 import { PhaserGame } from "../organisms/PhaserGame.tsx";
 import { QuestList } from "../organisms/QuestList.tsx";
 import { RelationshipsPanel } from "../organisms/RelationshipsPanel.tsx";
@@ -14,6 +16,8 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <AppHeader />
+      <ObjectiveTracker />
+      <OutcomeToast />
       <main className="game-layout">
         <section id="map">
           <ErrorBoundary fallback={(error) => (

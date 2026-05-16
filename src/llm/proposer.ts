@@ -72,6 +72,7 @@ function buildContext(world: World, npc: Npc): string {
   const here = world.npcs.filter((other) => other.id !== npc.id && other.locationId === npc.locationId).map((other) => `${other.id} (${other.name})`);
   const everyone = world.npcs.map((other) => `${other.id}=${other.name}`).join(", ");
   const locations = world.locations.map((location) => `${location.id}=${location.name}`).join(", ");
+  const exits = reachableLocations(world, npc.locationId).join(", ") || "(none)";
   const memories = retrieveMemories(world, npc.id, recentKeywords(world), MEMORY_LIMIT)
     .map((memory) => `- (t${memory.tick}) ${memory.text}`)
     .join("\n") || "(none retrieved)";
@@ -108,6 +109,7 @@ function buildContext(world: World, npc: Npc): string {
     `Others here: ${here.length ? here.join(", ") : "(alone)"}`,
     `All NPC ids: ${everyone}`,
     `All location ids: ${locations}`,
+    `Reachable move location ids this tick: ${exits}`,
     `World rules:\n${publicRules}`,
     `Mood: ${mood}`,
     `Current intent: ${intent}`,
@@ -120,6 +122,14 @@ function buildContext(world: World, npc: Npc): string {
     ``,
     `Decide your single action this tick.`,
   ].join("\n");
+}
+
+function reachableLocations(world: World, locationId: string): string[] {
+  return (world.exits ?? []).flatMap((exit) => {
+    if (exit.from === locationId) return [exit.to];
+    if (exit.bidirectional && exit.to === locationId) return [exit.from];
+    return [];
+  });
 }
 
 function recentKeywords(world: World): string {

@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 
 export const ACTOR_FRAME_W = 32;
 export const ACTOR_FRAME_H = 48;

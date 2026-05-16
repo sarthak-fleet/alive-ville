@@ -13,6 +13,9 @@ export interface DirectorOptions {
 
 export function createDirector({ propose }: DirectorOptions = {}) {
   return async function director(world: World): Promise<Action | null> {
+    const reveal = revealAction(world);
+    if (reveal) return reveal;
+
     const tension = findHighestTension(world);
     if (!tension) return null;
 
@@ -21,6 +24,27 @@ export function createDirector({ propose }: DirectorOptions = {}) {
       if (llmAction) return llmAction;
     }
     return scriptedAction(world, tension);
+  };
+}
+
+function revealAction(world: World): Action | null {
+  const state = world.directorState;
+  const reveal = state?.pendingReveals?.[0];
+  if (!state || !reveal || state.pressure < 30) return null;
+
+  state.pendingReveals = state.pendingReveals?.slice(1) ?? [];
+  state.lastNudgeTick = world.tick;
+
+  const witness =
+    world.npcs.find((npc) => npc.id === "lena") ??
+    world.npcs.find((npc) => npc.tier === "quest") ??
+    world.npcs[0];
+  if (!witness) return null;
+
+  return {
+    type: "remember",
+    actorId: witness.id,
+    text: `Director clue: ${reveal}`,
   };
 }
 

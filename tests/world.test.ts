@@ -24,6 +24,13 @@ describe("spatial + exits", () => {
     expect(blocked.applied).toBe(false);
     if (!blocked.applied) expect(blocked.reason).toBe("No exit to that location.");
   });
+
+  test("move rejects no-op moves", () => {
+    const world = fixture();
+    const result = applyAction(world, { type: "move", actorId: "mira", locationId: "garden" });
+    expect(result.applied).toBe(false);
+    if (!result.applied) expect(result.reason).toBe("Actor is already there.");
+  });
 });
 
 describe("items", () => {

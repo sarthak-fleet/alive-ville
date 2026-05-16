@@ -1,8 +1,15 @@
-import { ensureAgentStateDefaults, memoryMetaFromText, refreshAgentIntents, retrieveRelevantMemories } from "./agents.ts";
+import {
+  advanceStoryPressure,
+  ensureAgentStateDefaults,
+  memoryMetaFromText,
+  refreshAgentIntents,
+  retrieveRelevantMemories,
+} from "./agents.ts";
 import type {
   Action,
   ActionResult,
   ActionType,
+  AgentMood,
   AppliedAction,
   Director,
   Item,
@@ -11,6 +18,7 @@ import type {
   Proposer,
   Quest,
   RejectedAction,
+  RelationshipAxes,
   TickSummary,
   World,
 } from "./types.ts";
@@ -101,6 +109,7 @@ export async function runTick(
 
   world.tick += 1;
   advanceClock(world);
+  advanceStoryPressure(world, actions);
   refreshAgentIntents(world);
   const summary = summarizeTick(world, actions, rejected);
   world.eventLog.push(summary);
@@ -135,21 +144,27 @@ export function applyAction(world: World, action: Action): ActionResult {
     case "talk":
       remember(world, action.targetId, `${nameOf(world, action.actorId)} said: ${action.text}`);
       remember(world, action.actorId, `Told ${nameOf(world, action.targetId)}: ${action.text}`);
+      applyTalkConsequences(world, action.actorId, action.targetId, action.text);
       return applied(action, `${nameOf(world, action.actorId)} spoke with ${nameOf(world, action.targetId)}.`);
     case "gossip":
       remember(world, action.targetId, `${nameOf(world, action.actorId)} shared a rumor: ${action.text}`);
-      adjustRelationship(world, action.actorId, action.aboutId, -1);
-      adjustRelationship(world, action.targetId, action.aboutId, -1);
+      remember(world, action.actorId, `Shared a rumor with ${nameOf(world, action.targetId)} about ${nameOf(world, action.aboutId)}: ${action.text}`);
+      adjustRelationship(world, action.actorId, action.aboutId, -1, { trust: -1, suspicion: 2 });
+      adjustRelationship(world, action.targetId, action.aboutId, -1, { trust: -1, suspicion: 2, fear: 1 });
+      adjustRelationshipAxes(world, action.targetId, action.actorId, { trust: 1, respect: action.text.length > 12 ? 1 : 0 });
+      nudgeMood(world, action.targetId, { suspicion: 4, stress: 2 });
       return applied(action, `${nameOf(world, action.actorId)} gossiped to ${nameOf(world, action.targetId)} about ${nameOf(world, action.aboutId)}.`);
     case "confront":
       remember(world, action.targetId, `${nameOf(world, action.actorId)} confronted you: ${action.text}`);
       remember(world, action.actorId, `Confronted ${nameOf(world, action.targetId)}: ${action.text}`);
-      adjustRelationship(world, action.actorId, action.targetId, -2);
-      adjustRelationship(world, action.targetId, action.actorId, -1);
+      adjustRelationship(world, action.actorId, action.targetId, -2, { trust: -1, respect: 1, suspicion: 2 });
+      adjustRelationship(world, action.targetId, action.actorId, -1, { trust: -2, fear: 1, suspicion: 3 });
+      nudgeMood(world, action.actorId, { confidence: 3, stress: 1 });
+      nudgeMood(world, action.targetId, { stress: 8, suspicion: 5, confidence: -3 });
       return applied(action, `${nameOf(world, action.actorId)} confronted ${nameOf(world, action.targetId)}.`);
     case "remember":
       remember(world, action.actorId, action.text);
-      return applied(action, `${nameOf(world, action.actorId)} remembered something new.`);
+      return applied(action, `${nameOf(world, action.actorId)} noted: ${action.text}`);
     case "pickup": {
       const item = mustItem(world, action.itemId);
       delete item.locationId;
@@ -171,6 +186,7 @@ export function applyAction(world: World, action: Action): ActionResult {
       delete item.locationId;
       remember(world, action.targetId, `${nameOf(world, action.actorId)} gave you ${item.name}.`);
       remember(world, action.actorId, `Gave ${item.name} to ${nameOf(world, action.targetId)}.`);
+      adjustRelationshipAxes(world, action.targetId, action.actorId, { trust: 1, affection: 1, debt: 1 });
       const completed = completeQuestForGift(world, action.actorId, action.targetId, action.itemId);
       const questText = completed ? ` ${completed.title} is complete.` : "";
       return applied(action, `${nameOf(world, action.actorId)} gave ${item.name} to ${nameOf(world, action.targetId)}.${questText}`);
@@ -180,13 +196,17 @@ export function applyAction(world: World, action: Action): ActionResult {
       quest.status = "open";
       quest.giverId = action.actorId;
       remember(world, action.targetId, `${nameOf(world, action.actorId)} offered a task: ${quest.title}`);
+      adjustRelationshipAxes(world, action.targetId, action.actorId, { respect: 1 });
       return applied(action, `${nameOf(world, action.actorId)} offered "${quest.title}" to ${nameOf(world, action.targetId)}.`);
     }
     case "accept_quest": {
       const quest = mustQuest(world, action.questId);
       quest.status = "active";
       quest.acceptedBy = action.actorId;
-      if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, action.actorId)} accepted: ${quest.title}`);
+      if (quest.giverId) {
+        remember(world, quest.giverId, `${nameOf(world, action.actorId)} accepted: ${quest.title}`);
+        adjustRelationshipAxes(world, quest.giverId, action.actorId, { trust: 1, respect: 1 });
+      }
       if (action.actorId !== "player") remember(world, action.actorId, `Accepted "${quest.title}" from ${nameOf(world, quest.giverId ?? "")}.`);
       return applied(action, `${nameOf(world, action.actorId)} accepted "${quest.title}".`);
     }
@@ -196,13 +216,17 @@ export function applyAction(world: World, action: Action): ActionResult {
       applyQuestDeltas(world, quest.rewards?.relationshipDelta, quest.acceptedBy);
       if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, action.actorId)} finished: ${quest.title}`);
       if (action.actorId !== "player" && quest.giverId) remember(world, action.actorId, `Completed "${quest.title}" for ${nameOf(world, quest.giverId)}.`);
+      markAmbitionProgress(world, quest);
       return applied(action, `${nameOf(world, action.actorId)} completed "${quest.title}".`);
     }
     case "fail_quest": {
       const quest = mustQuest(world, action.questId);
       quest.status = "failed";
       applyQuestDeltas(world, quest.consequences?.relationshipDelta, quest.acceptedBy);
-      if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, action.actorId)} failed: ${quest.title}`);
+      if (quest.giverId) {
+        remember(world, quest.giverId, `${nameOf(world, action.actorId)} failed: ${quest.title}`);
+        nudgeMood(world, quest.giverId, { stress: 8, suspicion: 4, confidence: -2 });
+      }
       return applied(action, `${nameOf(world, action.actorId)} failed "${quest.title}".`);
     }
     default:
@@ -233,6 +257,7 @@ function completeQuestForGift(world: World, giverId: string, targetId: string, i
   applyQuestDeltas(world, quest.rewards?.relationshipDelta, giverId);
   if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, giverId)} finished: ${quest.title}`);
   remember(world, giverId, `Completed "${quest.title}" by giving ${getItem(world, itemId)?.name ?? itemId} to ${nameOf(world, targetId)}.`);
+  markAmbitionProgress(world, quest);
   return quest;
 }
 
@@ -297,6 +322,7 @@ export function validateAction(world: World, action: Action | unknown): Validati
     if (!locationId || !world.locations.some((loc) => loc.id === locationId)) return invalid("Unknown location.");
     const fromId = locationOf(world, a.actorId ?? "");
     if (!fromId) return invalid("Actor has no current location.");
+    if (fromId === locationId) return invalid("Actor is already there.");
     if (fromId !== locationId && (world.exits?.length ?? 0) > 0 && !hasExit(world, fromId, locationId)) {
       return invalid("No exit to that location.");
     }
@@ -393,10 +419,80 @@ function remember(world: World, npcId: string, text: string): void {
   npc.memories.push({ tick: world.tick, text, meta: memoryMetaFromText(text) });
 }
 
-function adjustRelationship(world: World, fromId: string, toId: string, delta: number): void {
+function adjustRelationship(world: World, fromId: string, toId: string, delta: number, axesDelta?: RelationshipAxes): void {
   const npc = getNpc(world, fromId);
   if (!npc) return;
   npc.relationships[toId] = (npc.relationships[toId] ?? 0) + delta;
+  adjustRelationshipAxes(world, fromId, toId, axesDelta ?? axesDeltaFromRelationship(delta));
+}
+
+function adjustRelationshipAxes(world: World, fromId: string, toId: string, delta: RelationshipAxes): void {
+  const npc = getNpc(world, fromId);
+  if (!npc) return;
+  npc.relationshipAxes ??= {};
+  const current = npc.relationshipAxes[toId] ?? {};
+  npc.relationshipAxes[toId] = {
+    trust: clampAxis((current.trust ?? 0) + (delta.trust ?? 0)),
+    affection: clampAxis((current.affection ?? 0) + (delta.affection ?? 0)),
+    fear: clampAxis((current.fear ?? 0) + (delta.fear ?? 0)),
+    respect: clampAxis((current.respect ?? 0) + (delta.respect ?? 0)),
+    debt: clampAxis((current.debt ?? 0) + (delta.debt ?? 0)),
+    suspicion: clampAxis((current.suspicion ?? 0) + (delta.suspicion ?? 0)),
+  };
+}
+
+function axesDeltaFromRelationship(delta: number): RelationshipAxes {
+  if (delta > 0) return { trust: delta, affection: Math.max(0, delta - 1), respect: Math.ceil(delta / 2), suspicion: -delta };
+  if (delta < 0) return { trust: delta, suspicion: Math.abs(delta), fear: Math.ceil(Math.abs(delta) / 2) };
+  return {};
+}
+
+function applyTalkConsequences(world: World, actorId: string, targetId: string, text: string): void {
+  const lower = text.toLowerCase();
+  const helpful = /help|working|task|promise|thank|sorry|safe|protect|return|found|proof/.test(lower);
+  const accusatory = /lie|stole|blame|fault|coward|secret|hide|why did you/.test(lower);
+  if (helpful) {
+    adjustRelationshipAxes(world, targetId, actorId, { trust: 1, respect: 1, suspicion: -1 });
+    nudgeMood(world, targetId, { stress: -2, confidence: 1 });
+  }
+  if (accusatory) {
+    adjustRelationship(world, targetId, actorId, -1, { trust: -1, fear: 1, suspicion: 2 });
+    nudgeMood(world, targetId, { stress: 4, suspicion: 3 });
+  }
+  if (lower.includes("sorry")) {
+    adjustRelationshipAxes(world, targetId, actorId, { trust: 1, suspicion: -2 });
+    nudgeMood(world, targetId, { stress: -2 });
+  }
+}
+
+function nudgeMood(world: World, npcId: string, delta: Partial<Record<keyof AgentMood, number>>): void {
+  const npc = getNpc(world, npcId);
+  if (!npc?.mood) return;
+  npc.mood = {
+    emotion: npc.mood.emotion,
+    stress: clampMood(npc.mood.stress + (delta.stress ?? 0)),
+    confidence: clampMood(npc.mood.confidence + (delta.confidence ?? 0)),
+    suspicion: clampMood(npc.mood.suspicion + (delta.suspicion ?? 0)),
+  };
+}
+
+function markAmbitionProgress(world: World, quest: Quest): void {
+  const giver = quest.giverId ? getNpc(world, quest.giverId) : undefined;
+  if (!giver?.ambitions) return;
+  const title = `${quest.title} ${quest.description ?? ""}`.toLowerCase();
+  for (const ambition of giver.ambitions) {
+    const targetMatch = ambition.targetId && title.includes(String(ambition.targetId).toLowerCase());
+    const titleMatch = title.split(/\W+/).some((term) => term.length > 4 && ambition.title.toLowerCase().includes(term));
+    if (targetMatch || titleMatch) ambition.status = "satisfied";
+  }
+}
+
+function clampAxis(value: number): number {
+  return Math.max(-10, Math.min(10, value));
+}
+
+function clampMood(value: number): number {
+  return Math.max(0, Math.min(100, value));
 }
 
 function summarizeTick(world: World, actions: AppliedAction[], rejected: RejectedAction[]): TickSummary {

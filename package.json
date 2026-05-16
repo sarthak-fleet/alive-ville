@@ -13,10 +13,13 @@
     "dev": "vite",
     "dev:server": "tsx watch --env-file-if-exists=.env src/server.ts",
     "eval:llm": "tsx --env-file-if-exists=.env src/eval.ts",
+    "eval:lmstudio": "tsx --env-file-if-exists=.env src/lmstudio-eval.ts",
+    "research:url": "tsx --env-file-if-exists=.env src/research-url.ts",
     "start": "tsx --env-file-if-exists=.env src/index.ts",
     "serve": "tsx --env-file-if-exists=.env src/server.ts",
     "test": "vitest run",
     "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
+    "playtest:first-loop": "tsx tests/playtests/first-loop.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },
@@ -46,6 +49,7 @@
     ]
   },
   "dependencies": {
+    "@saas-maker/posthog-client": "^0.1.0",
     "phaser": "^4.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

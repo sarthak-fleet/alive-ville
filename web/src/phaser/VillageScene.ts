@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 
+import { activeObjectives, type Objective } from "../../../src/objectives.ts";
 import type { Location, Npc, World } from "../../../src/types.ts";
 import { isNight, timeOfDay } from "../../../src/types.ts";
 import { makeActor } from "./actor-render.ts";
@@ -22,6 +23,7 @@ const PLAYER_RADIUS = 16;
 const ARRIVE_DISTANCE = 8;
 const INTERACT_DISTANCE = 54;
 const MINIMAP_HUD_CLEARANCE = 18;
+const USE_EXTERNAL_GROUND_TILES = false;
 
 interface ActorState {
   graphic: Phaser.GameObjects.Container;
@@ -98,6 +100,7 @@ export class VillageScene extends Phaser.Scene {
   private prompt?: Phaser.GameObjects.Text;
   private interactionCard?: Phaser.GameObjects.Container;
   private minimap?: MinimapState;
+  private objectivePins: Phaser.GameObjects.Container[] = [];
   private tintRect?: Phaser.GameObjects.Rectangle;
   private lamps: Phaser.GameObjects.Container[] = [];
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -200,6 +203,7 @@ export class VillageScene extends Phaser.Scene {
     this.syncPlayer(first);
     this.syncNpcs(first);
     this.syncItems();
+    this.syncObjectivePins();
     this.updateTint();
   }
 
@@ -223,7 +227,7 @@ export class VillageScene extends Phaser.Scene {
       [TILE.forest]: 13,
     };
 
-    const tileset = this.textures.exists("russpuppy-rpg") ? this.textures.get("russpuppy-rpg") : null;
+    const tileset = USE_EXTERNAL_GROUND_TILES && this.textures.exists("russpuppy-rpg") ? this.textures.get("russpuppy-rpg") : null;
     const source = tileset?.getSourceImage() as
       | HTMLImageElement
       | HTMLCanvasElement
@@ -1091,6 +1095,71 @@ export class VillageScene extends Phaser.Scene {
       }
       sprite.setPosition(pos.x, pos.y).setDepth(Math.round(pos.y) + 1);
     }
+  }
+
+  private syncObjectivePins() {
+    for (const pin of this.objectivePins) pin.destroy();
+    this.objectivePins = [];
+    if (!this.world) return;
+
+    const objectives = activeObjectives(this.world).slice(0, 3);
+    for (let i = 0; i < objectives.length; i += 1) {
+      const objective = objectives[i]!;
+      const position = this.objectivePosition(objective);
+      if (!position) continue;
+      this.objectivePins.push(this.makeObjectivePin(position.x, position.y, objective, i));
+    }
+  }
+
+  private objectivePosition(objective: Objective): Phaser.Math.Vector2 | null {
+    if (objective.targetType === "item") {
+      const item = this.itemSprites.get(objective.targetId);
+      if (item) return new Phaser.Math.Vector2(item.x, item.y - 26);
+    }
+    const area = this.area(objective.locationId);
+    if (!area) return null;
+    if (objective.targetType === "npc") {
+      const actor = this.actors.get(objective.targetId);
+      if (actor && this.world?.player.locationId === objective.locationId) {
+        return new Phaser.Math.Vector2(actor.graphic.x, actor.graphic.y - 68);
+      }
+    }
+    return new Phaser.Math.Vector2(area.door.x, area.door.y - 52);
+  }
+
+  private makeObjectivePin(x: number, y: number, objective: Objective, index: number) {
+    const color = objective.status === "active" ? 0xf8d44e : 0x9fc3ff;
+    const halo = this.add.circle(0, 0, 18, color, objective.status === "active" ? 0.16 : 0.1);
+    const ring = this.add.circle(0, 0, 13).setStrokeStyle(2, color, 0.9);
+    const diamond = this.add.rectangle(0, 0, 10, 10, color, 0.92).setRotation(Math.PI / 4);
+    const label = this.add.text(0, -28, index === 0 ? objective.text : objective.questTitle, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "10px",
+      color: "#10151d",
+      backgroundColor: objective.status === "active" ? "#f8d44eee" : "#9fc3ffee",
+      padding: { x: 6, y: 3 },
+      wordWrap: { width: 154 },
+      align: "center",
+    }).setOrigin(0.5, 1);
+    const pin = this.add.container(x, y, [halo, ring, diamond, label]).setDepth(Math.round(y) + 90);
+    this.tweens.add({
+      targets: [halo, ring],
+      scale: { from: 0.86, to: 1.18 },
+      alpha: { from: 0.78, to: 0.32 },
+      duration: 1100 + index * 130,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.InOut",
+    });
+    this.tweens.add({
+      targets: pin,
+      y: y - 5,
+      duration: 1350 + index * 100,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.InOut",
+    });
+    return pin;
   }
 
   private itemTarget(itemId: string, locationId: string) {

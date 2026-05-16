@@ -15,6 +15,7 @@ Rules:
 - Pick exactly one action.
 - "skip" means do nothing this tick.
 - Use only ids that exist in the world snapshot you were given.
+- For "move", choose a different location id from the reachable move list.
 - Keep "text" under 140 chars and in your voice.
 - Output JSON. Nothing else.`;
 

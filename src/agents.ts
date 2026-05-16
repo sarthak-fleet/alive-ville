@@ -1,4 +1,4 @@
-import type { AgentGoalKind, AgentIntent, Memory, Npc, RelationshipAxes, World } from "./types.ts";
+import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, World } from "./types.ts";
 
 const DEFAULT_NEEDS = {
   safety: 50,
@@ -54,10 +54,33 @@ export function refreshAgentIntents(world: World): void {
     npc.plan ??= {};
     npc.plan.currentIntent = planAgentIntent(world, npc);
   }
+}
+
+export function advanceStoryPressure(world: World, actions: AppliedAction[]): void {
   if (world.directorState) {
-    const last = world.eventLog.at(-1);
-    world.directorState.quietTicks = last && last.actions.length > 0 ? 0 : world.directorState.quietTicks + 1;
-    world.directorState.pressure = Math.min(100, world.directorState.pressure + (world.directorState.quietTicks > 1 ? 8 : 2));
+    world.directorState.quietTicks = actions.length > 0 ? 0 : world.directorState.quietTicks + 1;
+    world.directorState.pressure = clamp(world.directorState.pressure + (actions.length > 0 ? 2 : 8), 0, 100);
+    if (world.directorState.quietTicks >= 2) {
+      addPendingReveal(world, "The village has gone quiet enough for the bridge pattern to stand out.");
+    }
+  }
+
+  for (const plan of world.villainPlans ?? []) {
+    const blocked = isPlanCountered(world, plan.id);
+    if (blocked) {
+      plan.pressure = clamp(plan.pressure - 18, 0, 100);
+      if (plan.pressure < 25) plan.stage = Math.max(0, plan.stage - 1);
+      continue;
+    }
+
+    const duskOrLater = world.clock.hour >= 18 || world.clock.hour < 6;
+    const quietBonus = (world.directorState?.quietTicks ?? 0) >= 2 ? 8 : 0;
+    plan.pressure = clamp(plan.pressure + (duskOrLater ? 14 : 4) + quietBonus, 0, 100);
+    const nextStage = plan.pressure >= 75 ? 3 : plan.pressure >= 55 ? 2 : Math.max(1, plan.stage);
+    if (nextStage > plan.stage) {
+      plan.stage = nextStage;
+      addPendingReveal(world, revealForPlan(plan.id, plan.stage));
+    }
   }
 }
 
@@ -201,4 +224,32 @@ function averageSuspicion(npc: Npc): number {
 function mostSuspiciousTarget(npc: Npc): string | undefined {
   return Object.entries(npc.relationshipAxes ?? {})
     .sort(([, a], [, b]) => (b.suspicion ?? 0) - (a.suspicion ?? 0))[0]?.[0];
+}
+
+function isPlanCountered(world: World, planId: string): boolean {
+  if (planId !== "bridge_whisper_plan") return false;
+  const quests = world.quests ?? [];
+  return quests.some((quest) =>
+    (quest.id === "rekindle_forge" || quest.id === "bridge_whisper") && quest.status === "done"
+  );
+}
+
+function revealForPlan(planId: string, stage: number): string {
+  if (planId === "bridge_whisper_plan") {
+    if (stage >= 3) return "The bridge whisper is loud enough that loose nails tremble near the river.";
+    return "A blue pulse runs from the bridge toward every missing metal object.";
+  }
+  return "An unresolved hidden plan is pushing the village into a new stage.";
+}
+
+function addPendingReveal(world: World, text: string): void {
+  world.directorState ??= { pressure: 0, quietTicks: 0, pendingReveals: [] };
+  world.directorState.pendingReveals ??= [];
+  if (!world.directorState.pendingReveals.includes(text)) {
+    world.directorState.pendingReveals.push(text);
+  }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }

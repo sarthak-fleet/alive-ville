@@ -337,53 +337,56 @@ Still missing / next:
 - gateway logs must track latency, token usage, JSON failure rate, and action rejection rate
 - do not send the whole world every turn; retrieve only relevant state and memory
 
-### Local 30B Model Plan
+### Local LM Studio Model Plan
 
 Goal:
 
-> Make a local ~30B model usable for normal NPC decisions while keeping the same validated action pipeline.
+> Make LM Studio the first local model runner for normal NPC decisions while keeping the same validated action pipeline.
 
 Assumption:
 
 - Use an OpenAI-compatible local server so the existing `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL_NORMAL`, and `LLM_MODEL_QUEST` router can stay mostly unchanged.
-- First runtime: Ollama's OpenAI-compatible endpoint at `http://localhost:11434/v1`.
-- First normal-tier model target: `qwen3:30b-a3b`.
-- Candidate fallback runtimes: LM Studio, llama.cpp server, or vLLM if Ollama latency or JSON reliability is not good enough.
+- First runtime: LM Studio's OpenAI-compatible endpoint at `http://localhost:1234/v1`.
+- First model source: GGUF models managed by LM Studio, starting with a Qwen 30B/35B-class instruct model.
+- First challenger target: Qwen3.6-35B-A3B GGUF if it is available locally and can produce clean JSON in non-thinking/instruct mode.
+- Candidate fallback runtimes: Ollama, llama.cpp server, or vLLM if LM Studio latency, automation, or JSON reliability is not good enough.
 
 First integration:
 
 ```text
-local 30B model → normal NPC tier
+LM Studio local model → normal NPC tier
 scripted fallback → background / no-key mode
 remote stronger model or local larger reasoning model → quest/director tier, optional
 ```
 
 Checklist:
 
-1. Confirm available local runtime and exact model name.
-2. Start local OpenAI-compatible endpoint.
+1. Confirm LM Studio has the target GGUF downloaded/imported and loaded.
+2. Start LM Studio's local OpenAI-compatible server.
 3. Set `.env` locally, without committing secrets:
-   `LLM_BASE_URL=http://localhost:11434/v1`
-   `LLM_API_KEY=ollama`
-   `LLM_MODEL_NORMAL=qwen3:30b-a3b`
+   `LLM_BASE_URL=http://localhost:1234/v1`
+   `LLM_API_KEY=lm-studio`
+   `LLM_MODEL_NORMAL=<exact model id from /v1/models>`
 4. Start with `LLM_MAX_NPCS=1` for local smoke tests, then raise it after latency and JSON validity are acceptable.
 5. Run one LLM-backed tick from the server and inspect `logs/` for latency, JSON validity, and rejected actions.
 6. Tune timeout, temperature, and prompts for short valid actions.
-7. Decide whether quest/director stays remote, moves to the same local 30B, or gets a separate local reasoning model.
+7. Decide whether quest/director stays scripted/remote, moves to the same LM Studio model, or gets a separate local reasoning model.
 
 Baseline eval command:
 
 ```bash
-LLM_BASE_URL=http://localhost:11434/v1 \
-LLM_API_KEY=ollama \
-LLM_MODEL_NORMAL=qwen3:30b-a3b \
-LLM_TIMEOUT_MS=180000 \
-LLM_MAX_NPCS=1 \
-EVAL_TICKS=3 \
-pnpm eval:llm
+pnpm eval:lmstudio
 ```
 
-The eval rotates NPC order by default so `LLM_MAX_NPCS=1` can cover more than the first NPC without parallel local calls. Set `EVAL_ROTATE_NPCS=0` to preserve world order. Compare future models by changing only `LLM_MODEL_NORMAL`, then checking JSON validity, action rejection rate, skip rate, action variety, and latency.
+The LM Studio runner starts the local server if needed, resolves the downloaded Qwen 30B/35B-class model id, runs `pnpm eval:llm`, then unloads models and stops the server unless it was already running. Use `LMSTUDIO_KEEP_SERVER=1` or `LMSTUDIO_KEEP_MODEL=1` when actively iterating. The eval rotates NPC order by default so `LLM_MAX_NPCS=1` can cover more than the first NPC without parallel local calls. Set `EVAL_ROTATE_NPCS=0` to preserve world order. Compare future models by changing only `LLM_MODEL_NORMAL`, then checking JSON validity, action rejection rate, skip rate, action variety, and latency.
+
+Non-NPC internet/research utility:
+
+```bash
+pnpm research:url https://example.com "What facts matter for a playable world?"
+```
+
+This fetches a URL, extracts readable text, and asks the configured quest/import model to summarize facts, entities, conflicts, and clearly labeled game-design inferences. It is deliberately outside NPC ticks so internet access does not affect live gameplay latency or give NPCs out-of-world knowledge.
 
 ## 9. Sequential Steps
 
@@ -623,8 +626,9 @@ Goal:
 
 Includes:
 
-- local baseline: Ollama + `qwen3:30b-a3b`
+- local baseline: LM Studio OpenAI server + one loaded Qwen 30B/35B-class GGUF model
 - model router: background/scripted, normal NPC, quest/director, import/extraction
+- non-NPC research utility: URL fetch/extract/summarize through the configured model for later lore/import work
 - eval harness: JSON validity, rejection rate, latency, skip rate, action diversity, memory usage
 - prompt/version tracking
 - fallback strategy: scripted action, smaller local model, stronger remote model, timeout handling
@@ -744,6 +748,7 @@ Build:
 - learned task hints from dialogue/world knowledge
 - director event when the world goes quiet
 - save/load for one session
+- automated first-loop browser playtest for: start quest, travel, pickup, return, complete, screenshot evidence
 
 Exit criteria:
 
@@ -754,6 +759,14 @@ Exit criteria:
 - the player gets non-spoilery hints for the current task
 - no player movement or camera action waits on an LLM call
 - debug panels are optional overlays, not the primary experience
+
+Current browser playtest command:
+
+```bash
+pnpm playtest:first-loop
+```
+
+This starts isolated local API/Vite ports, restores the village fixture, drives the first Mira shears quest in Chromium, asserts objective progression, checks completion feedback, and writes screenshots to `tmp/playtest-artifacts/`.
 
 ### Phase 2 — Model + Agent Evals
 
