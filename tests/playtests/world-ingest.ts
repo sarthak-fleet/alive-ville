@@ -130,6 +130,7 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
     await expect(page.getByLabel("3D travel")).toContainText("At Atrium Gate");
     const conservatoryStartHash = await canvasPixelHash(page, ".three-host canvas");
+    expect(conservatoryStartHash).not.toEqual(skyfrontStartHash);
     await completeConservatoryFirstQuest(page);
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(conservatoryStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "06-conservatory-source.png") });
