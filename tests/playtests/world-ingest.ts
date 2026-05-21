@@ -150,6 +150,7 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "Abyssal 3D canvas should change after quest movement", timeout: 10_000 }).not.toEqual(abyssalStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "07-abyssal-source.png") });
     await verifyAbyssalLiveLoop(page);
+    await quickSaveImportedAbyssal(page);
     await verifyMobileImportedAbyssal(browser);
 
     await importSource(page, OPM);
@@ -170,6 +171,7 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await page.screenshot({ path: join(ARTIFACT_DIR, "08-opm-live-loop.png") });
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await quickLoadImportedAbyssal(page);
     await expect(errors, errors.join("\n")).toEqual([]);
   } finally {
     await page.close();
@@ -299,6 +301,22 @@ async function verifyAbyssalLiveLoop(page: Page): Promise<void> {
   await page.screenshot({ path: join(ARTIFACT_DIR, "08-abyssal-live-loop.png") });
   await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
   await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+}
+
+async function quickSaveImportedAbyssal(page: Page): Promise<void> {
+  await clickButton(page, "Slot Save");
+  await expect(page.locator(".header-toast")).toContainText("Quick saved: Abyssal Salvage Playable Slice", { timeout: 5_000 });
+}
+
+async function quickLoadImportedAbyssal(page: Page): Promise<void> {
+  await clickButton(page, "Slot Load");
+  await expect(page.locator(".header-toast")).toContainText("Quick loaded: Abyssal Salvage Playable Slice", { timeout: 5_000 });
+  await expect(page.getByRole("heading", { name: "Abyssal Salvage Playable Slice" })).toBeVisible();
+  await expect(page.locator(".objective-tracker")).toContainText("Recover Turbine gear for Paxel");
+  await expect(page.getByLabel("3D travel")).toContainText("At Reef Dome");
+  await expect(page.locator(".three-host canvas")).toBeVisible();
+  await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), { message: "quick-loaded imported Abyssal 3D canvas should render nonblank pixels", timeout: 10_000 }).toBeGreaterThan(40);
+  await page.screenshot({ path: join(ARTIFACT_DIR, "10-abyssal-quick-load.png") });
 }
 
 async function verifyMobileImportedAbyssal(browser: Awaited<ReturnType<typeof chromium.launch>>): Promise<void> {
