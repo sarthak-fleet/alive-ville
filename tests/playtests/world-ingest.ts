@@ -13,6 +13,7 @@ const VITE = new URL("../../node_modules/vite/bin/vite.js", import.meta.url).pat
 const SERVER = new URL("../../src/server.ts", import.meta.url).pathname;
 const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 const SKYFRONT = new URL("../../fixtures/worlds/skyfront-source.json", import.meta.url).pathname;
+const CONSERVATORY = new URL("../../fixtures/worlds/conservatory-source.json", import.meta.url).pathname;
 const INVALID_WORLD = new URL("../../fixtures/worlds/invalid-source.json", import.meta.url).pathname;
 const OPM = new URL("../../fixtures/anime/opm-ingest-source.json", import.meta.url).pathname;
 
@@ -121,10 +122,22 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.getByLabel("3D travel")).toContainText("At Guild Counter");
     await expect(page.locator(".three-host canvas")).toBeVisible();
 
+    await importSource(page, CONSERVATORY);
+    await expect(page.getByRole("heading", { name: "Clockwork Conservatory Playable Slice" })).toBeVisible();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await expect(page.locator(".objective-tracker")).toContainText("Recover Verdigris key for Eda");
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await expect(page.getByLabel("3D travel")).toContainText("At Atrium Gate");
+    const conservatoryStartHash = await canvasPixelHash(page, ".three-host canvas");
+    await completeConservatoryFirstQuest(page);
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(conservatoryStartHash);
+    await page.screenshot({ path: join(ARTIFACT_DIR, "06-conservatory-source.png") });
+
     await importSource(page, OPM);
     await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible();
     await expect(page.locator(".objective-tracker")).toContainText("Recover Grocery coupon for Saitama");
-    await page.screenshot({ path: join(ARTIFACT_DIR, "03-opm-source.png") });
+    await page.screenshot({ path: join(ARTIFACT_DIR, "07-opm-source.png") });
     await expect(errors, errors.join("\n")).toEqual([]);
   } finally {
     await page.close();
@@ -189,6 +202,29 @@ async function resolveSkyfrontStoryLoop(page: Page): Promise<void> {
   await expect(objective(page)).toContainText("Skyfront Couriers Playable Slice route stabilized");
   await expect(objective(page)).toContainText("The imported world's first playable loop is resolved");
   await page.screenshot({ path: join(ARTIFACT_DIR, "05-skyfront-story-resolved.png") });
+}
+
+async function completeConservatoryFirstQuest(page: Page): Promise<void> {
+  await expect(objective(page)).toContainText("Recover Verdigris key for Eda");
+  await expect(objective(page)).toContainText("Talk to Eda");
+  await clickObjective(page, "Talk");
+  await clickButton(page, "Accept task");
+  await clickButton(page, "Close");
+  await expect(objective(page)).toContainText("Find Verdigris key");
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText("At Gear Hall");
+  await expect(page.getByLabel("3D target")).toBeVisible();
+  await clickThreeTarget(page, "Pick up Verdigris key");
+  await expect(objective(page)).toContainText("Bring Verdigris key to Eda");
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText("At Atrium Gate");
+  await clickObjective(page, "Talk");
+  await clickButton(page, "Complete: Give Verdigris key");
+  await expect(page.locator(".outcome-toast")).toContainText("Recover Verdigris key for Eda is complete");
+  await expect(page.locator(".dialogue-panel")).toContainText("That matters in Clockwork Conservatory Playable Slice");
+  await expect(page.locator(".dialogue-panel")).not.toContainText("That matters in Skyfront");
+  await clickButton(page, "Close");
+  await expect(objective(page)).toContainText("Recover Glass gear for Brin");
 }
 
 async function importSource(page: Page, sourcePath: string): Promise<void> {
