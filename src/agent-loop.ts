@@ -31,6 +31,8 @@ export interface AgentLoopOptions {
   setIntervalFn?: (callback: () => void, ms: number) => unknown;
   clearIntervalFn?: (handle: unknown) => void;
   onCheckpoint?: (checkpoint: AgentLoopCheckpoint) => void;
+  initialCheckpoints?: AgentLoopCheckpoint[];
+  maxCheckpoints?: number;
 }
 
 export interface AgentLoop {
@@ -46,10 +48,11 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
   const intervalMs = Math.max(250, options.intervalMs ?? 4_000);
   const maxTicks = options.maxTicks ?? null;
   const checkpointEveryTicks = Math.max(1, options.checkpointEveryTicks ?? 5);
+  const maxCheckpoints = Math.max(1, options.maxCheckpoints ?? 24);
   const now = options.now ?? (() => new Date());
   const setIntervalFn = options.setIntervalFn ?? ((callback, ms) => setInterval(callback, ms));
   const clearIntervalFn = options.clearIntervalFn ?? ((handle) => clearInterval(handle as NodeJS.Timeout));
-  const checkpoints: AgentLoopCheckpoint[] = [];
+  const checkpoints: AgentLoopCheckpoint[] = (options.initialCheckpoints ?? []).map(cloneCheckpoint).slice(-maxCheckpoints);
   let state: AgentLoopState = "idle";
   let timer: unknown = null;
   let stepping = false;
@@ -159,6 +162,7 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
       world: cloneWorld(engine.state),
     };
     checkpoints.push(checkpoint);
+    while (checkpoints.length > maxCheckpoints) checkpoints.shift();
     options.onCheckpoint?.(checkpoint);
   }
 

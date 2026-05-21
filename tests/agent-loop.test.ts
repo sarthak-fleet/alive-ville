@@ -115,6 +115,36 @@ describe("long-running agent loop", () => {
     expect(loop.checkpoints()[0]?.world.tick).toBe(1);
     expect(() => loop.restoreCheckpoint(99)).toThrow("agent_loop_checkpoint_not_found");
   });
+
+  test("hydrates persisted checkpoints into a fresh loop and caps retention", async () => {
+    const firstEngine = createEngine(fixture(), { propose: async () => [] });
+    const firstLoop = createAgentLoop(firstEngine, {
+      checkpointEveryTicks: 1,
+      now: () => new Date("2026-05-21T00:00:00.000Z"),
+    });
+
+    await firstLoop.step();
+    await firstLoop.step();
+    const persisted = JSON.parse(JSON.stringify(firstLoop.checkpoints())) as ReturnType<typeof firstLoop.checkpoints>;
+    persisted[0]!.world.tick = 99;
+
+    const nextEngine = createEngine(fixture(), { propose: async () => [] });
+    const nextLoop = createAgentLoop(nextEngine, {
+      checkpointEveryTicks: 1,
+      initialCheckpoints: persisted,
+      maxCheckpoints: 2,
+      now: () => new Date("2026-05-21T00:01:00.000Z"),
+    });
+
+    expect(nextLoop.checkpoints().map((checkpoint) => checkpoint.tick)).toEqual([1, 2]);
+    expect(nextLoop.restoreCheckpoint(2).world.tick).toBe(2);
+    expect(nextEngine.state.tick).toBe(2);
+
+    await nextLoop.step();
+
+    expect(nextLoop.checkpoints().map((checkpoint) => checkpoint.tick)).toEqual([2, 3]);
+    expect(() => nextLoop.restoreCheckpoint(1)).toThrow("agent_loop_checkpoint_not_found");
+  });
 });
 
 function waitForMicrotasks(): Promise<void> {
