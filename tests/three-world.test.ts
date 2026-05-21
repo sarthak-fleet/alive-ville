@@ -15,6 +15,11 @@ describe("3D world scene model", () => {
 
     expect(model.locations.map((location) => location.id)).toContain("square");
     expect(model.locations.find((location) => location.id === world.player.locationId)?.active).toBe(true);
+    expect(model.locations.find((location) => location.id === "forge")).toMatchObject({
+      structureColor: "#8a4c2e",
+      accentColor: "#f08a38",
+      landmarks: ["forge_chimney"],
+    });
     expect(model.paths.map((path) => `${path.fromId}->${path.toId}`)).toContain("square->garden");
     expect(model.actors.find((actor) => actor.id === "player")?.player).toBe(true);
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
@@ -29,6 +34,10 @@ describe("3D world scene model", () => {
 
     expect(model.actors.find((actor) => actor.id === "mira")?.color).toBe("#f6d85f");
     expect(model.actors.find((actor) => actor.id === "pax")?.color).toBe("#2b2337");
+    expect(model.locations.find((location) => location.id === "bridge")).toMatchObject({
+      accentColor: "#8d5cff",
+      landmarks: ["bridge_span"],
+    });
   });
 
   test("moves the camera target with the active player location", () => {

@@ -55,12 +55,69 @@
   ],
   "directorState": { "pressure": 18, "quietTicks": 0, "pendingReveals": ["The missing metal follows the bridge pattern."] },
   "locations": [
-    { "id": "square", "name": "Village Square",  "x": 240, "y": 180, "w": 180, "h": 120 },
-    { "id": "forge",  "name": "Old Forge",       "x":  40, "y":  40, "w": 160, "h": 110 },
-    { "id": "garden", "name": "Herb Garden",     "x": 460, "y":  40, "w": 160, "h": 110 },
-    { "id": "inn",    "name": "Lantern Inn",     "x": 240, "y": 340, "w": 180, "h": 110 },
-    { "id": "bridge", "name": "Old Bridge",      "x":  40, "y": 340, "w": 160, "h": 110 },
-    { "id": "wood",   "name": "Hollow Wood",     "x": 460, "y": 340, "w": 160, "h": 110 }
+    {
+      "id": "square", "name": "Village Square",  "x": 240, "y": 180, "w": 180, "h": 120,
+      "visual": {
+        "role": "social hub",
+        "description": "A river-stone square with a notice board and morning market stands.",
+        "palette": { "ground": "#2f3a45", "structure": "#657180", "accent": "#f8d44e" },
+        "visualTags": ["river stone", "market", "notice board"],
+        "landmarks": ["notice_board"],
+        "elevation": 0.06
+      }
+    },
+    {
+      "id": "forge",  "name": "Old Forge",       "x":  40, "y":  40, "w": 160, "h": 110,
+      "visual": {
+        "role": "repair site",
+        "description": "A soot-dark forge with a cold chimney and borrowed tool racks.",
+        "palette": { "ground": "#3a3028", "structure": "#8a4c2e", "accent": "#f08a38" },
+        "visualTags": ["forge", "soot", "metal", "tools"],
+        "landmarks": ["forge_chimney"],
+        "elevation": 0.12
+      }
+    },
+    {
+      "id": "garden", "name": "Herb Garden",     "x": 460, "y":  40, "w": 160, "h": 110,
+      "visual": {
+        "role": "home route",
+        "description": "Moonmint beds, soft paths, and bundled herbs beside Mira's workbench.",
+        "palette": { "ground": "#243f2a", "structure": "#497c4a", "accent": "#b5e48c" },
+        "visualTags": ["garden", "moonmint", "herbs"],
+        "landmarks": ["garden_planter"]
+      }
+    },
+    {
+      "id": "inn",    "name": "Lantern Inn",     "x": 240, "y": 340, "w": 180, "h": 110,
+      "visual": {
+        "role": "report station",
+        "description": "Warm inn lanterns, a traveler board, and benches facing the square.",
+        "palette": { "ground": "#2f3344", "structure": "#596477", "accent": "#f8d44e" },
+        "visualTags": ["inn", "lantern", "notice board"],
+        "landmarks": ["lantern_post"]
+      }
+    },
+    {
+      "id": "bridge", "name": "Old Bridge",      "x":  40, "y": 340, "w": 160, "h": 110,
+      "visual": {
+        "role": "threat site",
+        "description": "An old river bridge with cold blue scratches and fog under the planks.",
+        "palette": { "ground": "#27313d", "structure": "#657180", "accent": "#7fd0ff" },
+        "visualTags": ["bridge", "fog", "blue ember", "threat"],
+        "landmarks": ["bridge_span"],
+        "elevation": 0.22
+      }
+    },
+    {
+      "id": "wood",   "name": "Hollow Wood",     "x": 460, "y": 340, "w": 160, "h": 110,
+      "visual": {
+        "role": "danger route",
+        "description": "Dense old trees around a sealed hollow where fog gathers.",
+        "palette": { "ground": "#263525", "structure": "#4d6540", "accent": "#b58f57" },
+        "visualTags": ["wood", "sealed hollow", "fog"],
+        "landmarks": ["wood_tree"]
+      }
+    }
   ],
   "exits": [
     { "from": "square", "to": "forge",  "bidirectional": true, "label": "north-west path" },

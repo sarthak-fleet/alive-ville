@@ -17,6 +17,11 @@ describe("generic world ingest", () => {
     expect(world.id).toBe("skyfront_couriers");
     expect(world.name).toBe("Skyfront Couriers Playable Slice");
     expect(world.npcs.map((npc) => npc.name)).toContain("Vex");
+    expect(world.locations.find((location) => location.id === "square")?.visual).toMatchObject({
+      role: "hub",
+      landmarks: ["notice_board"],
+    });
+    expect(world.locations.find((location) => location.id === "bridge")?.visual?.description).toContain("false pirate flags");
     expect(activeObjectives(world)[0]?.questTitle).toBe("Recover Route token for Mara");
     expect(validateStoryPackage(pkg)).toEqual([]);
   });

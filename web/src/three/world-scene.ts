@@ -14,6 +14,11 @@ export interface SceneLocationNode {
   depth: number;
   height: number;
   active: boolean;
+  groundColor: string;
+  structureColor: string;
+  accentColor: string;
+  visualTags: string[];
+  landmarks: string[];
 }
 
 export interface SceneActorNode {
@@ -184,6 +189,7 @@ function centerForLocation(location: Location): { x: number; z: number } {
 function locationNode(location: Location, activeLocationId: string): SceneLocationNode {
   const center = centerForLocation(location);
   const area = location.w * location.h;
+  const palette = locationPalette(location);
   return {
     id: location.id,
     name: location.name,
@@ -191,9 +197,40 @@ function locationNode(location: Location, activeLocationId: string): SceneLocati
     z: center.z,
     width: Math.max(0.9, location.w * WORLD_SCALE),
     depth: Math.max(0.72, location.h * WORLD_SCALE),
-    height: MIN_BUILDING_HEIGHT + Math.min(1.6, area / 90_000),
+    height: MIN_BUILDING_HEIGHT + Math.min(1.6, area / 90_000) + (location.visual?.elevation ?? 0),
     active: location.id === activeLocationId,
+    groundColor: palette.ground,
+    structureColor: palette.structure,
+    accentColor: palette.accent,
+    visualTags: location.visual?.visualTags ?? [],
+    landmarks: location.visual?.landmarks ?? fallbackLandmarks(location),
   };
+}
+
+function locationPalette(location: Location): { ground: string; structure: string; accent: string } {
+  const fallback = paletteForText(`${location.id} ${location.name}`);
+  return {
+    ground: location.visual?.palette?.ground ?? fallback.ground,
+    structure: location.visual?.palette?.structure ?? fallback.structure,
+    accent: location.visual?.palette?.accent ?? fallback.accent,
+  };
+}
+
+function paletteForText(text: string): { ground: string; structure: string; accent: string } {
+  if (/forge|training|engine|repair/i.test(text)) return { ground: "#3a3028", structure: "#8a4c2e", accent: "#f08a38" };
+  if (/garden|wood|rookery|home/i.test(text)) return { ground: "#243f2a", structure: "#497c4a", accent: "#b5e48c" };
+  if (/bridge|overpass|alley|threat/i.test(text)) return { ground: "#27313d", structure: "#657180", accent: "#7fd0ff" };
+  if (/inn|kiosk|counter|report/i.test(text)) return { ground: "#2f3344", structure: "#596477", accent: "#f8d44e" };
+  return { ground: "#283546", structure: "#5d718b", accent: "#f5d782" };
+}
+
+function fallbackLandmarks(location: Location): string[] {
+  const text = `${location.id} ${location.name}`;
+  if (/forge|training|engine/i.test(text)) return ["forge_chimney"];
+  if (/garden|wood|rookery/i.test(text)) return ["garden_planter"];
+  if (/inn|kiosk|counter/i.test(text)) return ["lantern_post"];
+  if (/bridge|overpass/i.test(text)) return ["bridge_span"];
+  return ["notice_board"];
 }
 
 function pathNode(exit: Exit, locations: Location[]): ScenePathNode | null {
@@ -292,9 +329,12 @@ function makePathMesh(path: ScenePathNode): THREE.Object3D {
 function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {
   const group = new THREE.Group();
   group.name = `location:${location.id}`;
-  const color = location.active ? 0x4a6fa5 : 0x273344;
   const geometry = new THREE.BoxGeometry(location.width, location.height, location.depth);
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.74, metalness: 0.04 });
+  const material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(location.active ? location.accentColor : location.structureColor),
+    roughness: 0.74,
+    metalness: location.visualTags.some((tag) => /metal|cyborg|kiosk|engine/.test(tag)) ? 0.16 : 0.04,
+  });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = `pick:${location.id}`;
   mesh.userData["locationId"] = location.id;
@@ -303,18 +343,72 @@ function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {
 
   const ring = new THREE.Mesh(
     new THREE.BoxGeometry(location.width + 0.08, 0.035, location.depth + 0.08),
-    new THREE.MeshStandardMaterial({ color: location.active ? 0xf8d44e : 0x596477, roughness: 0.8 })
+    new THREE.MeshStandardMaterial({ color: new THREE.Color(location.active ? location.accentColor : location.groundColor), roughness: 0.8 })
   );
   ring.position.set(location.x, 0.02, location.z);
   group.add(ring);
+  for (const landmark of location.landmarks) group.add(makeLandmarkMesh(landmark, location));
   if (location.active) {
     const beacon = new THREE.Mesh(
       new THREE.CylinderGeometry(0.08, 0.22, 0.9, 16, 1, true),
-      new THREE.MeshStandardMaterial({ color: 0xf8d44e, emissive: 0x5f4300, transparent: true, opacity: 0.42 })
+      new THREE.MeshStandardMaterial({ color: new THREE.Color(location.accentColor), emissive: 0x5f4300, transparent: true, opacity: 0.42 })
     );
     beacon.position.set(location.x, location.height + 0.52, location.z);
     group.add(beacon);
   }
+  return group;
+}
+
+function makeLandmarkMesh(kind: string, location: SceneLocationNode): THREE.Object3D {
+  const group = new THREE.Group();
+  group.name = `landmark:${kind}`;
+  const accent = new THREE.Color(location.accentColor);
+  const structure = new THREE.Color(location.structureColor);
+  const x = location.x - location.width * 0.3;
+  const z = location.z + location.depth * 0.28;
+  if (kind === "forge_chimney" || kind === "engine_stack") {
+    const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.72, 10), new THREE.MeshStandardMaterial({ color: 0x2f2420, roughness: 0.65 }));
+    stack.position.set(x, location.height + 0.36, z);
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 8), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.55 }));
+    glow.position.set(x, location.height + 0.78, z);
+    group.add(stack, glow);
+    return group;
+  }
+  if (kind === "signal_tower" || kind === "apartment_tower") {
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.95, 0.18), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.72 }));
+    tower.position.set(x, location.height + 0.48, z);
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.08, 0.38), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.48 }));
+    cap.position.set(x, location.height + 1, z);
+    group.add(tower, cap);
+    return group;
+  }
+  if (kind === "garden_planter" || kind === "wood_tree") {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.38, 8), new THREE.MeshStandardMaterial({ color: 0x6d4930, roughness: 0.8 }));
+    trunk.position.set(x, location.height + 0.2, z);
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 8), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.82 }));
+    crown.position.set(x, location.height + 0.48, z);
+    group.add(trunk, crown);
+    return group;
+  }
+  if (kind === "bridge_span") {
+    const span = new THREE.Mesh(new THREE.BoxGeometry(location.width * 0.72, 0.08, 0.12), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.7 }));
+    span.position.set(location.x, location.height + 0.26, location.z);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(location.width * 0.78, 0.05, 0.05), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.58 }));
+    rail.position.set(location.x, location.height + 0.44, location.z - 0.11);
+    group.add(span, rail);
+    return group;
+  }
+  if (kind === "lantern_post" || kind === "kiosk_sign" || kind === "notice_board") {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.56, 0.06), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.68 }));
+    post.position.set(x, location.height + 0.28, z);
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.04), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.5 }));
+    sign.position.set(x, location.height + 0.54, z);
+    group.add(post, sign);
+    return group;
+  }
+  const marker = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.5 }));
+  marker.position.set(x, location.height + 0.28, z);
+  group.add(marker);
   return group;
 }
 

@@ -55,12 +55,69 @@
   ],
   "directorState": { "pressure": 18, "quietTicks": 0, "pendingReveals": ["A challenge mark points from the overpass toward the plaza."] },
   "locations": [
-    { "id": "square", "name": "Z-City Plaza", "x": 240, "y": 180, "w": 180, "h": 120 },
-    { "id": "forge", "name": "Training Lot", "x": 40, "y": 40, "w": 160, "h": 110 },
-    { "id": "garden", "name": "Apartment Block", "x": 460, "y": 40, "w": 160, "h": 110 },
-    { "id": "inn", "name": "Hero Association Kiosk", "x": 240, "y": 340, "w": 180, "h": 110 },
-    { "id": "bridge", "name": "Ruined Overpass", "x": 40, "y": 340, "w": 160, "h": 110 },
-    { "id": "wood", "name": "Monster Alley", "x": 460, "y": 340, "w": 160, "h": 110 }
+    {
+      "id": "square", "name": "Z-City Plaza", "x": 240, "y": 180, "w": 180, "h": 120,
+      "visual": {
+        "role": "urban hub",
+        "description": "Concrete plaza with crosswalk paint, low railings, and passing civilians.",
+        "palette": { "ground": "#303746", "structure": "#6b7280", "accent": "#f5d782" },
+        "visualTags": ["urban", "plaza", "crosswalk"],
+        "landmarks": ["notice_board"],
+        "elevation": 0.04
+      }
+    },
+    {
+      "id": "forge", "name": "Training Lot", "x": 40, "y": 40, "w": 160, "h": 110,
+      "visual": {
+        "role": "first clue site",
+        "description": "Exercise mats and torn concrete where morning training left evidence.",
+        "palette": { "ground": "#34313a", "structure": "#8b5e45", "accent": "#f6d85f" },
+        "visualTags": ["training", "concrete", "coupon"],
+        "landmarks": ["forge_chimney"]
+      }
+    },
+    {
+      "id": "garden", "name": "Apartment Block", "x": 460, "y": 40, "w": 160, "h": 110,
+      "visual": {
+        "role": "home route",
+        "description": "Stacked apartment balconies over a quiet side street.",
+        "palette": { "ground": "#293241", "structure": "#4f5f73", "accent": "#f2f2e8" },
+        "visualTags": ["apartment", "balcony", "home"],
+        "landmarks": ["apartment_tower"],
+        "elevation": 0.28
+      }
+    },
+    {
+      "id": "inn", "name": "Hero Association Kiosk", "x": 240, "y": 340, "w": 180, "h": 110,
+      "visual": {
+        "role": "report station",
+        "description": "Small official kiosk with alert signage and radio chatter.",
+        "palette": { "ground": "#2f3344", "structure": "#596477", "accent": "#58a6ff" },
+        "visualTags": ["kiosk", "radio", "hero association"],
+        "landmarks": ["kiosk_sign"]
+      }
+    },
+    {
+      "id": "bridge", "name": "Ruined Overpass", "x": 40, "y": 340, "w": 160, "h": 110,
+      "visual": {
+        "role": "threat site",
+        "description": "Broken overpass span with challenge marks and exposed concrete.",
+        "palette": { "ground": "#272d38", "structure": "#737985", "accent": "#8d5cff" },
+        "visualTags": ["overpass", "ruin", "challenge", "threat"],
+        "landmarks": ["bridge_span"],
+        "elevation": 0.32
+      }
+    },
+    {
+      "id": "wood", "name": "Monster Alley", "x": 460, "y": 340, "w": 160, "h": 110,
+      "visual": {
+        "role": "danger route",
+        "description": "Back alley with dented crates, monster scraps, and service pipes.",
+        "palette": { "ground": "#252a32", "structure": "#3f4858", "accent": "#e05f7a" },
+        "visualTags": ["alley", "monster", "pipes"],
+        "landmarks": ["engine_stack"]
+      }
+    }
   ],
   "exits": [
     { "from": "square", "to": "forge", "bidirectional": true, "label": "north-west street" },

@@ -161,6 +161,19 @@ export interface CharacterAppearance {
   spriteSheet?: string;
 }
 
+export interface LocationVisualDesign {
+  role?: string;
+  description?: string;
+  palette?: {
+    ground?: string;
+    structure?: string;
+    accent?: string;
+  };
+  visualTags?: string[];
+  landmarks?: string[];
+  elevation?: number;
+}
+
 export interface RelationshipAxes {
   trust?: number;
   affection?: number;
@@ -200,6 +213,7 @@ export interface Location {
   y: number;
   w: number;
   h: number;
+  visual?: LocationVisualDesign;
 }
 
 export interface Exit {

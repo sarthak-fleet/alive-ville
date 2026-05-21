@@ -100,6 +100,14 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
       y: xy.y,
       w: xy.w,
       h: xy.h,
+      visual: {
+        role: draft.role,
+        description: draft.description,
+        palette: locationPaletteFor(index),
+        visualTags: tokenize(`${draft.role ?? ""} ${draft.description ?? ""}`).slice(0, 6),
+        landmarks: locationLandmarksFor(index, draft),
+        elevation: locationElevationFor(index, draft),
+      },
     };
   });
   const characters = CHARACTER_SLOTS.map((id, index) => characterToNpc(source, id, index));
@@ -378,6 +386,37 @@ function paletteFor(index: number): string[] {
     ["#66c26f", "#141b28", "#e7b07d"],
     ["#2b2337", "#8d5cff", "#ddb08a"],
   ][index] ?? ["#9fc3ff", "#f4f1e8", "#273344"];
+}
+
+function locationPaletteFor(index: number): { ground: string; structure: string; accent: string } {
+  return [
+    { ground: "#283546", structure: "#5d718b", accent: "#f5d782" },
+    { ground: "#3a3028", structure: "#8a4c2e", accent: "#f08a38" },
+    { ground: "#243f2a", structure: "#497c4a", accent: "#b5e48c" },
+    { ground: "#2f3344", structure: "#596477", accent: "#f8d44e" },
+    { ground: "#27313d", structure: "#657180", accent: "#7fd0ff" },
+    { ground: "#263525", structure: "#4d6540", accent: "#b58f57" },
+  ][index]!;
+}
+
+function locationLandmarksFor(index: number, draft: AnimeLocationDraft): string[] {
+  const text = `${draft.name} ${draft.role ?? ""} ${draft.description ?? ""}`.toLowerCase();
+  const inferred = new Set<string>();
+  if (/plaza|hub|ring|square/.test(text)) inferred.add("notice_board");
+  if (/training|forge|repair|mast|tower/.test(text)) inferred.add(index === 1 ? "forge_chimney" : "signal_tower");
+  if (/garden|apartment|home|rookery|deck/.test(text)) inferred.add(/apartment/.test(text) ? "apartment_tower" : "garden_planter");
+  if (/kiosk|guild|counter|report|inn/.test(text)) inferred.add(/guild|counter/.test(text) ? "kiosk_sign" : "lantern_post");
+  if (/bridge|overpass|threat|chain/.test(text)) inferred.add("bridge_span");
+  if (/wood|alley|engine|danger/.test(text)) inferred.add(/engine/.test(text) ? "engine_stack" : "wood_tree");
+  if (inferred.size === 0) inferred.add(["notice_board", "forge_chimney", "garden_planter", "lantern_post", "bridge_span", "wood_tree"][index] ?? "notice_board");
+  return [...inferred].slice(0, 2);
+}
+
+function locationElevationFor(index: number, draft: AnimeLocationDraft): number {
+  const text = `${draft.name} ${draft.role ?? ""} ${draft.description ?? ""}`.toLowerCase();
+  if (/tower|mast|apartment|overpass|bridge/.test(text)) return 0.3;
+  if (/engine|alley|wood/.test(text)) return -0.05;
+  return index === 0 ? 0.08 : 0;
 }
 
 function locationCoordinates(index: number): { x: number; y: number; w: number; h: number } {
