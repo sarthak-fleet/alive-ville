@@ -52,7 +52,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("src/agent-loop.ts", ["checkpointEveryTicks", "maxTicks", "start()", "stop("]),
       file("tests/agent-loop.test.ts"),
       source("tests/server.test.ts", ["/api/agent-loop/status", "/api/agent-loop/step"]),
-      source("tests/playtests/alive-village.ts", ["Agent loop controls", "1 autonomous ticks", "6 autonomous ticks", "3D agent activity", "Autonomous t1", "moved to", "running", "stopped"]),
+      source("tests/playtests/alive-village.ts", ["Agent loop controls", "1 autonomous ticks", "6 autonomous ticks", "autonomousTickCount", "LIVE_LOOP_INTERVAL_MS", "3D agent activity", "Autonomous t1", "Autonomous t(?:[7-9]|\\d{2,})", "moved to", "running", "stopped"]),
     ]),
     gate(rootDir, "performance_budget", "Performance budget", [
       file("src/bundle-budget.ts"),

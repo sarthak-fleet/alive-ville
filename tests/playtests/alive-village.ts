@@ -6,6 +6,7 @@ import { chromium, expect, type Page } from "@playwright/test";
 
 const API_PORT = Number(process.env["PLAYTEST_API_PORT"] ?? 5474);
 const WEB_PORT = Number(process.env["PLAYTEST_WEB_PORT"] ?? 5475);
+const LIVE_LOOP_INTERVAL_MS = 500;
 const BASE_URL = `http://127.0.0.1:${WEB_PORT}`;
 const ARTIFACT_DIR = process.env["PLAYTEST_ARTIFACT_DIR"] ?? "tmp/playtest-artifacts/alive-village";
 const TSX = new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url).pathname;
@@ -16,7 +17,7 @@ const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 async function main(): Promise<void> {
   mkdirSync(ARTIFACT_DIR, { recursive: true });
   const api = spawn(process.execPath, [TSX, SERVER], {
-    env: { ...process.env, PORT: String(API_PORT), LLM_API_KEY: "", LLM_BASE_URL: "" },
+    env: { ...process.env, PORT: String(API_PORT), AGENT_LOOP_INTERVAL_MS: String(LIVE_LOOP_INTERVAL_MS), LLM_API_KEY: "", LLM_BASE_URL: "" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   const web = spawn(process.execPath, [VITE, "--host", "127.0.0.1", "--port", String(WEB_PORT), "--strictPort"], {
@@ -70,6 +71,9 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.getByLabel("3D agent activity")).toContainText(/moved to/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("running");
+    await expect(page.getByLabel("Agent loop controls")).toContainText(`${LIVE_LOOP_INTERVAL_MS}ms`);
+    await expect.poll(() => autonomousTickCount(page)).toBeGreaterThan(6);
+    await expect(page.getByLabel("3D agent activity")).toContainText(/Autonomous t(?:[7-9]|\d{2,})/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
 
@@ -192,6 +196,12 @@ async function canvasPixelHash(page: Page, selector: string): Promise<string> {
     }
     return hash.toString(16);
   });
+}
+
+async function autonomousTickCount(page: Page): Promise<number> {
+  const text = await page.getByLabel("Agent loop controls").innerText();
+  const match = /(\d+) autonomous ticks/.exec(text);
+  return match ? Number(match[1]) : 0;
 }
 
 async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerSelector: string): Promise<void> {
