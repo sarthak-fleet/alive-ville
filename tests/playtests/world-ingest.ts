@@ -60,6 +60,12 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await expect(page.getByLabel("3D travel")).toContainText("At Harbor Ring");
+    const skyfrontStartHash = await canvasPixelHash(page, ".three-host canvas");
+    await expect(page.getByRole("button", { name: "Go Rookery Deck" })).toBeVisible();
+    await page.getByRole("button", { name: "Go Rookery Deck" }).click();
+    await expect(page.getByLabel("3D travel")).toContainText("At Rookery Deck");
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(skyfrontStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-skyfront-3d.png") });
 
     await importSource(page, OPM);
@@ -96,6 +102,29 @@ async function nonBlankCanvasPixels(page: Page, selector: string): Promise<numbe
       if (r + g + b > 32) visible += 1;
     }
     return visible;
+  });
+}
+
+async function canvasPixelHash(page: Page, selector: string): Promise<string> {
+  return page.locator(selector).evaluate((canvas) => {
+    const source = canvas as HTMLCanvasElement;
+    const probe = document.createElement("canvas");
+    probe.width = 48;
+    probe.height = 48;
+    const ctx = probe.getContext("2d");
+    if (!ctx || source.width === 0 || source.height === 0) return "blank";
+    ctx.drawImage(source, 0, 0, probe.width, probe.height);
+    const pixels = ctx.getImageData(0, 0, probe.width, probe.height).data;
+    let hash = 2166136261;
+    for (let i = 0; i < pixels.length; i += 12) {
+      hash ^= pixels[i] ?? 0;
+      hash = Math.imul(hash, 16777619);
+      hash ^= pixels[i + 1] ?? 0;
+      hash = Math.imul(hash, 16777619);
+      hash ^= pixels[i + 2] ?? 0;
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash.toString(16);
   });
 }
 

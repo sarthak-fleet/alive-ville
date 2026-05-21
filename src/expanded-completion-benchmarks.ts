@@ -38,7 +38,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("src/server.ts", ["/api/import-world-source", "validateWorldIngestSource", "worldSourceToWorld"]),
       source("web/src/organisms/AppHeader.tsx", ["World source JSON", "World"]),
       file("tests/world-ingest.test.ts"),
-      file("tests/playtests/world-ingest.ts"),
+      source("tests/playtests/world-ingest.ts", ["Skyfront Couriers Playable Slice", "3D travel", "At Harbor Ring", "Go Rookery Deck", "At Rookery Deck", "canvasPixelHash", "One Punch Man Playable Slice"]),
     ]),
     gate(rootDir, "long_running_agents", "Long-running AI agents", [
       file("src/agent-loop.ts"),
