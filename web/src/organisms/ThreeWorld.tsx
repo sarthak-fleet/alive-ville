@@ -16,6 +16,36 @@ export function ThreeWorld() {
     if (!host) return;
     const renderer = new ThreeWorldRenderer(host, {
       onLocationSelect: (locationId) => void movePlayerToward(locationId),
+      onNpcSelect: (npcId) => {
+        const world = useWorldStore.getState().world;
+        const npc = world?.npcs.find((candidate) => candidate.id === npcId);
+        if (!world || !npc) return;
+        if (npc.locationId !== world.player.locationId) {
+          void movePlayerToward(npc.locationId);
+          return;
+        }
+        useWorldStore.getState().openDrawer(npcId);
+      },
+      onItemSelect: (itemId) => {
+        const world = useWorldStore.getState().world;
+        const item = world?.items.find((candidate) => candidate.id === itemId);
+        if (!world || !item?.locationId) return;
+        if (item.locationId !== world.player.locationId) {
+          void movePlayerToward(item.locationId);
+          return;
+        }
+        void useWorldStore.getState().send({ type: "pickup", itemId } as never);
+      },
+      onPropSelect: (propId) => {
+        const world = useWorldStore.getState().world;
+        const prop = world?.interactables?.find((candidate) => candidate.id === propId);
+        if (!world || !prop) return;
+        if (prop.locationId !== world.player.locationId) {
+          void movePlayerToward(prop.locationId);
+          return;
+        }
+        void useWorldStore.getState().send({ type: "inspect", propId } as never);
+      },
     });
     const resizeObserver = new ResizeObserver(() => renderer.resize());
     resizeObserver.observe(host);

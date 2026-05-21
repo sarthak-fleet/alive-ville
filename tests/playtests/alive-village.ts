@@ -73,6 +73,9 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await expect(page.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
     await page.getByRole("button", { name: "Go Herb Garden" }).click();
     await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
+    await page.locator(".three-host canvas").click({ position: { x: 620, y: 320 } });
+    await expect(page.locator(".dialogue-panel")).toContainText("Mira");
+    await page.getByRole("button", { name: "Close" }).click();
     await page.screenshot({ path: join(ARTIFACT_DIR, "03-three-world.png") });
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 720 } });

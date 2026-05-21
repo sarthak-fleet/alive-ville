@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { Exit, Item, Location, Npc, World } from "../../../src/types.ts";
+import type { Exit, InteractableProp, Item, Location, Npc, World } from "../../../src/types.ts";
 
 const WORLD_SCALE = 0.018;
 const MIN_BUILDING_HEIGHT = 0.45;
@@ -24,6 +24,7 @@ export interface SceneLocationNode {
 export interface SceneActorNode {
   id: string;
   name: string;
+  locationId: string;
   x: number;
   z: number;
   color: string;
@@ -34,9 +35,19 @@ export interface SceneActorNode {
 export interface SceneItemNode {
   id: string;
   name: string;
+  locationId: string;
   x: number;
   z: number;
   color: string;
+}
+
+export interface ScenePropNode {
+  id: string;
+  name: string;
+  locationId: string;
+  x: number;
+  z: number;
+  inspected: boolean;
 }
 
 export interface ScenePathNode {
@@ -51,6 +62,7 @@ export interface WorldSceneModel {
   paths: ScenePathNode[];
   actors: SceneActorNode[];
   items: SceneItemNode[];
+  props: ScenePropNode[];
   bounds: { width: number; depth: number };
   cameraTarget: { x: number; z: number };
 }
@@ -67,15 +79,26 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const items = world.items
     .map((item) => itemNode(item, world.locations.find((location) => location.id === item.locationId)))
     .filter((node): node is SceneItemNode => Boolean(node));
+  const props = (world.interactables ?? [])
+    .map((prop) => propNode(prop, world.locations.find((location) => location.id === prop.locationId)))
+    .filter((node): node is ScenePropNode => Boolean(node));
   const target = activeLocation ? centerForLocation(activeLocation) : { x: 0, z: 0 };
   return {
     locations,
     paths,
     actors,
     items,
+    props,
     bounds,
     cameraTarget: target,
   };
+}
+
+interface ThreeWorldRendererOptions {
+  onLocationSelect?: (locationId: string) => void;
+  onNpcSelect?: (npcId: string) => void;
+  onItemSelect?: (itemId: string) => void;
+  onPropSelect?: (propId: string) => void;
 }
 
 export class ThreeWorldRenderer {
@@ -86,12 +109,21 @@ export class ThreeWorldRenderer {
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
   private readonly pickableLocations: THREE.Object3D[] = [];
+  private readonly pickableActors: THREE.Object3D[] = [];
+  private readonly pickableItems: THREE.Object3D[] = [];
+  private readonly pickableProps: THREE.Object3D[] = [];
   private frame = 0;
   private disposed = false;
   private onLocationSelect: ((locationId: string) => void) | null = null;
+  private onNpcSelect: ((npcId: string) => void) | null = null;
+  private onItemSelect: ((itemId: string) => void) | null = null;
+  private onPropSelect: ((propId: string) => void) | null = null;
 
-  constructor(private readonly container: HTMLElement, options: { onLocationSelect?: (locationId: string) => void } = {}) {
+  constructor(private readonly container: HTMLElement, options: ThreeWorldRendererOptions = {}) {
     this.onLocationSelect = options.onLocationSelect ?? null;
+    this.onNpcSelect = options.onNpcSelect ?? null;
+    this.onItemSelect = options.onItemSelect ?? null;
+    this.onPropSelect = options.onPropSelect ?? null;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x070a0f, 1);
@@ -121,6 +153,9 @@ export class ThreeWorldRenderer {
     disposeObjectTree(this.root);
     this.root.clear();
     this.pickableLocations.length = 0;
+    this.pickableActors.length = 0;
+    this.pickableItems.length = 0;
+    this.pickableProps.length = 0;
     this.root.add(makeGround(model));
     this.root.add(makeSkyline(model));
     for (const path of model.paths) this.root.add(makePathMesh(path));
@@ -131,8 +166,22 @@ export class ThreeWorldRenderer {
       if (pickable) this.pickableLocations.push(pickable);
       this.root.add(makeLabelSprite(location.name, location.x, location.height + 0.34, location.z, location.active));
     }
-    for (const item of model.items) this.root.add(makeItemMesh(item));
-    for (const actor of model.actors) this.root.add(makeActorMesh(actor));
+    for (const prop of model.props) {
+      const mesh = makePropMesh(prop);
+      this.root.add(mesh);
+      this.pickableProps.push(mesh);
+    }
+    for (const item of model.items) {
+      const mesh = makeItemMesh(item);
+      this.root.add(mesh);
+      this.pickableItems.push(mesh);
+    }
+    for (const actor of model.actors) {
+      const mesh = makeActorMesh(actor);
+      this.root.add(mesh);
+      const pickable = mesh.getObjectByName(`pick:actor:${actor.id}`);
+      if (!actor.player && pickable) this.pickableActors.push(pickable);
+    }
     this.camera.position.set(model.cameraTarget.x + 4.8, 6.4, model.cameraTarget.z + 7.2);
     this.camera.lookAt(model.cameraTarget.x, 0.25, model.cameraTarget.z);
     this.render();
@@ -162,15 +211,36 @@ export class ThreeWorldRenderer {
   }
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (!this.onLocationSelect || this.pickableLocations.length === 0) return;
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
     this.raycaster.setFromCamera(this.pointer, this.camera);
+    const actorId = this.firstHitId(this.pickableActors, "actorId");
+    if (actorId) {
+      this.onNpcSelect?.(actorId);
+      return;
+    }
+    const itemId = this.firstHitId(this.pickableItems, "itemId");
+    if (itemId) {
+      this.onItemSelect?.(itemId);
+      return;
+    }
+    const propId = this.firstHitId(this.pickableProps, "propId");
+    if (propId) {
+      this.onPropSelect?.(propId);
+      return;
+    }
     const hit = this.raycaster.intersectObjects(this.pickableLocations, false)[0];
     const locationId = hit?.object.userData["locationId"];
-    if (typeof locationId === "string") this.onLocationSelect(locationId);
+    if (typeof locationId === "string") this.onLocationSelect?.(locationId);
   };
+
+  private firstHitId(objects: THREE.Object3D[], key: "actorId" | "itemId" | "propId"): string | null {
+    if (objects.length === 0) return null;
+    const hit = this.raycaster.intersectObjects(objects, false)[0];
+    const id = hit?.object.userData[key];
+    return typeof id === "string" ? id : null;
+  }
 }
 
 function worldBounds(locations: Location[]): { width: number; depth: number } {
@@ -251,6 +321,7 @@ function playerNode(world: World, location: Location | undefined): SceneActorNod
   return {
     id: "player",
     name: world.player.name ?? "Player",
+    locationId: location.id,
     x: center.x,
     z: center.z,
     color: world.player.appearance?.palette?.[0] ?? "#58a6ff",
@@ -266,6 +337,7 @@ function actorNode(npc: Npc, location: Location | undefined): SceneActorNode | n
   return {
     id: npc.id,
     name: npc.name,
+    locationId: location.id,
     x: center.x + offset.x,
     z: center.z + offset.z,
     color: npc.appearance?.palette?.[0] ?? (npc.tier === "quest" ? "#b5e48c" : "#ff8a65"),
@@ -281,9 +353,24 @@ function itemNode(item: Item, location: Location | undefined): SceneItemNode | n
   return {
     id: item.id,
     name: item.name,
+    locationId: location.id,
     x: center.x + offset.x,
     z: center.z + offset.z,
     color: "#f8d44e",
+  };
+}
+
+function propNode(prop: InteractableProp, location: Location | undefined): ScenePropNode | null {
+  if (!location) return null;
+  const center = centerForLocation(location);
+  const offset = stableOffset(prop.id, 0.54);
+  return {
+    id: prop.id,
+    name: prop.name,
+    locationId: location.id,
+    x: center.x + offset.x,
+    z: center.z + offset.z,
+    inspected: Boolean(prop.inspected),
   };
 }
 
@@ -440,7 +527,8 @@ function makeActorMesh(actor: SceneActorNode): THREE.Object3D {
   const geometry = new THREE.CapsuleGeometry(radius, height, 5, 10);
   const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(actor.color), roughness: 0.48 });
   const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = actor.name;
+  mesh.name = `pick:actor:${actor.id}`;
+  mesh.userData["actorId"] = actor.id;
   mesh.position.set(actor.x, height / 2 + 0.16, actor.z);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(radius * 1.45, 18),
@@ -458,7 +546,22 @@ function makeItemMesh(item: SceneItemNode): THREE.Object3D {
   const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(item.color), emissive: 0x4a3300, roughness: 0.32 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = item.name;
+  mesh.userData["itemId"] = item.id;
   mesh.position.set(item.x, 0.24, item.z);
+  return mesh;
+}
+
+function makePropMesh(prop: ScenePropNode): THREE.Object3D {
+  const geometry = new THREE.BoxGeometry(0.16, prop.inspected ? 0.1 : 0.18, 0.16);
+  const material = new THREE.MeshStandardMaterial({
+    color: prop.inspected ? 0x7d8796 : 0x9fc3ff,
+    emissive: prop.inspected ? 0x0 : 0x102840,
+    roughness: 0.56,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = prop.name;
+  mesh.userData["propId"] = prop.id;
+  mesh.position.set(prop.x, prop.inspected ? 0.11 : 0.16, prop.z);
   return mesh;
 }
 

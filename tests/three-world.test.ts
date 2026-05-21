@@ -24,6 +24,7 @@ describe("3D world scene model", () => {
     expect(model.actors.find((actor) => actor.id === "player")?.player).toBe(true);
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
     expect(model.items.some((item) => item.id === "shears")).toBe(true);
+    expect(model.props.some((prop) => prop.id === "forge_tool_rack")).toBe(true);
     expect(model.bounds.width).toBeGreaterThan(0);
     expect(model.bounds.depth).toBeGreaterThan(0);
   });
