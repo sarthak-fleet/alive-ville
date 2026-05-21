@@ -1078,6 +1078,7 @@ function makeActorMesh(actor: SceneActorNode, motion: TravelMotion | null = null
   group.add(shadow, halo, mesh);
   const accessory = makeActorAccessoryMesh(actor, height, radius);
   if (accessory) group.add(accessory);
+  group.add(makeActorNameplate(actor, height));
   applyShadows(mesh, { cast: true });
   return group;
 }
@@ -1129,6 +1130,13 @@ function makeActorAccessoryMesh(actor: SceneActorNode, height: number, radius: n
   }
   for (const child of group.children) applyShadows(child, { cast: true });
   return group.children.length > 0 ? group : null;
+}
+
+function makeActorNameplate(actor: SceneActorNode, height: number): THREE.Object3D {
+  const label = makeLabelSprite(actor.name, 0, height + 0.72, 0, actor.player || actor.quest);
+  label.name = `actor-nameplate:${actor.id}`;
+  label.scale.set(actor.player ? 1.35 : 1.05, actor.player ? 0.34 : 0.26, 1);
+  return label;
 }
 
 function makeItemMesh(item: SceneItemNode): THREE.Object3D {
