@@ -47,7 +47,8 @@ async function runOpmWorldPlaytest(): Promise<void> {
   try {
     await page.goto(BASE_URL);
     await page.waitForLoadState("domcontentloaded");
-    await expect(page.locator("canvas")).toHaveCount(1);
+    await expect(page.locator(".three-host canvas")).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.getByRole("heading", { name: "Z-City Patrol" })).toBeVisible();
     await expectObjective(page, "Recover Saitama's grocery coupon");
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-z-city-start.png") });

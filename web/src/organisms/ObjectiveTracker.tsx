@@ -2,6 +2,7 @@ import { questHintsFor } from "../../../src/hints.ts";
 import { activeObjectives } from "../../../src/objectives.ts";
 import { Button } from "../atoms/Button.tsx";
 import { useWorldStore } from "../store/world.ts";
+import { movePlayerToward } from "../world-travel.ts";
 
 export function ObjectiveTracker() {
   const world = useWorldStore((s) => s.world);
@@ -50,7 +51,7 @@ export function ObjectiveTracker() {
       return;
     }
     if (canMove) {
-      window.dispatchEvent(new CustomEvent("ashbend:travel-to", { detail: { locationId: objective.locationId } }));
+      void movePlayerToward(objective.locationId);
       return;
     }
     if (objective.targetType === "npc") {

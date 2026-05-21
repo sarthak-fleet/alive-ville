@@ -54,7 +54,7 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await importSource(page, SKYFRONT);
     await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible();
     await expect(page.locator(".objective-tracker")).toContainText("Recover Route token for Mara");
-    await page.getByRole("button", { name: "3D" }).click();
+    await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-skyfront-3d.png") });

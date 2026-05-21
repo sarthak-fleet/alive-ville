@@ -13,7 +13,6 @@ import { MusicToggle } from "../organisms/MusicToggle.tsx";
 import { NpcDrawer } from "../organisms/NpcDrawer.tsx";
 import { ObjectiveTracker } from "../organisms/ObjectiveTracker.tsx";
 import { OutcomeToast } from "../organisms/OutcomeToast.tsx";
-import { PhaserGame } from "../organisms/PhaserGame.tsx";
 import { QuestList } from "../organisms/QuestList.tsx";
 import { RelationshipsPanel } from "../organisms/RelationshipsPanel.tsx";
 import { ReplayInspector } from "../organisms/ReplayInspector.tsx";
@@ -25,8 +24,13 @@ const ThreeWorld = lazy(async () => {
   return { default: module.ThreeWorld };
 });
 
+const PhaserGame = lazy(async () => {
+  const module = await import("../organisms/PhaserGame.tsx");
+  return { default: module.PhaserGame };
+});
+
 export function AppShell() {
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
 
   return (
     <div className="app-shell">
@@ -49,7 +53,9 @@ export function AppShell() {
             <div className="banner error">Map failed: {error.message}</div>
           )}>
             {viewMode === "2d" ? (
-              <PhaserGame />
+              <Suspense fallback={<div className="phaser-host loading" aria-label="2D world loading" />}>
+                <PhaserGame />
+              </Suspense>
             ) : (
               <Suspense fallback={<div className="three-host loading" aria-label="3D world loading" />}>
                 <ThreeWorld />

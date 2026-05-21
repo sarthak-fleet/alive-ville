@@ -47,7 +47,10 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await page.goto(BASE_URL);
     await page.waitForLoadState("domcontentloaded");
     await expect(page.locator(".objective-tracker")).toContainText("Return the pruning shears");
-    await expect(page.locator("canvas")).toHaveCount(1);
+    await expect(page.locator(".three-host canvas")).toHaveCount(1);
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
+    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
 
     const sound = page.getByRole("button", { name: "Sound" });
     await expect(sound).toHaveCount(1);
@@ -58,12 +61,8 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await page.waitForTimeout(7_500);
     await page.screenshot({ path: join(ARTIFACT_DIR, "02-ambient-wait.png") });
 
-    await page.getByRole("button", { name: "3D" }).click();
-    await expect(page.locator(".three-host canvas")).toHaveCount(1);
-    await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect(page.getByLabel("3D travel")).toContainText("At Village Square");
     await expect(page.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
-    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
     await page.getByRole("button", { name: "Go Herb Garden" }).click();
     await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
     await page.screenshot({ path: join(ARTIFACT_DIR, "03-three-world.png") });
@@ -72,9 +71,11 @@ async function runAliveVillagePlaytest(): Promise<void> {
     try {
       await mobile.goto(BASE_URL);
       await mobile.waitForLoadState("domcontentloaded");
-      await mobile.getByRole("button", { name: "3D" }).click();
+      await expect(mobile.getByRole("button", { name: "3D" })).toHaveClass(/active/);
       await expect(mobile.locator(".three-host canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, ".three-host canvas")).toBeGreaterThan(40);
+      await expectNoVerticalOverlap(mobile, ".view-toggle", ".three-overlay");
+      await expectNoVerticalOverlap(mobile, ".three-overlay", ".objective-tracker");
       await mobile.screenshot({ path: join(ARTIFACT_DIR, "04-three-world-mobile.png") });
     } finally {
       await mobile.close();
@@ -108,6 +109,16 @@ async function nonBlankCanvasPixels(page: Page, selector: string): Promise<numbe
     }
     return visible;
   });
+}
+
+async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerSelector: string): Promise<void> {
+  const boxes = await page.evaluate(({ upperSelector, lowerSelector }) => {
+    const upper = document.querySelector(upperSelector)?.getBoundingClientRect();
+    const lower = document.querySelector(lowerSelector)?.getBoundingClientRect();
+    return upper && lower ? { upperBottom: upper.bottom, lowerTop: lower.top } : null;
+  }, { upperSelector, lowerSelector });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.lowerTop).toBeGreaterThanOrEqual(boxes!.upperBottom + 6);
 }
 
 async function restoreWorld(): Promise<void> {

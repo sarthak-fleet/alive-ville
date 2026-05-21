@@ -989,7 +989,7 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
     max-width: calc(100vw - 20px);
   }
   .three-overlay {
-    top: 108px;
+    top: 216px;
     left: 10px;
     width: min(300px, calc(100vw - 20px));
   }
