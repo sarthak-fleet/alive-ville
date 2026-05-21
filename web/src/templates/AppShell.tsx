@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import { ActionBar } from "../organisms/ActionBar.tsx";
 import { AgentLoopPanel } from "../organisms/AgentLoopPanel.tsx";
@@ -32,9 +32,19 @@ const PhaserGame = lazy(async () => {
 
 export function AppShell() {
   const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
+  const [focusMode, setFocusMode] = useState(false);
+
+  useEffect(() => {
+    if (!focusMode) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFocusMode(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [focusMode]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${focusMode ? " focus-mode" : ""}`}>
       <AppHeader />
       <AmbienceToggle />
       <SoundToggle />
@@ -49,6 +59,9 @@ export function AppShell() {
           <div className="view-toggle" role="group" aria-label="World view">
             <button type="button" className={viewMode === "2d" ? "active" : ""} onClick={() => setViewMode("2d")}>2D</button>
             <button type="button" className={viewMode === "3d" ? "active" : ""} onClick={() => setViewMode("3d")}>3D</button>
+            <button type="button" className={focusMode ? "active" : ""} aria-pressed={focusMode} onClick={() => setFocusMode((value) => !value)}>
+              {focusMode ? "HUD" : "Focus"}
+            </button>
           </div>
           <ErrorBoundary fallback={(error) => (
             <div className="banner error">Map failed: {error.message}</div>

@@ -54,6 +54,17 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await page.getByRole("button", { name: "Focus" }).click();
+    await expect(page.getByRole("button", { name: "HUD" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".hud-panel")).toBeHidden();
+    await expect(page.locator("header")).toBeHidden();
+    await expect(page.locator(".objective-tracker")).toBeVisible();
+    await expect(page.getByLabel("3D travel")).toBeVisible();
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expectNoHorizontalOverlap(page, ".view-toggle", ".objective-tracker");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: "Focus" })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".hud-panel")).toBeVisible();
 
     const sound = page.getByRole("button", { name: "Sound" });
     await expect(sound).toHaveCount(1);
@@ -217,6 +228,16 @@ async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerS
   }, { upperSelector, lowerSelector });
   expect(boxes).not.toBeNull();
   expect(boxes!.lowerTop).toBeGreaterThanOrEqual(boxes!.upperBottom + 6);
+}
+
+async function expectNoHorizontalOverlap(page: Page, leftSelector: string, rightSelector: string): Promise<void> {
+  const boxes = await page.evaluate(({ leftSelector, rightSelector }) => {
+    const left = document.querySelector(leftSelector)?.getBoundingClientRect();
+    const right = document.querySelector(rightSelector)?.getBoundingClientRect();
+    return left && right ? { leftRight: left.right, rightLeft: right.left } : null;
+  }, { leftSelector, rightSelector });
+  expect(boxes).not.toBeNull();
+  expect(boxes!.rightLeft).toBeGreaterThanOrEqual(boxes!.leftRight + 6);
 }
 
 async function expectWithinViewport(page: Page, selector: string): Promise<void> {

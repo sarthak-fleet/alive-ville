@@ -344,6 +344,23 @@ button.primary:hover { filter: brightness(1.05); }
   background: rgba(88, 166, 255, 0.22);
   color: #f4f1e8;
 }
+.focus-mode header,
+.focus-mode .ambience-toggle,
+.focus-mode .sound-toggle,
+.focus-mode .music-toggle,
+.focus-mode .hud-panel {
+  display: none;
+}
+.focus-mode .view-toggle {
+  top: 16px;
+}
+.focus-mode .three-overlay {
+  top: 64px;
+}
+.focus-mode .objective-tracker {
+  top: 16px;
+  width: min(420px, calc(100vw - 190px));
+}
 .control-hint {
   position: absolute;
   left: 16px;
@@ -1224,6 +1241,16 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
   }
   .three-location-strip button {
     max-width: 132px;
+  }
+  .focus-mode .view-toggle {
+    top: 10px;
+  }
+  .focus-mode .three-overlay {
+    top: 58px;
+    width: min(300px, calc(100vw - 20px));
+  }
+  .focus-mode .objective-tracker {
+    width: calc(100vw - 20px);
   }
   .cutscene-player {
     left: 10px;
