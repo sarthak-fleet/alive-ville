@@ -1,13 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { World } from "../../../src/types.ts";
 import { useWorldStore } from "../store/world.ts";
-import { ThreeWorldRenderer } from "../three/world-scene.ts";
+import { type SceneTarget, ThreeWorldRenderer } from "../three/world-scene.ts";
 import { movePlayerToward } from "../world-travel.ts";
 
 export function ThreeWorld() {
   const world = useWorldStore((state) => state.world);
   const hostRef = useRef<HTMLDivElement>(null);
+  const [hoverTarget, setHoverTarget] = useState<SceneTarget | null>(null);
   const currentLocation = world?.locations.find((location) => location.id === world.player.locationId) ?? null;
   const destinations = world ? reachableLocations(world) : [];
 
@@ -46,6 +47,7 @@ export function ThreeWorld() {
         }
         void useWorldStore.getState().send({ type: "inspect", propId } as never);
       },
+      onTargetHover: setHoverTarget,
     });
     const resizeObserver = new ResizeObserver(() => renderer.resize());
     resizeObserver.observe(host);
@@ -75,6 +77,9 @@ export function ThreeWorld() {
     <div className="three-stage">
       <div className="three-overlay" aria-label="3D travel">
         <span>At {currentLocation?.name ?? "Unknown"}</span>
+        <strong className="three-target-readout" aria-label="3D target">
+          {hoverTarget ? `${hoverTarget.action} ${hoverTarget.label}` : "Hover a scene target"}
+        </strong>
         <div className="three-location-strip">
           {destinations.map((location) => (
             <button type="button" key={location.id} onClick={() => void movePlayerToward(location.id)}>

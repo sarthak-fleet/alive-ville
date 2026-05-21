@@ -99,6 +99,14 @@ interface ThreeWorldRendererOptions {
   onNpcSelect?: (npcId: string) => void;
   onItemSelect?: (itemId: string) => void;
   onPropSelect?: (propId: string) => void;
+  onTargetHover?: (target: SceneTarget | null) => void;
+}
+
+export interface SceneTarget {
+  kind: "location" | "npc" | "item" | "prop";
+  id: string;
+  label: string;
+  action: string;
 }
 
 export class ThreeWorldRenderer {
@@ -118,18 +126,23 @@ export class ThreeWorldRenderer {
   private onNpcSelect: ((npcId: string) => void) | null = null;
   private onItemSelect: ((itemId: string) => void) | null = null;
   private onPropSelect: ((propId: string) => void) | null = null;
+  private onTargetHover: ((target: SceneTarget | null) => void) | null = null;
+  private hoverKey: string | null = null;
 
   constructor(private readonly container: HTMLElement, options: ThreeWorldRendererOptions = {}) {
     this.onLocationSelect = options.onLocationSelect ?? null;
     this.onNpcSelect = options.onNpcSelect ?? null;
     this.onItemSelect = options.onItemSelect ?? null;
     this.onPropSelect = options.onPropSelect ?? null;
+    this.onTargetHover = options.onTargetHover ?? null;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x070a0f, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
     this.renderer.domElement.addEventListener("pointerdown", this.handlePointerDown);
+    this.renderer.domElement.addEventListener("pointermove", this.handlePointerMove);
+    this.renderer.domElement.addEventListener("pointerleave", this.handlePointerLeave);
     this.scene.add(this.root);
     this.scene.fog = new THREE.FogExp2(0x0a0d12, 0.035);
     this.scene.add(new THREE.HemisphereLight(0xcfe7ff, 0x222018, 1.7));
@@ -205,42 +218,69 @@ export class ThreeWorldRenderer {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
     this.renderer.domElement.removeEventListener("pointerdown", this.handlePointerDown);
+    this.renderer.domElement.removeEventListener("pointermove", this.handlePointerMove);
+    this.renderer.domElement.removeEventListener("pointerleave", this.handlePointerLeave);
     disposeObjectTree(this.root);
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
+    const target = this.targetAt(event);
+    if (target?.kind === "npc") {
+      this.onNpcSelect?.(target.id);
+      return;
+    }
+    if (target?.kind === "item") {
+      this.onItemSelect?.(target.id);
+      return;
+    }
+    if (target?.kind === "prop") {
+      this.onPropSelect?.(target.id);
+      return;
+    }
+    if (target?.kind === "location") this.onLocationSelect?.(target.id);
+  };
+
+  private readonly handlePointerMove = (event: PointerEvent): void => {
+    const target = this.targetAt(event);
+    const key = target ? `${target.kind}:${target.id}` : null;
+    this.renderer.domElement.style.cursor = target ? "pointer" : "";
+    if (key === this.hoverKey) return;
+    this.hoverKey = key;
+    this.onTargetHover?.(target);
+  };
+
+  private readonly handlePointerLeave = (): void => {
+    this.renderer.domElement.style.cursor = "";
+    if (!this.hoverKey) return;
+    this.hoverKey = null;
+    this.onTargetHover?.(null);
+  };
+
+  private targetAt(event: PointerEvent): SceneTarget | null {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const actorId = this.firstHitId(this.pickableActors, "actorId");
-    if (actorId) {
-      this.onNpcSelect?.(actorId);
-      return;
-    }
-    const itemId = this.firstHitId(this.pickableItems, "itemId");
-    if (itemId) {
-      this.onItemSelect?.(itemId);
-      return;
-    }
-    const propId = this.firstHitId(this.pickableProps, "propId");
-    if (propId) {
-      this.onPropSelect?.(propId);
-      return;
-    }
-    const hit = this.raycaster.intersectObjects(this.pickableLocations, false)[0];
-    const locationId = hit?.object.userData["locationId"];
-    if (typeof locationId === "string") this.onLocationSelect?.(locationId);
-  };
+    return (
+      this.firstHitTarget(this.pickableActors) ??
+      this.firstHitTarget(this.pickableItems) ??
+      this.firstHitTarget(this.pickableProps) ??
+      this.firstHitTarget(this.pickableLocations)
+    );
+  }
 
-  private firstHitId(objects: THREE.Object3D[], key: "actorId" | "itemId" | "propId"): string | null {
+  private firstHitTarget(objects: THREE.Object3D[]): SceneTarget | null {
     if (objects.length === 0) return null;
     const hit = this.raycaster.intersectObjects(objects, false)[0];
-    const id = hit?.object.userData[key];
-    return typeof id === "string" ? id : null;
+    const target = hit?.object.userData["target"];
+    return isSceneTarget(target) ? target : null;
   }
+}
+
+function isSceneTarget(value: unknown): value is SceneTarget {
+  return Boolean(value && typeof value === "object" && typeof (value as SceneTarget).id === "string" && typeof (value as SceneTarget).label === "string");
 }
 
 function worldBounds(locations: Location[]): { width: number; depth: number } {
@@ -425,6 +465,7 @@ function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = `pick:${location.id}`;
   mesh.userData["locationId"] = location.id;
+  mesh.userData["target"] = { kind: "location", id: location.id, label: location.name, action: "Travel" } satisfies SceneTarget;
   mesh.position.set(location.x, location.height / 2, location.z);
   group.add(mesh);
 
@@ -529,6 +570,7 @@ function makeActorMesh(actor: SceneActorNode): THREE.Object3D {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = `pick:actor:${actor.id}`;
   mesh.userData["actorId"] = actor.id;
+  mesh.userData["target"] = { kind: "npc", id: actor.id, label: actor.name, action: "Talk" } satisfies SceneTarget;
   mesh.position.set(actor.x, height / 2 + 0.16, actor.z);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(radius * 1.45, 18),
@@ -547,6 +589,7 @@ function makeItemMesh(item: SceneItemNode): THREE.Object3D {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = item.name;
   mesh.userData["itemId"] = item.id;
+  mesh.userData["target"] = { kind: "item", id: item.id, label: item.name, action: "Pick up" } satisfies SceneTarget;
   mesh.position.set(item.x, 0.24, item.z);
   return mesh;
 }
@@ -561,6 +604,7 @@ function makePropMesh(prop: ScenePropNode): THREE.Object3D {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = prop.name;
   mesh.userData["propId"] = prop.id;
+  mesh.userData["target"] = { kind: "prop", id: prop.id, label: prop.name, action: "Inspect" } satisfies SceneTarget;
   mesh.position.set(prop.x, prop.inspected ? 0.11 : 0.16, prop.z);
   return mesh;
 }

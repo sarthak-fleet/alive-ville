@@ -208,6 +208,14 @@ button.primary:hover { filter: brightness(1.05); }
   font-size: 12px;
   font-weight: 800;
 }
+.three-target-readout {
+  display: block;
+  min-height: 18px;
+  margin: 0 0 7px;
+  color: rgba(248, 212, 78, 0.94);
+  font-size: 11px;
+  line-height: 1.2;
+}
 .three-location-strip {
   display: flex;
   flex-wrap: wrap;
