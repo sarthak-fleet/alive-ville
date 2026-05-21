@@ -69,8 +69,15 @@ async function runBrowserPlaytest(): Promise<void> {
     await expect(objective(page)).toContainText("Pick up");
     await clickObjective(page, "Pick up");
     await expect(objective(page)).toContainText("Bring Pruning shears to Mira");
+    await page.reload();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expect(objective(page)).toContainText("Bring Pruning shears to Mira");
     await clickButton(page, "Slot Load");
     await expect(objective(page)).toContainText("Find Pruning shears");
+    await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
     await clickObjective(page, "Go");
     await expect(objective(page)).toContainText("Pick up");
     await clickObjective(page, "Pick up");

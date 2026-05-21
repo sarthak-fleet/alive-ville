@@ -27,6 +27,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("web/src/pages/App.tsx", ["Recoverable app error", "Action failed", "clearError", "error && !world"]),
       source("web/src/world-travel.ts", ["movePlayerToward", "shortestLocationRoute", "keyboardDestinationFor", "keyDirection"]),
       source("tests/world-travel.test.ts", ["keyboardDestinationFor", "d", "ArrowDown", "ArrowLeft"]),
+      source("tests/playtests/first-loop.ts", ["Slot Save", "page.reload", "Slot Load", "three-host canvas", "At Herb Garden"]),
       source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels", "canvasPixelHash", "webglcontextlost", "webglcontextrestored", "3D renderer paused", "3D renderer restored", "travelStartHash", "Rotate camera right", "Reset camera", "keyboard.press(\"d\")", "keyboard.press(\"a\")", "Go Village Square", "Go Herb Garden", "At Village Square", "At Herb Garden", "Talk Mira", "dialogue-panel", "toHaveClass(/active/)", "Recoverable app error", "Dismiss", "header-actions", "expectWithinViewport", "expectNoVerticalOverlap"]),
       source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "atmosphere", "firefly", "dust"]),
       source("worlds/village.json", ["\"visual\"", "\"landmarks\"", "\"palette\""]),
