@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { activeObjectives, type Objective } from "../../../src/objectives.ts";
-import type { Exit, InteractableProp, Item, Location, Npc, World } from "../../../src/types.ts";
+import { type Exit, type InteractableProp, type Item, type Location, type Npc, timeOfDay, type World } from "../../../src/types.ts";
 
 const WORLD_SCALE = 0.018;
 const MIN_BUILDING_HEIGHT = 0.45;
@@ -85,6 +85,19 @@ export interface SceneAtmosphereNode {
   scale: number;
 }
 
+export interface SceneMoodNode {
+  phase: "dawn" | "day" | "dusk" | "night";
+  skyColor: string;
+  fogColor: string;
+  fogDensity: number;
+  hemisphereSky: string;
+  hemisphereGround: string;
+  hemisphereIntensity: number;
+  sunColor: string;
+  sunIntensity: number;
+  sunPosition: { x: number; y: number; z: number };
+}
+
 export interface WorldSceneModel {
   locations: SceneLocationNode[];
   paths: ScenePathNode[];
@@ -93,6 +106,7 @@ export interface WorldSceneModel {
   items: SceneItemNode[];
   props: ScenePropNode[];
   objectives: SceneObjectiveNode[];
+  mood: SceneMoodNode;
   bounds: { width: number; depth: number };
   cameraTarget: { x: number; z: number };
 }
@@ -126,6 +140,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
     items,
     props,
     objectives,
+    mood: sceneMoodForClock(world),
     bounds,
     cameraTarget: target,
   };
@@ -153,6 +168,8 @@ export class ThreeWorldRenderer {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(50, 1, 0.1, 120);
+  private readonly hemisphereLight = new THREE.HemisphereLight(0xcfe7ff, 0x222018, 1.7);
+  private readonly sunLight = new THREE.DirectionalLight(0xffe1a0, 2.2);
   private readonly root = new THREE.Group();
   private readonly raycaster = new THREE.Raycaster();
   private readonly pointer = new THREE.Vector2();
@@ -198,18 +215,16 @@ export class ThreeWorldRenderer {
     this.renderer.domElement.addEventListener("webglcontextrestored", this.handleContextRestored);
     this.scene.add(this.root);
     this.scene.fog = new THREE.FogExp2(0x0a0d12, 0.035);
-    this.scene.add(new THREE.HemisphereLight(0xcfe7ff, 0x222018, 1.7));
-    const sun = new THREE.DirectionalLight(0xffe1a0, 2.2);
-    sun.position.set(6, 10, 5);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 32;
-    sun.shadow.camera.left = -10;
-    sun.shadow.camera.right = 14;
-    sun.shadow.camera.top = 14;
-    sun.shadow.camera.bottom = -10;
-    this.scene.add(sun);
+    this.sunLight.position.set(6, 10, 5);
+    this.sunLight.castShadow = true;
+    this.sunLight.shadow.mapSize.set(1024, 1024);
+    this.sunLight.shadow.camera.near = 1;
+    this.sunLight.shadow.camera.far = 32;
+    this.sunLight.shadow.camera.left = -10;
+    this.sunLight.shadow.camera.right = 14;
+    this.sunLight.shadow.camera.top = 14;
+    this.sunLight.shadow.camera.bottom = -10;
+    this.scene.add(this.hemisphereLight, this.sunLight);
     this.resize();
   }
 
@@ -226,6 +241,7 @@ export class ThreeWorldRenderer {
     this.currentWorld = world;
     if (this.contextLost) return;
     const model = buildWorldSceneModel(world);
+    this.applySceneMood(model.mood);
     disposeObjectTree(this.root);
     this.root.clear();
     this.pickableLocations.length = 0;
@@ -376,6 +392,17 @@ export class ThreeWorldRenderer {
     );
     this.camera.lookAt(this.cameraTarget.x, 0.25, this.cameraTarget.z);
     this.render();
+  }
+
+  private applySceneMood(mood: SceneMoodNode): void {
+    this.renderer.setClearColor(new THREE.Color(mood.skyColor), 1);
+    this.scene.fog = new THREE.FogExp2(new THREE.Color(mood.fogColor), mood.fogDensity);
+    this.hemisphereLight.color.set(mood.hemisphereSky);
+    this.hemisphereLight.groundColor.set(mood.hemisphereGround);
+    this.hemisphereLight.intensity = mood.hemisphereIntensity;
+    this.sunLight.color.set(mood.sunColor);
+    this.sunLight.intensity = mood.sunIntensity;
+    this.sunLight.position.set(mood.sunPosition.x, mood.sunPosition.y, mood.sunPosition.z);
   }
 
   private actorMotion(actor: SceneActorNode): TravelMotion | null {
@@ -595,6 +622,64 @@ function atmosphereColor(kind: SceneAtmosphereNode["kind"], location: SceneLocat
   if (kind === "mist") return "#9fc3ff";
   if (kind === "dust") return "#b9a58f";
   return location.accentColor;
+}
+
+function sceneMoodForClock(world: World): SceneMoodNode {
+  const phase = timeOfDay(world.clock);
+  if (phase === "dawn") {
+    return {
+      phase,
+      skyColor: "#101827",
+      fogColor: "#27384c",
+      fogDensity: 0.04,
+      hemisphereSky: "#ffd59a",
+      hemisphereGround: "#263128",
+      hemisphereIntensity: 1.55,
+      sunColor: "#ffd28a",
+      sunIntensity: 2,
+      sunPosition: { x: -4.5, y: 7.2, z: 6.6 },
+    };
+  }
+  if (phase === "dusk") {
+    return {
+      phase,
+      skyColor: "#130f1c",
+      fogColor: "#3b2b3d",
+      fogDensity: 0.047,
+      hemisphereSky: "#ff9f7a",
+      hemisphereGround: "#1b202d",
+      hemisphereIntensity: 1.3,
+      sunColor: "#ff8f5a",
+      sunIntensity: 1.55,
+      sunPosition: { x: 6.8, y: 4.6, z: -4.2 },
+    };
+  }
+  if (phase === "night") {
+    return {
+      phase,
+      skyColor: "#050812",
+      fogColor: "#111827",
+      fogDensity: 0.058,
+      hemisphereSky: "#7fa8ff",
+      hemisphereGround: "#090a0f",
+      hemisphereIntensity: 0.9,
+      sunColor: "#89a7ff",
+      sunIntensity: 0.65,
+      sunPosition: { x: -5.8, y: 6.2, z: -4.8 },
+    };
+  }
+  return {
+    phase,
+    skyColor: "#07111d",
+    fogColor: "#0a0d12",
+    fogDensity: 0.035,
+    hemisphereSky: "#cfe7ff",
+    hemisphereGround: "#222018",
+    hemisphereIntensity: 1.7,
+    sunColor: "#ffe1a0",
+    sunIntensity: 2.2,
+    sunPosition: { x: 6, y: 10, z: 5 },
+  };
 }
 
 function playerNode(world: World, location: Location | undefined): SceneActorNode | null {

@@ -81,4 +81,24 @@ describe("3D world scene model", () => {
     expect(activeObjective?.x).not.toBe(openObjective?.x);
     expect(activeObjective?.z).not.toBe(openObjective?.z);
   });
+
+  test("changes 3D lighting mood with the world clock", () => {
+    const world = fixture();
+
+    world.clock.hour = 7;
+    const dawn = buildWorldSceneModel(world).mood;
+    world.clock.hour = 14;
+    const day = buildWorldSceneModel(world).mood;
+    world.clock.hour = 20;
+    const dusk = buildWorldSceneModel(world).mood;
+    world.clock.hour = 23;
+    const night = buildWorldSceneModel(world).mood;
+
+    expect(dawn).toMatchObject({ phase: "dawn", sunColor: "#ffd28a" });
+    expect(day).toMatchObject({ phase: "day", sunIntensity: 2.2 });
+    expect(dusk).toMatchObject({ phase: "dusk", fogColor: "#3b2b3d" });
+    expect(night).toMatchObject({ phase: "night", skyColor: "#050812" });
+    expect(night.sunIntensity).toBeLessThan(day.sunIntensity);
+    expect(night.fogDensity).toBeGreaterThan(day.fogDensity);
+  });
 });
