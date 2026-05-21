@@ -20,6 +20,11 @@ export function ThreeWorld() {
     if (isInteractiveTarget(event.target)) return;
     const latestWorld = useWorldStore.getState().world;
     if (!latestWorld) return;
+    if (event.key.toLowerCase() === "e" && hoverTarget) {
+      event.preventDefault();
+      activateSceneTarget(hoverTarget);
+      return;
+    }
     const destination = keyboardDestinationFor(latestWorld, event.key);
     if (!destination) return;
     event.preventDefault();
@@ -31,36 +36,9 @@ export function ThreeWorld() {
     if (!host) return;
     const renderer = new ThreeWorldRenderer(host, {
       onLocationSelect: (locationId) => void movePlayerToward(locationId),
-      onNpcSelect: (npcId) => {
-        const world = useWorldStore.getState().world;
-        const npc = world?.npcs.find((candidate) => candidate.id === npcId);
-        if (!world || !npc) return;
-        if (npc.locationId !== world.player.locationId) {
-          void movePlayerToward(npc.locationId);
-          return;
-        }
-        useWorldStore.getState().openDrawer(npcId);
-      },
-      onItemSelect: (itemId) => {
-        const world = useWorldStore.getState().world;
-        const item = world?.items.find((candidate) => candidate.id === itemId);
-        if (!world || !item?.locationId) return;
-        if (item.locationId !== world.player.locationId) {
-          void movePlayerToward(item.locationId);
-          return;
-        }
-        void useWorldStore.getState().send({ type: "pickup", itemId } as never);
-      },
-      onPropSelect: (propId) => {
-        const world = useWorldStore.getState().world;
-        const prop = world?.interactables?.find((candidate) => candidate.id === propId);
-        if (!world || !prop) return;
-        if (prop.locationId !== world.player.locationId) {
-          void movePlayerToward(prop.locationId);
-          return;
-        }
-        void useWorldStore.getState().send({ type: "inspect", propId } as never);
-      },
+      onNpcSelect: (npcId) => activateSceneTarget({ kind: "npc", id: npcId, label: npcId, action: "Talk" }),
+      onItemSelect: (itemId) => activateSceneTarget({ kind: "item", id: itemId, label: itemId, action: "Pick up" }),
+      onPropSelect: (propId) => activateSceneTarget({ kind: "prop", id: propId, label: propId, action: "Inspect" }),
       onTargetHover: setHoverTarget,
       onContextStatus: setContextStatus,
     });
@@ -147,6 +125,43 @@ function reachableLocations(world: World): World["locations"] {
 
 function isInteractiveTarget(target: EventTarget): boolean {
   return target instanceof HTMLElement && Boolean(target.closest("button, input, select, textarea, summary, a"));
+}
+
+function activateSceneTarget(target: SceneTarget): void {
+  if (target.kind === "location") {
+    void movePlayerToward(target.id);
+    return;
+  }
+  if (target.kind === "npc") {
+    const world = useWorldStore.getState().world;
+    const npc = world?.npcs.find((candidate) => candidate.id === target.id);
+    if (!world || !npc) return;
+    if (npc.locationId !== world.player.locationId) {
+      void movePlayerToward(npc.locationId);
+      return;
+    }
+    useWorldStore.getState().openDrawer(target.id);
+    return;
+  }
+  if (target.kind === "item") {
+    const world = useWorldStore.getState().world;
+    const item = world?.items.find((candidate) => candidate.id === target.id);
+    if (!world || !item?.locationId) return;
+    if (item.locationId !== world.player.locationId) {
+      void movePlayerToward(item.locationId);
+      return;
+    }
+    void useWorldStore.getState().send({ type: "pickup", itemId: target.id } as never);
+    return;
+  }
+  const world = useWorldStore.getState().world;
+  const prop = world?.interactables?.find((candidate) => candidate.id === target.id);
+  if (!world || !prop) return;
+  if (prop.locationId !== world.player.locationId) {
+    void movePlayerToward(prop.locationId);
+    return;
+  }
+  void useWorldStore.getState().send({ type: "inspect", propId: target.id } as never);
 }
 
 function latestAutonomousActivity(summary: TickSummary): string | null {

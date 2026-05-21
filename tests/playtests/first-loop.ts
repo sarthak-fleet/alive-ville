@@ -77,7 +77,9 @@ async function runBrowserPlaytest(): Promise<void> {
     await expect(objective(page)).toContainText("Pick up");
     await clickThreeTarget(page, "Pick up Pruning shears");
     await expect(objective(page)).toContainText("Bring Pruning shears to Mira");
-    await clickThreeTarget(page, "Inspect Sooty tool rack");
+    await hoverThreeTarget(page, "Inspect Sooty tool rack");
+    await page.locator(".three-host").focus();
+    await page.keyboard.press("e");
     await expect(page.locator(".outcome-toast")).toContainText("Fresh soot outlines a missing pair of shears");
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
@@ -124,6 +126,11 @@ async function clickButton(page: Page, label: string): Promise<void> {
 }
 
 async function clickThreeTarget(page: Page, label: string): Promise<void> {
+  const point = await hoverThreeTarget(page, label);
+  await page.mouse.click(point.x, point.y);
+}
+
+async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number; y: number }> {
   const canvas = page.locator(".three-host canvas");
   const box = await canvas.boundingBox();
   if (!box) throw new Error("3D canvas is not visible");
@@ -136,9 +143,7 @@ async function clickThreeTarget(page: Page, label: string): Promise<void> {
       await page.waitForTimeout(15);
       const readout = await page.getByLabel("3D target").innerText();
       if (readout !== "Hover a scene target") seen.add(readout);
-      if (!readout.includes(label)) continue;
-      await page.mouse.click(point.x, point.y);
-      return;
+      if (readout.includes(label)) return point;
     }
   }
 
