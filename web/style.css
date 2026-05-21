@@ -1114,6 +1114,13 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
     left: 10px;
     width: min(300px, calc(100vw - 20px));
   }
+  .three-camera-controls {
+    grid-template-columns: 36px minmax(58px, 1fr) 36px 62px;
+  }
+  .three-camera-controls button,
+  .three-location-strip button {
+    min-height: 34px;
+  }
   .three-location-strip button {
     max-width: 132px;
   }

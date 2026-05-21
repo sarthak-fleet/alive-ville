@@ -114,6 +114,13 @@ async function runAliveVillagePlaytest(): Promise<void> {
       await expect(mobile.getByRole("button", { name: "3D" })).toHaveClass(/active/);
       await expect(mobile.locator(".three-host canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, ".three-host canvas")).toBeGreaterThan(40);
+      await expect(mobile.getByLabel("3D travel")).toContainText("At Herb Garden");
+      await expect(mobile.getByRole("button", { name: "Go Village Square" })).toBeVisible();
+      await mobile.getByRole("button", { name: "Go Village Square" }).click();
+      await expect(mobile.getByLabel("3D travel")).toContainText("At Village Square");
+      await expect(mobile.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
+      await mobile.getByRole("button", { name: "Go Herb Garden" }).click();
+      await expect(mobile.getByLabel("3D travel")).toContainText("At Herb Garden");
       await expectNoVerticalOverlap(mobile, ".view-toggle", ".three-overlay");
       await expectNoVerticalOverlap(mobile, ".three-overlay", ".objective-tracker");
       await mobile.screenshot({ path: join(ARTIFACT_DIR, "04-three-world-mobile.png") });
