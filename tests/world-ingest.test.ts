@@ -146,6 +146,62 @@ describe("generic world ingest", () => {
     expect(JSON.stringify(pkg)).not.toMatch(/Anime Ingest Slice|anime conflict|anime_origin|anime_report|anime_antagonist|"id":"(?:mira|tomas|lena|orrin|pax|shears|bellows_leather|blue_ember|rumor_note|lantern)"/);
   });
 
+  test("compiles an undersea salvage genre with source-derived visuals and playable objectives", () => {
+    const world = worldSourceToWorld(source("../fixtures/worlds/abyssal-source.json"));
+    const pkg = storyPackageFromWorld(world);
+
+    expect(world.id).toBe("abyssal_salvage");
+    expect(world.name).toBe("Abyssal Salvage Playable Slice");
+    expect(world.story?.title).toBe("Abyssal Salvage: World Ingest Slice");
+    expect(world.story?.currentObjective).toBe("Stabilize Reef Dome before the core conflict escalates.");
+    expect(world.story?.opening).not.toMatch(/anime/i);
+    expect(world.locations.map((location) => location.id)).toEqual([
+      "reef_dome",
+      "sonar_array",
+      "kelp_quarters",
+      "dock_ledger",
+      "pressure_gate",
+      "wreck_engine",
+    ]);
+    expect(world.locations.find((location) => location.id === "reef_dome")?.visual).toMatchObject({
+      palette: { ground: "#0f3340", structure: "#287085", accent: "#72f1d0" },
+      landmarks: expect.arrayContaining(["notice_board", "reef_spire"]),
+    });
+    expect(world.locations.find((location) => location.id === "sonar_array")?.visual).toMatchObject({
+      palette: { ground: "#102a43", structure: "#3f7fa6", accent: "#72f1d0" },
+      landmarks: ["sonar_dish"],
+    });
+    expect(world.npcs.map((npc) => npc.id)).toEqual(["neri", "paxel", "juno", "vale", "morrow"]);
+    expect(world.quests?.map((quest) => [quest.id, quest.giverId])).toEqual([
+      ["recover_pearl_key", "neri"],
+      ["recover_turbine_gear", "paxel"],
+      ["recover_coral_shell", "juno"],
+    ]);
+    expect(world.items.find((item) => item.id === "pearl_key")?.visual).toMatchObject({
+      material: "metal",
+      shape: "token",
+    });
+    expect(world.items.find((item) => item.id === "turbine_gear")?.visual).toMatchObject({
+      material: "metal",
+      shape: "gear",
+    });
+    expect(world.items.find((item) => item.id === "coral_shell")?.visual).toMatchObject({
+      material: "organic",
+      shape: "scale",
+    });
+    expect(world.tensions?.[0]).toMatchObject({
+      id: "a_false_breach_alarm_threatens_the_pressure_gate",
+      involvedIds: ["morrow", "pressure_gate"],
+    });
+    expect(activeObjectives(world)[0]).toMatchObject({
+      questId: "recover_pearl_key",
+      targetType: "npc",
+      targetId: "neri",
+    });
+    expect(validateStoryPackage(pkg)).toEqual([]);
+    expect(JSON.stringify(pkg)).not.toMatch(/Anime Ingest Slice|anime conflict|anime_origin|anime_report|anime_antagonist/);
+  });
+
   test("keeps source-derived generic quest IDs playable through the first objective loop", () => {
     const world = worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json"));
 

@@ -1,0 +1,83 @@
+{
+  "title": "Abyssal Salvage",
+  "worldId": "abyssal_salvage",
+  "synopsis": "An undersea salvage source used to prove the world compiler can turn non-anime ocean exploration material into a playable slice. Divers in a reef dome must recover pressure seals, repair sonar gear, and expose a staged hull breach before the settlement floods.",
+  "themes": ["undersea salvage", "reef settlements", "pressure locks", "staged disaster"],
+  "locations": [
+    { "name": "Reef Dome", "role": "hub", "description": "A glass habitat threaded through coral ribs and blue maintenance lights." },
+    { "name": "Sonar Array", "role": "repair site", "description": "A ring of hydrophones listening for hull stress beyond the reef." },
+    { "name": "Kelp Quarters", "role": "home route", "description": "Sleeping pods and kelp curtains tucked against the dome wall." },
+    { "name": "Dock Ledger", "role": "report station", "description": "A watertight counter where crews log salvage claims and oxygen debt." },
+    { "name": "Pressure Gate", "role": "threat site", "description": "A heavy lock marked by fresh breach warnings and drifting silt." },
+    { "name": "Wreck Engine", "role": "danger route", "description": "A sunken turbine room where salvage lights pulse through rust." }
+  ],
+  "factions": [
+    { "name": "Dome Salvagers", "goals": ["keep the reef dome sealed", "recover useful wreck parts"], "resources": ["sonar charts", "pressure suits"], "reputation": 2 },
+    { "name": "Flood Claim Crew", "goals": ["fake an evacuation", "claim abandoned salvage"], "resources": ["breach tags", "cut valves"], "reputation": -2 }
+  ],
+  "characters": [
+    {
+      "name": "Neri",
+      "role": "dive captain",
+      "faction": "Dome Salvagers",
+      "description": "A calm captain trying to keep the reef dome from evacuating too early.",
+      "look": { "palette": ["#72f1d0", "#0f3340", "#f5d782"], "visualTags": ["diver", "captain", "reef map"] },
+      "goals": ["recover the pearl key before the pressure gate locks", "keep new divers calm"],
+      "memories": ["The pearl key vanished near the Sonar Array after the breach alarm."]
+    },
+    {
+      "name": "Paxel",
+      "role": "sonar mechanic",
+      "faction": "Dome Salvagers",
+      "description": "A patient mechanic who needs a turbine gear to confirm the breach readings.",
+      "look": { "palette": ["#3f7fa6", "#102a43", "#d8f3dc"], "visualTags": ["mechanic", "sonar", "pressure suit"] },
+      "goals": ["recover a turbine gear from the Wreck Engine", "restart the sonar array"],
+      "memories": ["A turbine gear slipped into the Wreck Engine during the staged alarm."]
+    },
+    {
+      "name": "Juno",
+      "role": "dock witness",
+      "faction": "Dome Salvagers",
+      "description": "A ledger keeper who will not accuse anyone without physical proof.",
+      "look": { "palette": ["#9fc3ff", "#f7edd3", "#17324a"], "visualTags": ["witness", "ledger", "oxygen tags"] },
+      "goals": ["collect a coral shell from the Pressure Gate", "verify the salvage log"],
+      "memories": ["A coral shell was wedged beside a fake breach tag."]
+    },
+    {
+      "name": "Vale",
+      "role": "reef medic",
+      "faction": "Dome Salvagers",
+      "description": "A careful medic who notices when panic rises before oxygen levels drop.",
+      "look": { "palette": ["#7fd0ff", "#17324a", "#b5e48c"], "visualTags": ["medic", "reef charms", "sealant pack"] },
+      "goals": ["watch oxygen levels", "protect the kelp quarters"],
+      "memories": ["The oxygen readings are stable; the breach alarm feels planted."]
+    },
+    {
+      "name": "Morrow",
+      "role": "claim saboteur",
+      "faction": "Flood Claim Crew",
+      "description": "A smiling saboteur tagging false hull breaches to empty the dome.",
+      "look": { "palette": ["#34243f", "#e05f7a", "#ddb08a"], "visualTags": ["saboteur", "breach tags", "cut valve"] },
+      "goals": ["force the Pressure Gate to close", "claim abandoned wreck rights"],
+      "secrets": ["Morrow planted the fake breach tag at the Pressure Gate."],
+      "memories": ["False breach tags work best when crews panic before checking the seals."]
+    }
+  ],
+  "conflicts": [
+    {
+      "title": "A false breach alarm threatens the pressure gate",
+      "pressure": 55,
+      "involved": ["Morrow", "Neri", "Pressure Gate"],
+      "antagonist": "Morrow",
+      "objective": "Raise evacuation panic with false breach tags before the dock ledger proof is gathered.",
+      "clue": "Fresh pink sealant on the Pressure Gate tag points back toward the Reef Dome."
+    }
+  ],
+  "artifacts": [
+    { "name": "Pearl key", "description": "A white metal key that opens the pressure gate override.", "location": "Sonar Array", "clue": "The key slid beneath a hydrophone bracket." },
+    { "name": "Turbine gear", "description": "A blue steel gear needed to restart the sonar motor.", "location": "Wreck Engine", "clue": "The gear fell during the staged breach alarm." },
+    { "name": "Coral shell", "description": "A reef shell scraped with false breach paint.", "location": "Pressure Gate", "clue": "The shell still holds fresh sealant flakes." },
+    { "name": "Pressure map", "description": "A waterproof map showing evacuation valve timing.", "location": "Pressure Gate", "clue": "The map redirects crews away from the dock ledger." },
+    { "name": "Sonar radio", "description": "A sealed radio used to confirm real hull stress.", "location": "Dock Ledger", "clue": "The radio needs proof before ordering evacuation." }
+  ]
+}

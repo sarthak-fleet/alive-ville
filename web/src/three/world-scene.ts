@@ -639,6 +639,7 @@ function atmosphereNodesFor(location: SceneLocationNode): SceneAtmosphereNode[] 
 function atmosphereKindFor(location: SceneLocationNode): SceneAtmosphereNode["kind"] {
   const text = `${location.name} ${location.visualTags.join(" ")} ${location.landmarks.join(" ")}`.toLowerCase();
   if (/bridge|overpass|alley|threat|monster|ruin/.test(text)) return "dust";
+  if (/reef|coral|kelp|subsea|undersea|abyss|dome|pressure/.test(text)) return "mist";
   if (/cloud|fog|sky|harbor|rookery/.test(text)) return "mist";
   if (/forge|engine|metal|soot|cyborg|training/.test(text)) return "spark";
   if (/garden|wood|herb|home/.test(text)) return "firefly";
@@ -1008,6 +1009,23 @@ function makeLandmarkMesh(kind: string, location: SceneLocationNode): THREE.Obje
     const crown = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 8), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.82 }));
     crown.position.set(x, location.height + 0.48, z);
     group.add(trunk, crown);
+    return group;
+  }
+  if (kind === "reef_spire") {
+    const base = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.62, 7), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.86 }));
+    base.position.set(x, location.height + 0.31, z);
+    const coral = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.18, roughness: 0.74 }));
+    coral.position.set(x + 0.08, location.height + 0.66, z - 0.02);
+    group.add(base, coral);
+    return group;
+  }
+  if (kind === "sonar_dish") {
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.58, 8), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.56, metalness: 0.22 }));
+    mast.position.set(x, location.height + 0.29, z);
+    const dish = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: accent, roughness: 0.34, metalness: 0.18, side: THREE.DoubleSide }));
+    dish.position.set(x, location.height + 0.64, z);
+    dish.rotation.x = Math.PI * 0.34;
+    group.add(mast, dish);
     return group;
   }
   if (kind === "bridge_span") {

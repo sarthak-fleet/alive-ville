@@ -98,6 +98,7 @@ describe("3D world scene model", () => {
   test("uses source-derived location palettes for visually distinct imported worlds", () => {
     const skyfront = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json")));
     const conservatory = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/conservatory-source.json")));
+    const abyssal = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/abyssal-source.json")));
 
     expect(skyfront.locations.find((location) => location.id === "harbor_ring")).toMatchObject({
       groundColor: "#1f3f58",
@@ -114,7 +115,21 @@ describe("3D world scene model", () => {
       structureColor: "#6b7f99",
       accentColor: "#9fc3ff",
     });
+    expect(abyssal.locations.find((location) => location.id === "reef_dome")).toMatchObject({
+      groundColor: "#0f3340",
+      structureColor: "#287085",
+      accentColor: "#72f1d0",
+      landmarks: expect.arrayContaining(["reef_spire"]),
+    });
+    expect(abyssal.locations.find((location) => location.id === "sonar_array")).toMatchObject({
+      groundColor: "#102a43",
+      structureColor: "#3f7fa6",
+      landmarks: ["sonar_dish"],
+    });
+    expect(abyssal.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["mist", "signal"]));
     expect(conservatory.locations.find((location) => location.id === "atrium_gate")?.groundColor)
+      .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
+    expect(abyssal.locations.find((location) => location.id === "reef_dome")?.groundColor)
       .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
   });
 

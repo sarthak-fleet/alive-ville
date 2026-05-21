@@ -393,6 +393,14 @@ function artifactVisualFor(artifact: Required<AnimeArtifactDraft>): ItemVisualDe
       visualTags,
     };
   }
+  if (/scale|bone|shell|fang/.test(text)) {
+    return {
+      material: "organic",
+      shape: "scale",
+      palette: { primary: "#7fd0ff", emissive: "#17324a" },
+      visualTags,
+    };
+  }
   if (/flag|scrap|cloth|torn|paint/.test(text)) {
     return {
       material: "cloth",
@@ -406,14 +414,6 @@ function artifactVisualFor(artifact: Required<AnimeArtifactDraft>): ItemVisualDe
       material: "paper",
       shape: "note",
       palette: { primary: "#f7e8a5", emissive: "#3d331a" },
-      visualTags,
-    };
-  }
-  if (/scale|bone|shell|fang/.test(text)) {
-    return {
-      material: "organic",
-      shape: "scale",
-      palette: { primary: "#7fd0ff", emissive: "#17324a" },
       visualTags,
     };
   }
@@ -514,6 +514,12 @@ function locationPaletteFor(index: number, draft: AnimeLocationDraft): { ground:
   if (/cloud|sky|harbor|dock|mast|rookery|courier|bird/.test(text)) {
     return { ground: "#1f3f58", structure: "#6fa6c8", accent: "#f5d782" };
   }
+  if (/sonar|hydrophone|beacon|radar/.test(text)) {
+    return { ground: "#102a43", structure: "#3f7fa6", accent: "#72f1d0" };
+  }
+  if (/reef|coral|kelp|subsea|undersea|abyss|dome|pressure|wreck|salvage/.test(text)) {
+    return { ground: "#0f3340", structure: "#287085", accent: "#72f1d0" };
+  }
   if (/engine|gear|clockwork|machine|piston|repair/.test(text)) {
     return { ground: "#3a3028", structure: "#9b6438", accent: "#f08a38" };
   }
@@ -542,8 +548,11 @@ function locationPaletteFor(index: number, draft: AnimeLocationDraft): { ground:
 function locationLandmarksFor(index: number, draft: AnimeLocationDraft): string[] {
   const text = `${draft.name} ${draft.role ?? ""} ${draft.description ?? ""}`.toLowerCase();
   const inferred = new Set<string>();
-  if (/plaza|hub|ring|square/.test(text)) inferred.add("notice_board");
-  if (/training|forge|repair|mast|tower/.test(text)) inferred.add(index === 1 ? "forge_chimney" : "signal_tower");
+  const hasSonar = /sonar|hydrophone|beacon|radar|array/.test(text);
+  if (/plaza|hub|square/.test(text)) inferred.add("notice_board");
+  if (/reef|coral|kelp|subsea|undersea|abyss|dome/.test(text) && !hasSonar) inferred.add("reef_spire");
+  if (hasSonar) inferred.add("sonar_dish");
+  if (/training|forge|repair|mast|tower/.test(text) && !hasSonar) inferred.add(index === 1 ? "forge_chimney" : "signal_tower");
   if (/garden|apartment|home|rookery|deck/.test(text)) inferred.add(/apartment/.test(text) ? "apartment_tower" : "garden_planter");
   if (/kiosk|guild|counter|report|inn/.test(text)) inferred.add(/guild|counter/.test(text) ? "kiosk_sign" : "lantern_post");
   if (/bridge|overpass|threat|chain/.test(text)) inferred.add("bridge_span");
