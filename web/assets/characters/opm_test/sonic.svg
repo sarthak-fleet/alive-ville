@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="black-haired ninja rival portrait">
+  <rect width="256" height="256" rx="28" fill="#1b1725"/>
+  <path d="M56 234c11-60 39-91 72-91s61 31 72 91z" fill="#2b2337" stroke="#0b0712" stroke-width="6"/>
+  <circle cx="128" cy="92" r="42" fill="#ddb08a" stroke="#0b0712" stroke-width="6"/>
+  <path d="M75 91c5-42 25-64 54-64s49 22 53 65c-33-17-70-17-107-1z" fill="#15131c" stroke="#0b0712" stroke-width="6"/>
+  <path d="M81 72c26-25 65-27 94-1" stroke="#2f2940" stroke-width="11" stroke-linecap="round"/>
+  <path d="M73 101c-5 31-21 52-48 64 30 5 56-7 78-37z" fill="#15131c"/>
+  <path d="M183 101c5 31 21 52 48 64-30 5-56-7-78-37z" fill="#15131c"/>
+  <circle cx="111" cy="96" r="5" fill="#111"/>
+  <circle cx="145" cy="96" r="5" fill="#111"/>
+  <path d="M113 119c13 6 27 6 40 0" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+  <path d="M75 180h106" stroke="#8d5cff" stroke-width="9" stroke-linecap="round"/>
+  <path d="M103 151l50 82" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+</svg>

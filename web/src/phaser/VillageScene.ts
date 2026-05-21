@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 
+import { ambientBarksForLocation } from "../../../src/ambient.ts";
+import type { CombatMove } from "../../../src/combat.ts";
 import { activeObjectives, type Objective } from "../../../src/objectives.ts";
-import type { Location, Npc, World } from "../../../src/types.ts";
+import type { InteractableProp, Location, Npc, World } from "../../../src/types.ts";
 import { isNight, timeOfDay } from "../../../src/types.ts";
 import { makeActor } from "./actor-render.ts";
 import {
@@ -32,6 +34,7 @@ interface ActorState {
   home: Phaser.Math.Vector2;
   target: Phaser.Math.Vector2 | null;
   nextWanderAt: number;
+  lastStepAt: number;
 }
 
 interface MinimapState {
@@ -48,6 +51,7 @@ interface VillageSceneHandlers {
   onNpcClick?: (npcId: string) => void;
   onLocationClick?: (locationId: string) => void;
   onItemClick?: (itemId: string) => void;
+  onPropClick?: (propId: string) => void;
 }
 
 interface RectArea extends Omit<MapRectArea, "door"> {
@@ -80,20 +84,33 @@ const BUILDING_PALETTES: Record<string, BuildingPalette> = {
   wood: { wall: 0x486b55, wallDark: 0x2f493a, roof: 0x6f9a62, roofDark: 0x41633f, trim: 0xdbcf84, sign: "Wood Gate" },
 };
 
+const ROOM_ENTRY_OVERRIDES: Record<string, { x: number; y: number }> = {
+  forge: { x: 315, y: 292 },
+  garden: { x: 1342, y: 298 },
+  inn: { x: 842, y: 792 },
+  bridge: { x: 356, y: 794 },
+  wood: { x: 1192, y: 842 },
+};
+
 export class VillageScene extends Phaser.Scene {
   private handlers: VillageSceneHandlers;
   private ready = false;
   private world: World | null = null;
   private player?: Phaser.GameObjects.Container;
+  private playerAppearanceKey = "";
   private destination: Phaser.Math.Vector2 | null = null;
   private destinationQueue: Phaser.Math.Vector2[] = [];
+  private destinationIgnoresCollision = false;
   private destinationMarker?: Phaser.GameObjects.Container;
   private pendingLocation: string | null = null;
   private pendingNpcId: string | null = null;
   private pendingItemId: string | null = null;
+  private pendingPropId: string | null = null;
   private playerFacing = new Phaser.Math.Vector2(0, 1);
+  private lastPlayerStepAt = 0;
   private actors = new Map<string, ActorState>();
   private itemSprites = new Map<string, Phaser.GameObjects.Container>();
+  private propSprites = new Map<string, Phaser.GameObjects.Container>();
   private locationContainers = new Map<string, Phaser.GameObjects.Container>();
   private groundLayer?: Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer;
   private obstacles: Obstacle[] = [];
@@ -103,6 +120,7 @@ export class VillageScene extends Phaser.Scene {
   private objectivePins: Phaser.GameObjects.Container[] = [];
   private tintRect?: Phaser.GameObjects.Rectangle;
   private lamps: Phaser.GameObjects.Container[] = [];
+  private nextAmbientBarkAt = 0;
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys?: Record<string, Phaser.Input.Keyboard.Key>;
 
@@ -156,14 +174,175 @@ export class VillageScene extends Phaser.Scene {
   }
 
   previewPlayerMove(locationId: string) {
-    const area = this.area(locationId);
-    if (!area) return;
-    this.setDestination(area.door.x, area.door.y, { locationId });
+    this.setTravelDestination(locationId);
   }
 
   flashActor(actorId: string) {
     const actor = this.actors.get(actorId);
     if (actor) actor.flashUntil = this.time.now + 1600;
+  }
+
+  playCombatFx(actorId: string, style: CombatMove["style"] = "strike", moveLabel?: string) {
+    const actor = this.actors.get(actorId);
+    const x = actor?.graphic.x ?? this.player?.x ?? this.cameras.main.midPoint.x;
+    const y = actor?.graphic.y ?? this.player?.y ?? this.cameras.main.midPoint.y;
+    const colors: Record<CombatMove["style"], { main: number; accent: number; label: string; shake: number }> = {
+      strike: { main: 0xf8d44e, accent: 0xffffff, label: "HIT", shake: 0.006 },
+      rush: { main: 0x9fc3ff, accent: 0xf8f1c4, label: "RUSH", shake: 0.008 },
+      counter: { main: 0x7ed26d, accent: 0xeaf5ff, label: "COUNTER", shake: 0.006 },
+      guard: { main: 0x8a98ac, accent: 0xeaf5ff, label: "GUARD", shake: 0.004 },
+      special: { main: 0xe8846b, accent: 0xf8d44e, label: "SPECIAL", shake: 0.01 },
+      finisher: { main: 0xf6d85f, accent: 0xffffff, label: "FINISH", shake: 0.014 },
+    };
+    const fx = colors[style];
+    this.cameras.main.shake(style === "finisher" ? 230 : 140, fx.shake);
+    this.playFightSceneStaging(x, y, moveLabel ?? fx.label, style, fx);
+
+    const burst = this.add.circle(x, y - 28, 10, fx.main, 0.82)
+      .setStrokeStyle(3, fx.accent, 0.86)
+      .setDepth(Math.round(y) + 160);
+    const ring = this.add.circle(x, y - 28, 18)
+      .setStrokeStyle(3, fx.main, 0.92)
+      .setDepth(Math.round(y) + 159);
+    const slash = this.add.rectangle(x, y - 30, style === "rush" ? 72 : 54, 5, fx.accent, 0.84)
+      .setRotation(style === "counter" ? -0.62 : 0.42)
+      .setDepth(Math.round(y) + 161);
+    const impactArc = this.add.arc(x, y - 30, style === "finisher" ? 42 : 30, 210, 340, false, fx.main, 0.44)
+      .setStrokeStyle(7, fx.main, 0.8)
+      .setDepth(Math.round(y) + 160);
+    const label = this.add.text(x, y - 72, fx.label, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: style === "finisher" ? "17px" : "13px",
+      color: "#10151d",
+      backgroundColor: `#${fx.main.toString(16).padStart(6, "0")}ee`,
+      padding: { x: 7, y: 3 },
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(Math.round(y) + 162);
+
+    if (actor) {
+      const direction = actor.graphic.x >= (this.player?.x ?? actor.graphic.x) ? 1 : -1;
+      this.tweens.add({
+        targets: actor.graphic,
+        x: actor.graphic.x + direction * (style === "finisher" ? 22 : 12),
+        y: actor.graphic.y - (style === "rush" ? 3 : 0),
+        duration: 65,
+        yoyo: true,
+        ease: "Quad.Out",
+      });
+      if (this.player) {
+        this.tweens.add({
+          targets: this.player,
+          x: this.player.x + direction * (style === "rush" ? 12 : 6),
+          duration: 72,
+          yoyo: true,
+          ease: "Quad.Out",
+        });
+      }
+    }
+    this.tweens.add({
+      targets: burst,
+      scale: { from: 0.6, to: style === "finisher" ? 3.2 : 2.4 },
+      alpha: { from: 0.84, to: 0 },
+      duration: 360,
+      ease: "Sine.Out",
+      onComplete: () => burst.destroy(),
+    });
+    this.tweens.add({
+      targets: ring,
+      scale: { from: 0.8, to: style === "finisher" ? 2.8 : 2.1 },
+      alpha: { from: 0.92, to: 0 },
+      duration: 420,
+      ease: "Sine.Out",
+      onComplete: () => ring.destroy(),
+    });
+    this.tweens.add({
+      targets: slash,
+      x: slash.x + (style === "rush" ? 28 : 12),
+      alpha: { from: 0.84, to: 0 },
+      scaleX: { from: 0.5, to: 1.25 },
+      duration: 260,
+      ease: "Sine.Out",
+      onComplete: () => slash.destroy(),
+    });
+    this.tweens.add({
+      targets: impactArc,
+      scale: { from: 0.8, to: 1.7 },
+      rotation: style === "counter" ? -0.5 : 0.5,
+      alpha: { from: 0.86, to: 0 },
+      duration: 360,
+      ease: "Sine.Out",
+      onComplete: () => impactArc.destroy(),
+    });
+    this.tweens.add({
+      targets: label,
+      y: label.y - 24,
+      alpha: { from: 1, to: 0 },
+      duration: 760,
+      ease: "Sine.Out",
+      onComplete: () => label.destroy(),
+    });
+  }
+
+  private playFightSceneStaging(
+    x: number,
+    y: number,
+    moveLabel: string,
+    style: CombatMove["style"],
+    fx: { main: number; accent: number; label: string; shake: number }
+  ) {
+    const viewW = this.scale.width || FALLBACK_VIEW_W;
+    const viewH = this.scale.height || FALLBACK_VIEW_H;
+    const barH = style === "finisher" ? 44 : 28;
+    const depth = 5000;
+    const topBar = this.add.rectangle(0, 0, viewW, barH, 0x030509, 0.72)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    const bottomBar = this.add.rectangle(0, viewH - barH, viewW, barH, 0x030509, 0.72)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    const title = this.add.text(viewW / 2, barH / 2, moveLabel.toUpperCase(), {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: style === "finisher" ? "18px" : "13px",
+      color: "#f8f1c4",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+    const lines: Phaser.GameObjects.Rectangle[] = [];
+    const lineCount = style === "finisher" ? 12 : 7;
+    for (let i = 0; i < lineCount; i += 1) {
+      const line = this.add.rectangle(
+        x + Phaser.Math.Between(-84, 84),
+        y - 28 + Phaser.Math.Between(-42, 42),
+        Phaser.Math.Between(34, style === "rush" ? 100 : 74),
+        2,
+        i % 2 === 0 ? fx.accent : fx.main,
+        0.68
+      )
+        .setRotation(Phaser.Math.FloatBetween(-0.45, 0.45))
+        .setDepth(Math.round(y) + 158);
+      lines.push(line);
+      this.tweens.add({
+        targets: line,
+        x: line.x + Phaser.Math.Between(34, 86),
+        alpha: 0,
+        duration: 260 + i * 12,
+        ease: "Sine.Out",
+        onComplete: () => line.destroy(),
+      });
+    }
+    this.tweens.add({
+      targets: [topBar, bottomBar, title],
+      alpha: 0,
+      delay: style === "finisher" ? 520 : 300,
+      duration: 260,
+      ease: "Sine.Out",
+      onComplete: () => {
+        topBar.destroy();
+        bottomBar.destroy();
+        title.destroy();
+      },
+    });
   }
 
   showBubble(actorId: string, text: string) {
@@ -184,7 +363,10 @@ export class VillageScene extends Phaser.Scene {
       y: actor.bubble.y - 16,
       duration: 4200,
       ease: "Sine.Out",
-      onComplete: () => actor.bubble?.destroy(),
+      onComplete: () => {
+        actor.bubble?.destroy();
+        actor.bubble = null;
+      },
     });
   }
 
@@ -192,6 +374,7 @@ export class VillageScene extends Phaser.Scene {
     if (!this.world || !this.player) return;
     this.movePlayer(delta / 1000);
     this.updateActors(delta / 1000);
+    this.updateAmbientBarks();
     this.updatePrompt();
     this.updateTint();
     this.updateMinimap();
@@ -203,6 +386,7 @@ export class VillageScene extends Phaser.Scene {
     this.syncPlayer(first);
     this.syncNpcs(first);
     this.syncItems();
+    this.syncProps();
     this.syncObjectivePins();
     this.updateTint();
   }
@@ -323,8 +507,8 @@ export class VillageScene extends Phaser.Scene {
       this.groundLayer?.setAlpha(1);
       this.groundLayer?.setCollision([TILE.water]);
     }
-    this.add.text(58, 958, "Ashbend river", { fontFamily: "ui-sans-serif, system-ui", fontSize: "13px", color: "#9ec8e6" }).setDepth(-6);
-    this.add.text(1250, 965, "Hollow Wood", { fontFamily: "ui-sans-serif, system-ui", fontSize: "13px", color: "#a8d8a6" }).setDepth(-6);
+    this.add.text(58, 958, "South canal", { fontFamily: "ui-sans-serif, system-ui", fontSize: "13px", color: "#9ec8e6" }).setDepth(-6);
+    this.add.text(1250, 965, "East edge", { fontFamily: "ui-sans-serif, system-ui", fontSize: "13px", color: "#a8d8a6" }).setDepth(-6);
   }
 
   private drawVenueAtmosphere() {
@@ -421,13 +605,13 @@ export class VillageScene extends Phaser.Scene {
     this.drawLampPost(705, 736);
     this.drawLampPost(1020, 820);
     this.drawTownSquareLandmark(805, 524);
-    this.drawMarketStall(612, 642, 0xb54e45, "seeds");
+    this.drawMarketStall(612, 642, 0xb54e45, "goods");
     this.drawMarketStall(962, 578, 0x4f8b68, "tonics");
-    this.drawMarketStall(506, 802, 0xd29b46, "fish");
+    this.drawMarketStall(506, 802, 0xd29b46, "food");
     this.drawGardenRows(g, 1144, 172, 5, 4);
     this.drawGardenRows(g, 1272, 172, 4, 4);
-    this.drawSignpost(540, 528, "Forge", "Inn");
-    this.drawSignpost(1018, 706, "Wood", "Bridge");
+    this.drawSignpost(540, 528, "West", "South");
+    this.drawSignpost(1018, 706, "East", "West");
     this.drawCampfire(1012, 948);
     this.drawCratesAndBarrels(g);
     this.drawWaterSparkles();
@@ -1018,9 +1202,21 @@ export class VillageScene extends Phaser.Scene {
   private syncPlayer(first: boolean) {
     if (!this.world) return;
     const pos = this.area(this.world.player.locationId)?.door ?? new Phaser.Math.Vector2(560, 485);
+    const appearanceKey = playerAppearanceKey(this.world);
+    if (this.player && this.playerAppearanceKey !== appearanceKey) {
+      const previous = new Phaser.Math.Vector2(this.player.x, this.player.y);
+      this.player.destroy();
+      this.player = undefined;
+      this.player = makeActor(this, "player", playerFillForWorld(this.world), PLAYER_RADIUS, this.world.player.appearance);
+      this.player.setPosition(previous.x, previous.y);
+      this.playerAppearanceKey = appearanceKey;
+      this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+      this.cameras.main.setZoom(1);
+    }
     if (!this.player) {
-      this.player = makeActor(this, "player", 0x526f3f, PLAYER_RADIUS);
+      this.player = makeActor(this, "player", playerFillForWorld(this.world), PLAYER_RADIUS, this.world.player.appearance);
       this.player.setPosition(pos.x, pos.y);
+      this.playerAppearanceKey = appearanceKey;
       this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
       this.cameras.main.setZoom(1);
     } else if (first) {
@@ -1030,7 +1226,7 @@ export class VillageScene extends Phaser.Scene {
 
   private syncNpcs(initial: boolean) {
     if (!this.world) return;
-    const wanted = new Set(this.world.npcs.map((npc) => npc.id));
+    const wanted = new Set(this.world.npcs.filter((npc) => npc.id !== this.world?.player.characterId).map((npc) => npc.id));
     for (const id of [...this.actors.keys()]) {
       if (id !== "player" && !wanted.has(id)) {
         this.actors.get(id)?.graphic.destroy();
@@ -1040,15 +1236,11 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     for (const npc of this.world.npcs) {
+      if (npc.id === this.world.player.characterId) continue;
       const target = this.npcTarget(npc);
       let actor = this.actors.get(npc.id);
       if (!actor) {
-        const npcFill = npc.id === "tomas" ? 0x6f4b35
-          : npc.id === "mira" ? 0x708a4b
-            : npc.id === "lena" ? 0xa96a42
-              : npc.id === "orrin" ? 0x355a82
-                : 0xb47657;
-        const graphic = makeActor(this, npc.id, npcFill, 14);
+        const graphic = makeActor(this, npc.id, actorFillForNpc(npc), 14, npc.appearance);
         graphic.setSize(48, 62);
         graphic.setInteractive();
         graphic.on("pointerup", () => {
@@ -1061,6 +1253,7 @@ export class VillageScene extends Phaser.Scene {
           home: new Phaser.Math.Vector2(target.x, target.y),
           target: null,
           nextWanderAt: this.time.now + Phaser.Math.Between(700, 2800),
+          lastStepAt: 0,
         };
         this.actors.set(npc.id, actor);
       }
@@ -1094,6 +1287,33 @@ export class VillageScene extends Phaser.Scene {
         sprite = marker;
       }
       sprite.setPosition(pos.x, pos.y).setDepth(Math.round(pos.y) + 1);
+    }
+  }
+
+  private syncProps() {
+    if (!this.world) return;
+    const visible = new Set((this.world.interactables ?? []).map((prop) => prop.id));
+    for (const [id, sprite] of [...this.propSprites]) {
+      if (!visible.has(id)) {
+        sprite.destroy();
+        this.propSprites.delete(id);
+      }
+    }
+    for (const prop of this.world.interactables ?? []) {
+      const pos = this.propTarget(prop);
+      let sprite = this.propSprites.get(prop.id);
+      if (!sprite) {
+        const marker = this.makePropMarker(prop);
+        marker.setSize(52, 52);
+        marker.setInteractive();
+        marker.on("pointerup", () => {
+          this.queuePropInteraction(prop.id);
+        });
+        this.propSprites.set(prop.id, marker);
+        sprite = marker;
+      }
+      const alpha = prop.inspected ? 0.58 : 1;
+      sprite.setPosition(pos.x, pos.y).setDepth(Math.round(pos.y) + 2).setAlpha(alpha);
     }
   }
 
@@ -1176,6 +1396,52 @@ export class VillageScene extends Phaser.Scene {
     return { x: area.x + ox, y: area.y + oy };
   }
 
+  private propTarget(prop: InteractableProp) {
+    const area = this.area(prop.locationId) ?? this.area("square")!;
+    const offsets: Record<string, [number, number]> = {
+      forge_tool_rack: [area.w * 0.66, area.h * 0.42],
+      bridge_scars: [area.w * 0.46, area.h * 0.62],
+      inn_notice: [area.w * 0.5, area.h * 0.36],
+      training_timer: [area.w * 0.66, area.h * 0.42],
+      hero_kiosk_report: [area.w * 0.5, area.h * 0.36],
+      sonic_challenge_marks: [area.w * 0.46, area.h * 0.62],
+    };
+    const [ox, oy] = offsets[prop.id] ?? [area.w * 0.36, area.h * 0.48];
+    return { x: area.x + ox, y: area.y + oy };
+  }
+
+  private makePropMarker(prop: InteractableProp) {
+    const color = prop.relatedQuestId ? 0x9fc3ff : 0xf8d44e;
+    const glow = this.add.circle(0, -14, 18, color, prop.inspected ? 0.08 : 0.16);
+    const ring = this.add.circle(0, -14, 11).setStrokeStyle(2, color, prop.inspected ? 0.42 : 0.9);
+    const glyph = this.add.text(0, -15, "?", {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "15px",
+      color: "#10151d",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+    const label = this.add.text(0, 7, prop.name, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "9px",
+      color: "#eaf5ff",
+      backgroundColor: "#10151d99",
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5, 0).setVisible(false);
+    const marker = this.add.container(0, 0, [glow, ring, glyph, label]);
+    marker.on("pointerover", () => label.setVisible(true));
+    marker.on("pointerout", () => label.setVisible(false));
+    this.tweens.add({
+      targets: [glow, ring],
+      scale: { from: 0.9, to: 1.18 },
+      alpha: { from: prop.inspected ? 0.22 : 0.82, to: prop.inspected ? 0.08 : 0.34 },
+      duration: 1300,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.InOut",
+    });
+    return marker;
+  }
+
   private makeItemMarker(itemId: string, name: string) {
     const frameByItem: Record<string, number> = {
       shears: 39,
@@ -1245,6 +1511,41 @@ export class VillageScene extends Phaser.Scene {
     });
   }
 
+  private showPropCard(prop: InteractableProp) {
+    this.interactionCard?.destroy();
+    const width = Math.min(420, this.viewportWidth() - 48);
+    const height = 92;
+    const x = 24;
+    const y = this.viewportHeight() - height - 24;
+    const bg = this.add.rectangle(x, y, width, height, 0x10151d, 0.92)
+      .setOrigin(0)
+      .setStrokeStyle(1, 0x9fc3ff, 0.78)
+      .setScrollFactor(0);
+    const title = this.add.text(x + 16, y + 13, prop.name, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "14px",
+      color: "#f4f1e8",
+      fontStyle: "bold",
+    }).setScrollFactor(0);
+    const line = this.add.text(x + 16, y + 36, prop.inspected ? prop.inspectText : prop.description, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "11px",
+      color: "#cbd2df",
+      wordWrap: { width: width - 32 },
+    }).setScrollFactor(0);
+    this.interactionCard = this.add.container(0, 0, [bg, title, line]).setDepth(240);
+    this.tweens.add({
+      targets: this.interactionCard,
+      alpha: { from: 1, to: 0 },
+      delay: 3800,
+      duration: 420,
+      onComplete: () => {
+        this.interactionCard?.destroy();
+        this.interactionCard = undefined;
+      },
+    });
+  }
+
   private queueNpcInteraction(npcId: string) {
     if (!this.world || !this.player) return;
     const npc = this.world.npcs.find((candidate) => candidate.id === npcId);
@@ -1279,10 +1580,28 @@ export class VillageScene extends Phaser.Scene {
     this.setDestination(sprite.x, sprite.y + 16, { itemId });
   }
 
+  private queuePropInteraction(propId: string) {
+    if (!this.world || !this.player) return;
+    const prop = (this.world.interactables ?? []).find((candidate) => candidate.id === propId);
+    const sprite = this.propSprites.get(propId);
+    if (!prop || !sprite) return;
+    if (prop.locationId !== this.world.player.locationId) {
+      this.travelTo(prop.locationId);
+      return;
+    }
+    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, sprite.x, sprite.y) <= INTERACT_DISTANCE) {
+      this.showPropCard(prop);
+      this.handlers.onPropClick?.(prop.id);
+      return;
+    }
+    this.setDestination(sprite.x, sprite.y + 18, { propId });
+  }
+
   private resolvePendingInteraction() {
     const locationId = this.pendingLocation;
     const npcId = this.pendingNpcId;
     const itemId = this.pendingItemId;
+    const propId = this.pendingPropId;
     this.clearDestination();
     if (locationId) {
       this.handlers.onLocationClick?.(locationId);
@@ -1293,6 +1612,14 @@ export class VillageScene extends Phaser.Scene {
       if (item?.locationId === this.world.player.locationId) {
         this.showItemCard(item.id, item.name, item.description ?? "Useful somehow.");
         this.handlers.onItemClick?.(item.id);
+      }
+      return;
+    }
+    if (propId && this.world) {
+      const prop = (this.world.interactables ?? []).find((candidate) => candidate.id === propId);
+      if (prop?.locationId === this.world.player.locationId) {
+        this.showPropCard(prop);
+        this.handlers.onPropClick?.(prop.id);
       }
       return;
     }
@@ -1318,6 +1645,7 @@ export class VillageScene extends Phaser.Scene {
       velocity.normalize().scale(PLAYER_SPEED * dt);
       this.tryMove(velocity.x, velocity.y);
       this.updateCharacterPose(this.player, true, this.playerFacing, true);
+      this.emitPlayerFootstep();
       return;
     }
     if (!this.destination) {
@@ -1337,8 +1665,14 @@ export class VillageScene extends Phaser.Scene {
     }
     this.playerFacing = delta.clone().normalize();
     delta.normalize().scale(Math.min(PLAYER_SPEED * dt, distance));
-    this.tryMove(delta.x, delta.y);
+    if (this.destinationIgnoresCollision) {
+      this.player.x = Phaser.Math.Clamp(this.player.x + delta.x, PLAYER_RADIUS, WORLD_W - PLAYER_RADIUS);
+      this.player.y = Phaser.Math.Clamp(this.player.y + delta.y, PLAYER_RADIUS, WORLD_H - PLAYER_RADIUS);
+    } else {
+      this.tryMove(delta.x, delta.y);
+    }
     this.updateCharacterPose(this.player, true, this.playerFacing, true);
+    this.emitPlayerFootstep();
   }
 
   private keyboardVelocity() {
@@ -1376,12 +1710,83 @@ export class VillageScene extends Phaser.Scene {
   }
 
   private travelTo(locationId: string) {
-    const area = this.area(locationId);
-    if (!area) return;
-    this.setDestination(area.door.x, area.door.y, { locationId });
+    this.setTravelDestination(locationId);
   }
 
-  private setDestination(x: number, y: number, pending: { locationId?: string | null; npcId?: string | null; itemId?: string | null } = {}) {
+  private setTravelDestination(locationId: string) {
+    const area = this.area(locationId);
+    if (!area || !this.player) return;
+    const target = this.locationEntryPoint(area);
+    const waypoints = this.travelWaypoints(locationId, target);
+    if (waypoints.length === 0) {
+      this.showDestinationMarker(target.x, target.y, false);
+      return;
+    }
+    this.destination = waypoints.shift() ?? null;
+    this.destinationQueue = waypoints;
+    this.destinationIgnoresCollision = true;
+    this.pendingLocation = locationId;
+    this.pendingNpcId = null;
+    this.pendingItemId = null;
+    this.showDestinationMarker(target.x, target.y, true);
+  }
+
+  private travelWaypoints(locationId: string, target: Phaser.Math.Vector2): Phaser.Math.Vector2[] {
+    if (!this.player) return [];
+    const segments: Phaser.Math.Vector2[] = [];
+    const currentArea = this.world ? this.area(this.world.player.locationId) : null;
+    let from = new Phaser.Math.Vector2(this.player.x, this.player.y);
+
+    if (currentArea && currentArea.id !== "square" && currentArea.id !== locationId) {
+      const out = this.findPath(from.x, from.y, currentArea.door.x, currentArea.door.y);
+      if (out.length === 0) return [];
+      segments.push(...out);
+      from = new Phaser.Math.Vector2(currentArea.door.x, currentArea.door.y);
+    }
+
+    if (locationId !== "square") {
+      const area = this.area(locationId);
+      if (!area) return [];
+      const toDoor = this.findPath(from.x, from.y, area.door.x, area.door.y);
+      if (toDoor.length === 0) return [];
+      segments.push(...toDoor);
+      from = new Phaser.Math.Vector2(area.door.x, area.door.y);
+    }
+
+    const intoRoom = this.findPath(from.x, from.y, target.x, target.y);
+    if (intoRoom.length === 0) return locationId === "square" ? segments : [...segments, target];
+    segments.push(...intoRoom);
+    return dedupeCloseWaypoints(segments);
+  }
+
+  private locationEntryPoint(area: RectArea): Phaser.Math.Vector2 {
+    if (area.id === "square") return new Phaser.Math.Vector2(area.door.x, area.door.y);
+    const override = ROOM_ENTRY_OVERRIDES[area.id];
+    if (override && !this.tileBlocks(override.x, override.y) && !this.collidesWithObstacle(override.x, override.y)) {
+      return new Phaser.Math.Vector2(override.x, override.y);
+    }
+    const candidates: Phaser.Math.Vector2[] = [];
+    for (let y = area.y + area.h - 54; y >= area.y + 62; y -= 18) {
+      for (const offset of [0, -42, 42, -78, 78, -112, 112]) {
+        candidates.push(new Phaser.Math.Vector2(area.x + area.w / 2 + offset, y));
+      }
+    }
+    candidates.push(new Phaser.Math.Vector2(area.door.x, area.door.y));
+    return candidates.find((point) =>
+      point.x > area.x + PLAYER_RADIUS &&
+      point.x < area.x + area.w - PLAYER_RADIUS &&
+      point.y > area.y + PLAYER_RADIUS &&
+      point.y < area.y + area.h - PLAYER_RADIUS &&
+      !this.tileBlocks(point.x, point.y) &&
+      !this.collidesWithObstacle(point.x, point.y)
+    ) ?? new Phaser.Math.Vector2(area.door.x, area.door.y);
+  }
+
+  private setDestination(
+    x: number,
+    y: number,
+    pending: { locationId?: string | null; npcId?: string | null; itemId?: string | null; propId?: string | null } = {}
+  ) {
     const clampedX = Phaser.Math.Clamp(x, PLAYER_RADIUS, WORLD_W - PLAYER_RADIUS);
     const clampedY = Phaser.Math.Clamp(y, PLAYER_RADIUS, WORLD_H - PLAYER_RADIUS);
     if (this.tileBlocks(clampedX, clampedY) || this.collidesWithObstacle(clampedX, clampedY)) {
@@ -1395,9 +1800,11 @@ export class VillageScene extends Phaser.Scene {
     }
     this.destination = waypoints.shift() ?? null;
     this.destinationQueue = waypoints;
+    this.destinationIgnoresCollision = false;
     this.pendingLocation = pending.locationId ?? null;
     this.pendingNpcId = pending.npcId ?? null;
     this.pendingItemId = pending.itemId ?? null;
+    this.pendingPropId = pending.propId ?? null;
     this.showDestinationMarker(clampedX, clampedY, true);
   }
 
@@ -1472,9 +1879,11 @@ export class VillageScene extends Phaser.Scene {
   private clearDestination() {
     this.destination = null;
     this.destinationQueue = [];
+    this.destinationIgnoresCollision = false;
     this.pendingLocation = null;
     this.pendingNpcId = null;
     this.pendingItemId = null;
+    this.pendingPropId = null;
     this.destinationMarker?.destroy();
     this.destinationMarker = undefined;
   }
@@ -1505,10 +1914,27 @@ export class VillageScene extends Phaser.Scene {
       const walking = this.updateNpcWander(actor, dt);
       const facing = walking ? new Phaser.Math.Vector2(actor.graphic.x - was.x, actor.graphic.y - was.y).normalize() : new Phaser.Math.Vector2(0, 1);
       this.updateCharacterPose(actor.graphic, walking, facing, false, this.time.now < actor.flashUntil ? 0xf8d44e : undefined);
+      if (walking && this.time.now - actor.lastStepAt > 390) {
+        actor.lastStepAt = this.time.now;
+        this.emitFootstep(actor.graphic.x, actor.graphic.y + 20, 0.34);
+      }
       actor.graphic.setDepth(Math.round(actor.graphic.y));
       actor.bubble?.setPosition(actor.graphic.x, actor.graphic.y - 26);
     }
     this.player?.setDepth(Math.round(this.player.y) + 5);
+  }
+
+  private updateAmbientBarks() {
+    if (!this.world || this.time.now < this.nextAmbientBarkAt) return;
+    this.nextAmbientBarkAt = this.time.now + Phaser.Math.Between(6200, 9800);
+    const barks = ambientBarksForLocation(this.world, this.world.player.locationId)
+      .filter((bark) => {
+        const actor = this.actors.get(bark.actorId);
+        return Boolean(actor) && !actor!.bubble;
+      });
+    if (barks.length === 0) return;
+    const bark = barks[(Math.floor(this.time.now / 1000) + this.world.tick) % barks.length]!;
+    this.showBubble(bark.actorId, bark.text);
   }
 
   private updateNpcWander(actor: ActorState, dt: number) {
@@ -1551,10 +1977,47 @@ export class VillageScene extends Phaser.Scene {
     if (!sprite) return;
     const directionIndex = this.directionIndex(facing);
     const walkFrame = walking ? 1 + (Math.floor(this.time.now / 115) % 3) : 0;
+    const gait = Math.sin(this.time.now / 86);
     sprite.setFrame(directionIndex * 4 + walkFrame);
-    sprite.y = PLAYER_RADIUS + 9 + (walking ? Math.abs(Math.sin(this.time.now / 90)) * 2 : Math.sin((this.time.now + actor.x) / 700) * 0.6);
+    sprite.y = PLAYER_RADIUS + 9 + (walking ? Math.abs(gait) * 2.4 : Math.sin((this.time.now + actor.x) / 700) * 0.6);
+    sprite.scaleX = walking ? 1 + Math.abs(gait) * 0.035 : 1;
+    sprite.scaleY = walking ? 1 - Math.abs(gait) * 0.025 : 1;
     sprite.setTint(fillOverride ?? 0xffffff);
+    const shadow = actor.getAt(0) as Phaser.GameObjects.Ellipse | undefined;
+    if (shadow) {
+      shadow.scaleX = walking ? 1.02 + Math.abs(gait) * 0.08 : 1;
+      shadow.scaleY = walking ? 0.96 - Math.abs(gait) * 0.04 : 1;
+      shadow.alpha = walking ? 0.24 + Math.abs(gait) * 0.05 : 0.22;
+    }
     actor.rotation = isPlayer && walking ? Phaser.Math.Clamp(facing.x * 0.035, -0.04, 0.04) : 0;
+  }
+
+  private emitPlayerFootstep() {
+    if (!this.player || this.time.now - this.lastPlayerStepAt < 245) return;
+    this.lastPlayerStepAt = this.time.now;
+    this.emitFootstep(this.player.x, this.player.y + 22, 0.46);
+  }
+
+  private emitFootstep(x: number, y: number, alpha: number) {
+    const puff = this.add.ellipse(
+      x + Phaser.Math.Between(-7, 7),
+      y + Phaser.Math.Between(-2, 4),
+      Phaser.Math.Between(7, 13),
+      Phaser.Math.Between(3, 6),
+      0xd9c18d,
+      alpha
+    ).setDepth(Math.round(y) - 2);
+    this.tweens.add({
+      targets: puff,
+      x: puff.x + Phaser.Math.Between(-8, 8),
+      y: puff.y - Phaser.Math.Between(3, 8),
+      scaleX: 1.8,
+      scaleY: 1.35,
+      alpha: 0,
+      duration: 520,
+      ease: "Sine.Out",
+      onComplete: () => puff.destroy(),
+    });
   }
 
   private directionIndex(facing: Phaser.Math.Vector2) {
@@ -1571,6 +2034,7 @@ export class VillageScene extends Phaser.Scene {
   private updatePrompt() {
     if (!this.player || !this.prompt || !this.world) return;
     const item = this.nearestItem();
+    const prop = this.nearestProp();
     const npc = this.nearestNpc();
     const area = this.nearestDoor();
     if (item) {
@@ -1579,6 +2043,15 @@ export class VillageScene extends Phaser.Scene {
       if (this.keys?.["E"] && Phaser.Input.Keyboard.JustDown(this.keys["E"])) {
         this.showItemCard(item.id, item.name, item.description ?? "Useful somehow.");
         this.handlers.onItemClick?.(item.id);
+      }
+      return;
+    }
+    if (prop) {
+      this.prompt.setText(`E Inspect ${prop.name}`);
+      this.prompt.setPosition(this.player.x, this.player.y + 42).setVisible(true);
+      if (this.keys?.["E"] && Phaser.Input.Keyboard.JustDown(this.keys["E"])) {
+        this.showPropCard(prop);
+        this.handlers.onPropClick?.(prop.id);
       }
       return;
     }
@@ -1610,7 +2083,7 @@ export class VillageScene extends Phaser.Scene {
       .setOrigin(0)
       .setStrokeStyle(1, 0x52617d, 0.95)
       .setScrollFactor(0);
-    const portrait = this.add.circle(x + 40, y + 45, 24, npc.tier === "quest" ? 0xb5e48c : 0xff8a65)
+    const portrait = this.add.circle(x + 40, y + 45, 24, actorFillForNpc(npc))
       .setStrokeStyle(2, 0x1a2430)
       .setScrollFactor(0);
     const initial = this.add.text(x + 40, y + 45, npc.name[0] ?? "?", {
@@ -1766,6 +2239,15 @@ export class VillageScene extends Phaser.Scene {
     }) ?? null;
   }
 
+  private nearestProp(): InteractableProp | null {
+    if (!this.world || !this.player) return null;
+    return (this.world.interactables ?? []).find((prop) => {
+      if (prop.locationId !== this.world!.player.locationId) return false;
+      const sprite = this.propSprites.get(prop.id);
+      return sprite ? Phaser.Math.Distance.Between(this.player!.x, this.player!.y, sprite.x, sprite.y) <= INTERACT_DISTANCE : false;
+    }) ?? null;
+  }
+
   private nearestDoor(): RectArea | null {
     if (!this.world || !this.player) return null;
     return this.world.locations
@@ -1813,11 +2295,55 @@ export class VillageScene extends Phaser.Scene {
     if (flashing) return 0xf8d44e;
     if (id === "player") return 0x58a6ff;
     const npc = this.world?.npcs.find((n) => n.id === id);
-    if (npc?.tier === "quest") return 0xb5e48c;
+    if (npc) return actorFillForNpc(npc);
     return 0xff8a65;
   }
 }
 
 export function centerOf(location: Location) {
   return { x: location.x + location.w / 2, y: location.y + location.h / 2 };
+}
+
+function actorFillForNpc(npc: Npc): number {
+  const color = npc.appearance?.palette?.[0];
+  const parsed = color ? parseCssHexColor(color) : null;
+  if (parsed !== null) return parsed;
+  if (npc.id === "tomas") return 0x6f4b35;
+  if (npc.id === "mira") return 0x708a4b;
+  if (npc.id === "lena") return 0xa96a42;
+  if (npc.id === "orrin") return 0x355a82;
+  return npc.tier === "quest" ? 0xb5e48c : 0xff8a65;
+}
+
+function playerFillForWorld(world: World): number {
+  const color = world.player.appearance?.palette?.[0];
+  const parsed = color ? parseCssHexColor(color) : null;
+  return parsed ?? 0x526f3f;
+}
+
+function playerAppearanceKey(world: World): string {
+  return [
+    world.player.characterId ?? "custom",
+    world.player.name ?? "",
+    world.player.appearance?.sourceLook ?? "",
+    world.player.appearance?.palette?.join(",") ?? "",
+    world.player.appearance?.visualTags?.join(",") ?? "",
+  ].join("|");
+}
+
+function dedupeCloseWaypoints(waypoints: Phaser.Math.Vector2[]): Phaser.Math.Vector2[] {
+  const result: Phaser.Math.Vector2[] = [];
+  for (const point of waypoints) {
+    const previous = result.at(-1);
+    if (!previous || Phaser.Math.Distance.Between(previous.x, previous.y, point.x, point.y) > ARRIVE_DISTANCE) {
+      result.push(point);
+    }
+  }
+  return result;
+}
+
+function parseCssHexColor(value: string): number | null {
+  const trimmed = value.trim();
+  const match = /^#?([0-9a-f]{6})$/i.exec(trimmed);
+  return match ? Number.parseInt(match[1]!, 16) : null;
 }

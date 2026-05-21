@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="armored cyclist hero portrait">
+  <rect width="256" height="256" rx="28" fill="#1c5f42"/>
+  <path d="M55 232c8-62 39-92 73-92s65 30 73 92z" fill="#2f7d52" stroke="#102c22" stroke-width="6"/>
+  <circle cx="128" cy="94" r="42" fill="#d99b68" stroke="#102c22" stroke-width="6"/>
+  <path d="M76 89c4-45 28-68 52-68s49 23 52 68z" fill="#6fb45f" stroke="#102c22" stroke-width="6"/>
+  <path d="M78 91h100" stroke="#f7e8a5" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="111" cy="99" r="5" fill="#162219"/>
+  <circle cx="145" cy="99" r="5" fill="#162219"/>
+  <path d="M113 120c11 9 23 9 34 0" stroke="#162219" stroke-width="5" stroke-linecap="round"/>
+  <path d="M73 178h110v28H73z" fill="#f7e8a5" stroke="#102c22" stroke-width="5"/>
+  <path d="M89 207c14-10 64-10 78 0" stroke="#102c22" stroke-width="9" stroke-linecap="round"/>
+</svg>

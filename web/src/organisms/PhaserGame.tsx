@@ -23,16 +23,21 @@ export function PhaserGame() {
       if (!world || item?.locationId !== world.player.locationId) return;
       void useWorldStore.getState().send({ type: "pickup", itemId } as never);
     };
+    const onProp = (propId: string) => {
+      const world = useWorldStore.getState().world;
+      const prop = world?.interactables?.find((candidate) => candidate.id === propId);
+      if (!world || prop?.locationId !== world.player.locationId) return;
+      void useWorldStore.getState().send({ type: "inspect", propId } as never);
+    };
     const onLoc = (locationId: string) => {
       const world = useWorldStore.getState().world;
       if (!world || world.player.locationId === locationId) return;
-      sceneRef.current?.previewPlayerMove(locationId);
       void movePlayerToward(locationId);
     };
     const container = containerRef.current;
     const initialWidth = Math.max(MIN_GAME_WIDTH, Math.round(container.clientWidth || INITIAL_GAME_WIDTH));
     const initialHeight = Math.max(MIN_GAME_HEIGHT, Math.round(container.clientHeight || INITIAL_GAME_HEIGHT));
-    const scene = new VillageScene({ onNpcClick: onNpc, onLocationClick: onLoc, onItemClick: onItem });
+    const scene = new VillageScene({ onNpcClick: onNpc, onLocationClick: onLoc, onItemClick: onItem, onPropClick: onProp });
     sceneRef.current = scene;
     const game = new Phaser.Game({
       type: Phaser.AUTO,
@@ -57,7 +62,8 @@ export function PhaserGame() {
       if (state.world && state.world !== prev.world) scene.setWorld(state.world);
       const newBubbles = state.bubbles.slice(prev.bubbles.length);
       for (const bubble of newBubbles) {
-        if (bubble.fromDirector && bubble.actorId) scene.flashActor(bubble.actorId);
+        if (bubble.actionType === "fight" && bubble.actorId) scene.playCombatFx(bubble.actorId, bubble.combatStyle, bubble.combatLabel);
+        if ((bubble.fromDirector || bubble.actionType === "fight") && bubble.actorId) scene.flashActor(bubble.actorId);
         if (bubble.actorId) scene.showBubble(bubble.actorId, bubble.text);
       }
     });
@@ -73,11 +79,15 @@ export function PhaserGame() {
       const target = world ? locationInDirection(world, direction) : null;
       if (!target) return;
       event.preventDefault();
-      onLoc(target);
+      sceneRef.current?.previewPlayerMove(target);
+      void movePlayerToward(target);
     };
     const onTravelRequest = (event: Event) => {
       const detail = (event as CustomEvent<{ locationId?: string }>).detail;
-      if (detail?.locationId) onLoc(detail.locationId);
+      if (detail?.locationId) {
+        sceneRef.current?.previewPlayerMove(detail.locationId);
+        void movePlayerToward(detail.locationId);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("ashbend:travel-to", onTravelRequest);

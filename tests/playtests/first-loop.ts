@@ -61,8 +61,16 @@ async function runBrowserPlaytest(): Promise<void> {
     await clickObjective(page, "Talk");
     await clickButton(page, "Accept task");
     await expect(objective(page)).toContainText("Find Pruning shears");
+    await clickButton(page, "Slot Save");
+    await expect(page.locator(".header-toast")).toContainText("Quick saved", { timeout: 5_000 });
     await page.screenshot({ path: join(ARTIFACT_DIR, "02-accepted.png") });
 
+    await clickObjective(page, "Go");
+    await expect(objective(page)).toContainText("Pick up");
+    await clickObjective(page, "Pick up");
+    await expect(objective(page)).toContainText("Bring Pruning shears to Mira");
+    await clickButton(page, "Slot Load");
+    await expect(objective(page)).toContainText("Find Pruning shears");
     await clickObjective(page, "Go");
     await expect(objective(page)).toContainText("Pick up");
     await clickObjective(page, "Pick up");

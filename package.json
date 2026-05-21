@@ -19,7 +19,13 @@
     "serve": "tsx --env-file-if-exists=.env src/server.ts",
     "test": "vitest run",
     "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
+    "bench:completion": "tsx src/completion-benchmarks.ts",
+    "bench:expanded": "tsx src/expanded-completion-benchmarks.ts",
     "playtest:first-loop": "tsx tests/playtests/first-loop.ts",
+    "playtest:basic-v0": "tsx tests/playtests/basic-v0.ts",
+    "playtest:alive": "tsx tests/playtests/alive-village.ts",
+    "playtest:opm": "tsx tests/playtests/opm-world.ts",
+    "playtest:world-ingest": "tsx tests/playtests/world-ingest.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },
@@ -33,6 +39,7 @@
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/ui": "^4.1.5",
     "eslint": "9.39.4",
@@ -53,6 +60,7 @@
     "phaser": "^4.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "three": "^0.184.0",
     "zustand": "^5.0.13"
   },
   "prettier": "@saas-maker/prettier-config"

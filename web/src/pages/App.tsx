@@ -12,6 +12,6 @@ export function App() {
   useEffect(() => { void init(); }, [init]);
 
   if (error) return <div className="banner error">Error: {error}</div>;
-  if (loading || !world) return <div className="banner">Loading Ashbend…</div>;
+  if (loading || !world) return <div className="banner">Loading world…</div>;
   return <AppShell />;
 }

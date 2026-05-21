@@ -1,5 +1,7 @@
 import type Phaser from "phaser";
 
+import type { CharacterAppearance } from "../../../src/types.ts";
+
 export const ACTOR_FRAME_W = 32;
 export const ACTOR_FRAME_H = 48;
 export const ACTOR_SCALE = 1.55;
@@ -48,20 +50,43 @@ export function drawActorFrame(
   variant: number,
   facing: FacingName,
   frame: number,
+  appearance?: CharacterAppearance,
 ): void {
-  const isBlacksmith = id === "tomas";
-  const isGardener = id === "mira";
-  const isElder = id === "orrin";
-  const isYouth = id === "pax";
-  const skin = id === "player" ? "#f0bf8a" : isElder ? "#efc99b" : "#e79b69";
-  const skinShade = id === "player" ? "#c79165" : isElder ? "#c8a37b" : "#bf7a4d";
+  const look = `${appearance?.sourceLook ?? ""} ${(appearance?.visualTags ?? []).join(" ")}`.toLowerCase();
+  const isBaldHero = look.includes("bald") || look.includes("yellow suit");
+  const isCyborg = look.includes("cyborg") || look.includes("mechanical");
+  const isHelmetHero = look.includes("helmet") || look.includes("cyclist");
+  const isPsychic = look.includes("psychic") || look.includes("green hair");
+  const isNinja = look.includes("ninja") || look.includes("purple scarf");
+  const isBlacksmith = id === "tomas" && !isCyborg;
+  const isGardener = id === "mira" && !isBaldHero;
+  const isElder = id === "orrin" && !isPsychic;
+  const isYouth = id === "pax" && !isNinja;
+  const skin = id === "player" ? "#f0bf8a" : isElder ? "#efc99b" : isCyborg ? "#f0c08c" : "#e79b69";
+  const skinShade = id === "player" ? "#c79165" : isElder ? "#c8a37b" : isCyborg ? "#b87b55" : "#bf7a4d";
   const shirt = hex(fill);
   const shirtShade = shade(fill, -0.22);
   const shirtLight = shade(fill, 0.18);
   const trim = id === "player" ? "#f8d44e" : isGardener ? "#e2d58f" : variant % 2 === 0 ? "#d2b16c" : "#f4d782";
-  const pants = id === "player" ? "#4a2a1d" : isBlacksmith ? "#2c2a28" : isGardener ? "#5a4a32" : isElder ? "#6b553d" : "#2d3d56";
-  const pantsShade = id === "player" ? "#2f1a10" : isBlacksmith ? "#191817" : isGardener ? "#3a301f" : isElder ? "#4a3a28" : "#1a2638";
-  const hair = id === "player" ? "#5b351d" : isElder ? "#e7dbbe" : isBlacksmith ? "#2d2018" : isGardener ? "#6d4930" : ["#4a2917", "#6d4930", "#2d2018", "#8a6038", "#e7dbbe"][variant]!;
+  const pants = id === "player" ? "#4a2a1d" : isBlacksmith ? "#2c2a28" : isGardener ? "#5a4a32" : isElder ? "#6b553d" : isNinja ? "#171520" : "#2d3d56";
+  const pantsShade = id === "player" ? "#2f1a10" : isBlacksmith ? "#191817" : isGardener ? "#3a301f" : isElder ? "#4a3a28" : isNinja ? "#0d0b12" : "#1a2638";
+  const hair = id === "player"
+    ? "#5b351d"
+    : isBaldHero
+      ? skin
+      : isPsychic
+        ? "#4fcf75"
+        : isCyborg
+          ? "#f1c85a"
+          : isNinja
+            ? "#16121b"
+            : isElder
+              ? "#e7dbbe"
+              : isBlacksmith
+                ? "#2d2018"
+                : isGardener
+                  ? "#6d4930"
+                  : ["#4a2917", "#6d4930", "#2d2018", "#8a6038", "#e7dbbe"][variant]!;
   const hairShade = shade(parseInt(hair.slice(1), 16), -0.25);
   const boot = "#2b1d16";
   const belt = "#7b4a25";
@@ -145,6 +170,32 @@ export function drawActorFrame(
     rect(8 - side * 2, 26, 7, 2, "#5b3b28", 2);
   }
 
+  if (isBaldHero) {
+    rect(6 - side, 18, 8, 24, "#f4f1e8", 5);
+    rect(19 - side, 18, 8, 24, "#e8e2d4", 5);
+    rect(7, 18, 18, 3, "#ffffff", 3);
+    rect(7, 28, 18, 5, "#c2292d", 2);
+  }
+  if (isCyborg) {
+    rect(6 + side, 22, 5, 17, "#d38a31", 3);
+    rect(22 + side, 22, 5, 17, "#d38a31", 3);
+    rect(5 + side, 27, 7, 2, "#ffd46b", 1);
+    rect(21 + side, 27, 7, 2, "#ffd46b", 1);
+    oval(14 + side * 3, 15, 1.2, 1.3, "#f8d44e");
+    oval(18 + side * 3, 15, 1.2, 1.3, "#f8d44e");
+  }
+  if (isPsychic) {
+    rect(8, 20, 17, 21, "#151722", 6);
+    rect(8, 20, 17, 2, "#31384d", 3);
+    oval(16, 33, 13, 4, "rgba(102,194,111,0.38)");
+  }
+  if (isNinja) {
+    rect(7, 19, 19, 22, "#1a1723", 5);
+    rect(8, 23, 18, 3, "#8d5cff", 2);
+    rect(23 + side, 18, 3, 26, "#bfc5d1", 2);
+    rect(21 + side, 17, 7, 3, "#3d344f", 2);
+  }
+
   // Front trim ribbon.
   rect(14, 20, 3, 18, trim, 2);
   rect(14, 20, 3, 1, "rgba(255,255,255,0.35)");
@@ -156,11 +207,18 @@ export function drawActorFrame(
   oval(18.5 + side * 4, 17, 1.4, 1, "rgba(196,90,70,0.32)");
 
   // Hair.
-  rect(10 + side * 2, 9, 12, 6, hairShade, 5);
-  rect(11 + side * 2, 8, 10, 6, hair, 5);
+  if (isHelmetHero) {
+    rect(8 + side * 2, 7, 16, 8, "#2f7d52", 5);
+    rect(8 + side * 2, 8, 16, 2, "#6fcf83", 2);
+  } else if (!isBaldHero) {
+    rect(10 + side * 2, 9, 12, 6, hairShade, 5);
+    rect(11 + side * 2, 8, 10, 6, hair, 5);
+  } else {
+    oval(16 + side * 2, 12, 6, 5, skin);
+  }
 
   if (up || back) {
-    oval(16 + side * 2, 14, 7, 8, hair);
+    if (!isBaldHero && !isHelmetHero) oval(16 + side * 2, 14, 7, 8, hair);
   } else {
     // Eyes.
     oval(14 + side * 3, 15, 1, 1.4, "#24120b");
@@ -188,6 +246,15 @@ export function drawActorFrame(
     rect(7 + side * 2, 7, 18, 7, "#5f7d4d", 4);
     rect(7 + side * 2, 7, 18, 1, "rgba(255,255,255,0.22)");
     rect(20 + side * 2, 10, 4, 5, "#3f5d3c", 2);
+  } else if (isHelmetHero) {
+    rect(7 + side * 2, 10, 18, 3, "#17432b", 2);
+    rect(20 + side * 2, 11, 5, 5, "#17432b", 2);
+  } else if (isPsychic) {
+    rect(7 + side * 2, 9, 18, 5, "#4fcf75", 5);
+    rect(9 + side * 2, 5, 11, 5, "#61dd82", 5);
+  } else if (isNinja) {
+    rect(8 + side * 2, 8, 18, 4, "#15111c", 3);
+    rect(19 + side * 2, 9, 8, 3, "#8d5cff", 2);
   } else if (variant === 1) {
     rect(9 + side * 2, 9, 15, 3, "#592d37", 2);
   } else if (variant === 3) {
@@ -209,6 +276,7 @@ export function ensureActorSpritesheet(
   id: string,
   fill: number,
   variant: number,
+  appearance?: CharacterAppearance,
 ): void {
   if (scene.textures.exists(key)) return;
   const canvas = document.createElement("canvas");
@@ -228,6 +296,7 @@ export function ensureActorSpritesheet(
         variant,
         FACING_ORDER[dir]!,
         frame,
+        appearance,
       );
     }
   }
@@ -251,10 +320,12 @@ export function makeActor(
   id: string,
   fill: number,
   radius: number,
+  appearance?: CharacterAppearance,
 ): Phaser.GameObjects.Container {
   const variant = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 5;
-  const key = `ashbend-actor-${id}`;
-  ensureActorSpritesheet(scene, key, id, fill, variant);
+  const styleKey = appearance ? `${appearance.sourceLook ?? ""}-${appearance.visualTags?.join("-") ?? ""}`.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "default";
+  const key = `ashbend-actor-${id}-${styleKey}`;
+  ensureActorSpritesheet(scene, key, id, fill, variant, appearance);
   const shadow = scene.add.ellipse(0, radius + 12, radius * 2.35, radius * 0.72, 0x000000, 0.26);
   const sprite = scene.add.sprite(0, radius + 9, key, 0).setOrigin(0.5, 1).setScale(ACTOR_SCALE);
   return scene.add.container(0, 0, [shadow, sprite]).setDepth(id === "player" ? 80 : 70);
