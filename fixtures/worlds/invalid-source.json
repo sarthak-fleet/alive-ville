@@ -1,0 +1,14 @@
+{
+  "title": "",
+  "worldId": "invalid_test_world",
+  "synopsis": "",
+  "locations": [
+    { "name": "Only Room", "role": "broken", "description": "Too small to compile into a playable slice." }
+  ],
+  "characters": [
+    { "name": "Solo", "role": "tester", "description": "Not enough cast members for starter quests." }
+  ],
+  "artifacts": [
+    { "name": "Broken token", "description": "Invalid test item.", "location": "Only Room" }
+  ]
+}

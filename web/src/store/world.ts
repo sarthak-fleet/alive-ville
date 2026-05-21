@@ -2,12 +2,12 @@ import { create } from "zustand";
 
 import { type CombatMove,combatMoveFor } from "../../../src/combat.ts";
 import type { PlayerAction, TickSummary, World } from "../../../src/types.ts";
-import { worldSourceToWorld } from "../../../src/world-ingest.ts";
 import {
   fetchSnapshot,
   fetchState,
   fetchStoryPackage,
   importStoryPackage,
+  importWorldSource,
   postTick,
   restoreSnapshot,
   type Snapshot,
@@ -122,8 +122,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     if (!source || typeof source !== "object") {
       throw new Error("World source is missing");
     }
-    const draftWorld = worldSourceToWorld(source as never);
-    const world = await restoreSnapshot(draftWorld);
+    const world = await importWorldSource(source as never);
     updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
     set({ world, error: null, bubbles: [], lastSummary: null, drawerNpcId: null });
   },

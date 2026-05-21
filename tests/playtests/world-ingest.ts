@@ -13,6 +13,7 @@ const VITE = new URL("../../node_modules/vite/bin/vite.js", import.meta.url).pat
 const SERVER = new URL("../../src/server.ts", import.meta.url).pathname;
 const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 const SKYFRONT = new URL("../../fixtures/worlds/skyfront-source.json", import.meta.url).pathname;
+const INVALID_WORLD = new URL("../../fixtures/worlds/invalid-source.json", import.meta.url).pathname;
 const OPM = new URL("../../fixtures/anime/opm-ingest-source.json", import.meta.url).pathname;
 
 async function main(): Promise<void> {
@@ -41,9 +42,11 @@ async function runWorldIngestPlaytest(): Promise<void> {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors: string[] = [];
+  let allowInvalidImportError = false;
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    const text = message.text();
+    if (message.type() === "error" && !(allowInvalidImportError && text.includes("400 (Bad Request)"))) errors.push(text);
   });
   page.on("response", (response) => {
     if (response.status() === 404) errors.push(`404 ${response.url()}`);
@@ -68,6 +71,13 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(skyfrontStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-skyfront-3d.png") });
 
+    allowInvalidImportError = true;
+    await importInvalidSource(page, INVALID_WORLD);
+    allowInvalidImportError = false;
+    await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible();
+    await expect(page.getByLabel("3D travel")).toContainText("At Rookery Deck");
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+
     await importSource(page, OPM);
     await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible();
     await expect(page.locator(".objective-tracker")).toContainText("Recover Grocery coupon for Saitama");
@@ -82,6 +92,11 @@ async function runWorldIngestPlaytest(): Promise<void> {
 async function importSource(page: Page, sourcePath: string): Promise<void> {
   await page.locator("input[aria-label='World source JSON']").setInputFiles(sourcePath);
   await expect(page.locator(".header-toast")).toContainText("World source imported", { timeout: 8_000 });
+}
+
+async function importInvalidSource(page: Page, sourcePath: string): Promise<void> {
+  await page.locator("input[aria-label='World source JSON']").setInputFiles(sourcePath);
+  await expect(page.locator(".header-toast")).toContainText("World import failed: invalid_world_source", { timeout: 8_000 });
 }
 
 async function nonBlankCanvasPixels(page: Page, selector: string): Promise<number> {

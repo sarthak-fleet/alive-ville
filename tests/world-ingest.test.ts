@@ -32,4 +32,13 @@ describe("generic world ingest", () => {
     expect(validateWorldIngestSource(anime)).toEqual([]);
     expect(worldSourceToWorld(anime).id).toBe("opm_ingested_z_city");
   });
+
+  test("rejects malformed generic source before it can replace a playable world", () => {
+    const invalid = source("../fixtures/worlds/invalid-source.json");
+
+    expect(validateWorldIngestSource(invalid).map((issue) => issue.path)).toEqual(
+      expect.arrayContaining(["title", "synopsis", "locations", "characters"])
+    );
+    expect(() => worldSourceToWorld(invalid)).toThrow("Invalid anime ingest source");
+  });
 });
