@@ -70,13 +70,50 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.getByLabel("3D travel")).toContainText("At Rookery Deck");
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(skyfrontStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-skyfront-3d.png") });
-    await completeSkyfrontRouteTokenQuest(page);
+    await completeSkyfrontQuest(page, {
+      title: "Recover Route token for Mara",
+      acceptNpc: "Mara",
+      itemText: "Find Route token",
+      pickupLabel: "Pick up Route token",
+      returnText: "Bring Route token to Mara",
+      travelText: "At Signal Mast",
+      completeButton: "Complete: Give Route token",
+      completedText: "Recover Route token for Mara is complete",
+      nextText: "Recover Prism gear for Ivo",
+      artifactPrefix: "route-token",
+      pickupVia3d: true,
+    });
+    await completeSkyfrontQuest(page, {
+      title: "Recover Prism gear for Ivo",
+      acceptNpc: "Ivo",
+      itemText: "Find Prism gear",
+      pickupLabel: "Pick up Prism gear",
+      returnText: "Bring Prism gear to Ivo",
+      travelText: "At Cloud Engine",
+      completeButton: "Complete: Give Prism gear",
+      completedText: "Recover Prism gear for Ivo is complete",
+      nextText: "Recover Painted flag scrap for Nell",
+      artifactPrefix: "prism-gear",
+    });
+    await completeSkyfrontQuest(page, {
+      title: "Recover Painted flag scrap for Nell",
+      acceptNpc: "Nell",
+      itemText: "Find Painted flag scrap",
+      pickupLabel: "Pick up Painted flag scrap",
+      returnText: "Bring Painted flag scrap to Nell",
+      travelText: "At Chain Bridge",
+      completeButton: "Complete: Give Painted flag scrap",
+      completedText: "Recover Painted flag scrap for Nell is complete",
+      nextText: "Report to Guild Counter before pressure peaks",
+      artifactPrefix: "painted-flag",
+    });
+    await resolveSkyfrontStoryLoop(page);
 
     allowInvalidImportError = true;
     await importInvalidSource(page, INVALID_WORLD);
     allowInvalidImportError = false;
     await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible();
-    await expect(page.getByLabel("3D travel")).toContainText("At Harbor Ring");
+    await expect(page.getByLabel("3D travel")).toContainText("At Guild Counter");
     await expect(page.locator(".three-host canvas")).toBeVisible();
 
     await importSource(page, OPM);
@@ -90,30 +127,63 @@ async function runWorldIngestPlaytest(): Promise<void> {
   }
 }
 
-async function completeSkyfrontRouteTokenQuest(page: Page): Promise<void> {
-  await expect(objective(page)).toContainText("Recover Route token for Mara");
+async function completeSkyfrontQuest(
+  page: Page,
+  quest: {
+    title: string;
+    acceptNpc: string;
+    itemText: string;
+    pickupLabel: string;
+    returnText: string;
+    travelText: string;
+    completeButton: string;
+    completedText: string;
+    nextText: string;
+    artifactPrefix: string;
+    pickupVia3d?: boolean;
+  }
+): Promise<void> {
+  await expect(objective(page)).toContainText(quest.title);
   await clickObjective(page, "Go");
-  await expect(page.getByLabel("3D travel")).toContainText("At Harbor Ring");
-  await expect(objective(page)).toContainText("Talk to Mara");
+  await expect(objective(page)).toContainText(`Talk to ${quest.acceptNpc}`);
   await clickObjective(page, "Talk");
   await clickButton(page, "Accept task");
   await clickButton(page, "Close");
-  await expect(objective(page)).toContainText("Find Route token");
+  await expect(objective(page)).toContainText(quest.itemText);
   await clickObjective(page, "Go");
-  await expect(page.getByLabel("3D travel")).toContainText("At Signal Mast");
+  await expect(page.getByLabel("3D travel")).toContainText(quest.travelText);
+  await expect(page.locator(".three-host canvas")).toBeVisible();
+  await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
   await expect(objective(page)).toContainText("Pick up");
-  await clickThreeTarget(page, "Pick up Route token");
-  await expect(objective(page)).toContainText("Bring Route token to Mara");
+  if (quest.pickupVia3d) {
+    await clickThreeTarget(page, quest.pickupLabel);
+  } else {
+    await clickObjective(page, "Pick up");
+  }
+  await expect(objective(page)).toContainText(quest.returnText);
   await clickObjective(page, "Go");
-  await expect(page.getByLabel("3D travel")).toContainText("At Harbor Ring");
+  await expect(objective(page)).toContainText("Talk");
   await clickObjective(page, "Talk");
-  await clickButton(page, "Complete: Give Route token");
-  await expect(page.locator(".outcome-toast")).toContainText("Recover Route token for Mara is complete");
+  await clickButton(page, quest.completeButton);
+  await expect(page.locator(".outcome-toast")).toContainText(quest.completedText);
   await expect(page.locator(".dialogue-panel")).toContainText("That matters in Skyfront Couriers Playable Slice");
   await expect(page.locator(".dialogue-panel")).not.toContainText("That matters in Ashbend");
   await expect(page.getByRole("button", { name: "Ask about world" })).toBeVisible();
-  await expect(objective(page)).toContainText("Recover Prism gear for Ivo");
-  await page.screenshot({ path: join(ARTIFACT_DIR, "02-skyfront-remapped-quest-complete.png") });
+  await clickButton(page, "Close");
+  await expect(objective(page)).toContainText(quest.nextText);
+  await page.screenshot({ path: join(ARTIFACT_DIR, `02-${quest.artifactPrefix}-complete.png`) });
+}
+
+async function resolveSkyfrontStoryLoop(page: Page): Promise<void> {
+  await expect(objective(page)).toContainText("Report to Guild Counter before pressure peaks");
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText("At Guild Counter");
+  await expect(objective(page)).toContainText("Confront Vex");
+  await expect(objective(page)).toContainText("Call Vex into the open with Nell watching.");
+  await clickObjective(page, "Confront");
+  await expect(objective(page)).toContainText("Skyfront Couriers Playable Slice route stabilized");
+  await expect(objective(page)).toContainText("The imported world's first playable loop is resolved");
+  await page.screenshot({ path: join(ARTIFACT_DIR, "05-skyfront-story-resolved.png") });
 }
 
 async function importSource(page: Page, sourcePath: string): Promise<void> {
