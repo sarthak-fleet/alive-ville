@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vitest";
 
+import { applyAction } from "../src/simulation.ts";
 import type { World } from "../src/types.ts";
 import { type WorldIngestSource, worldSourceToWorld } from "../src/world-ingest.ts";
 import { buildWorldSceneModel } from "../web/src/three/world-scene.ts";
@@ -114,6 +115,21 @@ describe("3D world scene model", () => {
     expect(bridgeTarget).not.toEqual(squareTarget);
     expect(bridgeTarget.x).toBeGreaterThanOrEqual(0);
     expect(bridgeTarget.z).toBeGreaterThanOrEqual(0);
+  });
+
+  test("projects a chosen character as the 3D player avatar", () => {
+    const world = fixture();
+    const result = applyAction(world, { type: "choose_character", actorId: "player", targetId: "tomas" });
+    const model = buildWorldSceneModel(world);
+
+    expect(result.applied).toBe(true);
+    expect(model.actors.find((actor) => actor.id === "player")).toMatchObject({
+      name: "Tomas",
+      locationId: "forge",
+      color: "#6f4b35",
+      player: true,
+    });
+    expect(model.actors.some((actor) => actor.id === "tomas")).toBe(false);
   });
 
   test("moves the primary 3D objective beacon from giver to active item", () => {

@@ -125,7 +125,9 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const atmosphere = locations.flatMap((location) => atmosphereNodesFor(location));
   const actors = [
     playerNode(world, activeLocation),
-    ...world.npcs.map((npc) => actorNode(npc, world.locations.find((location) => location.id === npc.locationId))),
+    ...world.npcs
+      .filter((npc) => npc.id !== world.player.characterId)
+      .map((npc) => actorNode(npc, world.locations.find((location) => location.id === npc.locationId))),
   ].filter((node): node is SceneActorNode => Boolean(node));
   const items = world.items
     .map((item) => itemNode(item, world.locations.find((location) => location.id === item.locationId)))

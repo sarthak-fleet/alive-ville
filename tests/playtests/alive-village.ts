@@ -63,6 +63,12 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await choosePlayableCharacter(page, "Tomas", "At Old Forge");
+    await restoreWorld();
+    await page.reload();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator(".objective-tracker")).toContainText("Return the pruning shears");
+    await expect(page.getByLabel("3D travel")).toContainText("At Village Square");
     await page.getByRole("button", { name: "Focus" }).click();
     await expect(page.getByRole("button", { name: "HUD" })).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".hud-panel")).toBeHidden();
@@ -273,6 +279,17 @@ async function openAgentsPanel(page: Page): Promise<void> {
   if (await agents.getAttribute("open") === null) {
     await agents.locator("summary").click();
   }
+}
+
+async function choosePlayableCharacter(page: Page, name: string, travelText: string): Promise<void> {
+  const interact = page.locator("details").filter({ has: page.locator("summary", { hasText: "Interact" }) });
+  if (await interact.getAttribute("open") === null) {
+    await interact.locator("summary").click();
+  }
+  await interact.getByRole("combobox").first().selectOption({ label: name });
+  await interact.getByRole("button", { name: "Choose" }).click();
+  await expect(interact.locator(".hint").filter({ hasText: name })).toBeVisible();
+  await expect(page.getByLabel("3D travel")).toContainText(travelText);
 }
 
 async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number; y: number }> {
