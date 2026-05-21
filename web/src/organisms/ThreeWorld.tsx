@@ -1,18 +1,20 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
-import type { World } from "../../../src/types.ts";
+import type { TickSummary, World } from "../../../src/types.ts";
 import { useWorldStore } from "../store/world.ts";
 import { type SceneTarget, ThreeWorldRenderer } from "../three/world-scene.ts";
 import { keyboardDestinationFor, movePlayerToward } from "../world-travel.ts";
 
 export function ThreeWorld() {
   const world = useWorldStore((state) => state.world);
+  const lastSummary = useWorldStore((state) => state.lastSummary);
   const hostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<ThreeWorldRenderer | null>(null);
   const [hoverTarget, setHoverTarget] = useState<SceneTarget | null>(null);
   const [cameraBearing, setCameraBearing] = useState(34);
   const currentLocation = world?.locations.find((location) => location.id === world.player.locationId) ?? null;
   const destinations = world ? reachableLocations(world) : [];
+  const agentActivity = lastSummary ? latestAutonomousActivity(lastSummary) : null;
   const handleKeyboardTravel = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isInteractiveTarget(event.target)) return;
     const latestWorld = useWorldStore.getState().world;
@@ -94,6 +96,9 @@ export function ThreeWorld() {
         <strong className="three-target-readout" aria-label="3D target">
           {hoverTarget ? `${hoverTarget.action} ${hoverTarget.label}` : "Hover a scene target"}
         </strong>
+        <p className="three-agent-feed" aria-label="3D agent activity">
+          {agentActivity ?? "Autonomous agents waiting"}
+        </p>
         <div className="three-camera-controls" aria-label="3D camera controls">
           <button type="button" aria-label="Rotate camera left" onClick={() => setCameraBearing(rendererRef.current?.orbitCamera(-Math.PI / 8) ?? cameraBearing)}>
             ◀
@@ -137,4 +142,10 @@ function reachableLocations(world: World): World["locations"] {
 
 function isInteractiveTarget(target: EventTarget): boolean {
   return target instanceof HTMLElement && Boolean(target.closest("button, input, select, textarea, summary, a"));
+}
+
+function latestAutonomousActivity(summary: TickSummary): string | null {
+  const action = summary.actions.find((entry) => entry.action.actorId !== "player");
+  if (!action) return null;
+  return `Autonomous t${summary.tick}: ${action.text.replace(/\.$/, "")}`;
 }

@@ -42,7 +42,8 @@ interface WorldStore {
   exportStoryPackage: () => Promise<Awaited<ReturnType<typeof fetchStoryPackage>>>;
   restoreFromJson: (text: string) => Promise<void>;
   importWorldSourceFromJson: (text: string) => Promise<void>;
-  refreshFromServer: () => Promise<void>;
+  refreshFromServer: (summary?: TickSummary | null) => Promise<void>;
+  applyServerTick: (world: World, summary: TickSummary) => void;
   openDrawer: (npcId: string) => void;
   closeDrawer: () => void;
   pruneBubbles: (now: number) => void;
@@ -75,36 +76,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       const res = await postTick(action);
       updateMusicMood(res.state.storyProgress?.phase ? { worldId: res.state.id, phase: res.state.storyProgress.phase } : { worldId: res.state.id });
       playActionCues(res.summary.actions, res.state);
-      const expires = performance.now() + 4200;
-      const newBubbles = res.summary.actions.map((entry) => {
-        const action = entry.action;
-        const combatMove = action.type === "fight" ? combatMoveFor(res.state, action.moveId) : null;
-        let combatTarget: World["npcs"][number] | null = null;
-        let previousCombatTarget: World["npcs"][number] | null = null;
-        if (action.type === "fight") {
-          combatTarget = res.state.npcs.find((npc) => npc.id === action.targetId) ?? null;
-          previousCombatTarget = previousWorld?.npcs.find((npc) => npc.id === action.targetId) ?? null;
-        }
-        return {
-          id: ++bubbleSeq,
-          actorId: bubbleActorId(entry),
-          text: bubbleText(entry),
-          fromDirector: Boolean(entry.fromDirector),
-          actionType: entry.action.type,
-          combatStyle: combatMove?.style,
-          combatLabel: combatMove?.label,
-          combatTargetName: combatTarget?.name,
-          combatHpBefore: previousCombatTarget?.combat?.hp,
-          combatHpAfter: combatTarget?.combat?.hp,
-          combatHpMax: combatTarget?.combat?.maxHp,
-          expiresAt: expires,
-        };
-      });
-      set({
-        world: res.state,
-        lastSummary: res.summary,
-        bubbles: [...get().bubbles, ...newBubbles],
-      });
+      commitTick(set, get, res.state, res.summary, previousWorld);
     } catch (error) {
       set({ error: (error as Error).message });
     }
@@ -155,10 +127,20 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     set({ world, error: null, bubbles: [], lastSummary: null, drawerNpcId: null });
   },
 
-  async refreshFromServer() {
+  async refreshFromServer(summary = null) {
     const world = await fetchState();
     updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
+    if (summary) {
+      commitTick(set, get, world, summary, get().world);
+      return;
+    }
     set({ world, error: null });
+  },
+
+  applyServerTick(world, summary) {
+    updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
+    playActionCues(summary.actions, world);
+    commitTick(set, get, world, summary, get().world);
   },
 
   openDrawer(npcId) {
@@ -171,6 +153,46 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     set({ bubbles: get().bubbles.filter((b) => b.expiresAt > now) });
   },
 }));
+
+function commitTick(
+  set: (partial: Partial<WorldStore>) => void,
+  get: () => WorldStore,
+  world: World,
+  summary: TickSummary,
+  previousWorld: World | null
+): void {
+  const expires = performance.now() + 4200;
+  const newBubbles = summary.actions.map((entry) => {
+    const action = entry.action;
+    const combatMove = action.type === "fight" ? combatMoveFor(world, action.moveId) : null;
+    let combatTarget: World["npcs"][number] | null = null;
+    let previousCombatTarget: World["npcs"][number] | null = null;
+    if (action.type === "fight") {
+      combatTarget = world.npcs.find((npc) => npc.id === action.targetId) ?? null;
+      previousCombatTarget = previousWorld?.npcs.find((npc) => npc.id === action.targetId) ?? null;
+    }
+    return {
+      id: ++bubbleSeq,
+      actorId: bubbleActorId(entry),
+      text: bubbleText(entry),
+      fromDirector: Boolean(entry.fromDirector),
+      actionType: entry.action.type,
+      combatStyle: combatMove?.style,
+      combatLabel: combatMove?.label,
+      combatTargetName: combatTarget?.name,
+      combatHpBefore: previousCombatTarget?.combat?.hp,
+      combatHpAfter: combatTarget?.combat?.hp,
+      combatHpMax: combatTarget?.combat?.maxHp,
+      expiresAt: expires,
+    };
+  });
+  set({
+    world,
+    error: null,
+    lastSummary: summary,
+    bubbles: [...get().bubbles, ...newBubbles],
+  });
+}
 
 function isStoryPackage(value: unknown): value is Parameters<typeof importStoryPackage>[0] {
   return Boolean(value && typeof value === "object" && (value as { packageVersion?: unknown }).packageVersion === 1);

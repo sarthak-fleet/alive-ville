@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 
 import type { AgentLoopStatus } from "../../../src/agent-loop.ts";
+import type { TickSummary, World } from "../../../src/types.ts";
 import { fetchAgentLoopStatus, startAgentLoop, stepAgentLoop, stopAgentLoop } from "../api/client.ts";
 import { Button } from "../atoms/Button.tsx";
 import { Panel } from "../atoms/Panel.tsx";
 import { useWorldStore } from "../store/world.ts";
 
 export function AgentLoopPanel() {
+  const applyServerTick = useWorldStore((state) => state.applyServerTick);
   const refreshFromServer = useWorldStore((state) => state.refreshFromServer);
   const [status, setStatus] = useState<AgentLoopStatus | null>(null);
   const [busy, setBusy] = useState<"" | "start" | "stop" | "step">("");
@@ -20,7 +22,7 @@ export function AgentLoopPanel() {
         if (cancelled) return;
         setStatus(next);
         setError(null);
-        if (next.state === "running") await refreshFromServer();
+        if (next.state === "running") await refreshFromServer(next.lastTick);
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
       }
@@ -33,13 +35,18 @@ export function AgentLoopPanel() {
     };
   }, [refreshFromServer, status?.state]);
 
-  const run = async (label: "start" | "stop" | "step", action: () => Promise<AgentLoopStatus>) => {
+  const run = async (label: "start" | "stop" | "step", action: () => Promise<RunResult>) => {
     setBusy(label);
     try {
-      const next = await action();
+      const result = await action();
+      const next = "status" in result ? result.status : result;
       setStatus(next);
       setError(null);
-      await refreshFromServer();
+      if ("summary" in result) {
+        applyServerTick(result.state, result.summary);
+      } else {
+        await refreshFromServer(next.lastTick);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -56,7 +63,12 @@ export function AgentLoopPanel() {
           <small>{status ? `${status.ticksRun} autonomous ticks` : "checking status"}</small>
         </div>
         <div className="agent-loop-actions">
-          <Button onClick={() => void run("step", async () => (await stepAgentLoop()).status)} disabled={busy !== "" || status?.state === "running"}>
+          <Button
+            onClick={() => void run("step", async () => {
+              return stepAgentLoop();
+            })}
+            disabled={busy !== "" || status?.state === "running"}
+          >
             {busy === "step" ? "Stepping..." : "Step"}
           </Button>
           <Button onClick={() => void run("start", startAgentLoop)} disabled={busy !== "" || status?.state === "running"}>
@@ -79,3 +91,5 @@ export function AgentLoopPanel() {
     </Panel>
   );
 }
+
+type RunResult = AgentLoopStatus | { status: AgentLoopStatus; state: World; summary: TickSummary };
