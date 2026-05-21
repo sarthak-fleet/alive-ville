@@ -1,3 +1,4 @@
+import { phasePressureRevealText, planRevealText, quietWorldRevealText } from "./story-context.ts";
 import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, ScheduleBlock, World } from "./types.ts";
 
 const DEFAULT_NEEDS = {
@@ -64,13 +65,11 @@ export function advanceStoryPressure(world: World, actions: AppliedAction[]): vo
     world.directorState.quietTicks = actions.length > 0 ? 0 : world.directorState.quietTicks + 1;
     world.directorState.pressure = clamp(world.directorState.pressure + (actions.length > 0 ? 2 : 8), 0, 100);
     if (world.directorState.quietTicks >= 2) {
-      addPendingReveal(world, "The village has gone quiet enough for the bridge pattern to stand out.");
+      addPendingReveal(world, quietWorldRevealText(world));
     }
-    if (world.storyProgress?.phase === "nightfall_warning" && world.directorState.quietTicks >= 1) {
-      addPendingReveal(world, "The Lantern Inn windows dim when the bridge whisper crosses the square.");
-    }
-    if (world.storyProgress?.phase === "shadow_confrontation" && world.directorState.quietTicks >= 1) {
-      addPendingReveal(world, "Lena's lantern throws one shadow too many across the inn floor.");
+    if ((world.storyProgress?.phase === "nightfall_warning" || world.storyProgress?.phase === "shadow_confrontation") && world.directorState.quietTicks >= 1) {
+      const phaseReveal = phasePressureRevealText(world);
+      if (phaseReveal) addPendingReveal(world, phaseReveal);
     }
   }
 
@@ -88,7 +87,7 @@ export function advanceStoryPressure(world: World, actions: AppliedAction[]): vo
     const nextStage = plan.pressure >= 75 ? 3 : plan.pressure >= 55 ? 2 : Math.max(1, plan.stage);
     if (nextStage > plan.stage) {
       plan.stage = nextStage;
-      addPendingReveal(world, revealForPlan(plan.id, plan.stage));
+      addPendingReveal(world, planRevealText(world, plan.id, plan.stage));
     }
   }
   advanceTensions(world);
@@ -341,14 +340,6 @@ function isPlanCountered(world: World, planId: string): boolean {
   return quests.some((quest) =>
     (quest.id === "rekindle_forge" || quest.id === "bridge_whisper") && quest.status === "done"
   );
-}
-
-function revealForPlan(planId: string, stage: number): string {
-  if (planId === "bridge_whisper_plan") {
-    if (stage >= 3) return "The bridge whisper is loud enough that loose nails tremble near the river.";
-    return "A blue pulse runs from the bridge toward every missing metal object.";
-  }
-  return "An unresolved hidden plan is pushing the village into a new stage.";
 }
 
 function addPendingReveal(world: World, text: string): void {

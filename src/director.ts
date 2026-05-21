@@ -1,4 +1,5 @@
 import { getNpc } from "./simulation.ts";
+import { directorStoryBeatText, storyDirectorNpc } from "./story-context.ts";
 import type { Action, ProposeRequest, ProposeResult, World } from "./types.ts";
 
 export interface Tension {
@@ -35,27 +36,11 @@ function storyBeatAction(world: World): Action | null {
   if (!state || state.pressure < 40) return null;
   if (state.lastNudgeTick === world.tick) return null;
 
-  if (world.storyProgress?.phase === "nightfall_warning") {
-    const actorId = world.npcs.find((npc) => npc.id === "lena")?.id ?? world.npcs[0]?.id;
-    if (!actorId) return null;
-    state.lastNudgeTick = world.tick;
-    return {
-      type: "remember",
-      actorId,
-      text: "Director beat: The Lantern Inn should be reached before the fog thickens.",
-    };
-  }
-  if (world.storyProgress?.phase === "shadow_confrontation") {
-    const actorId = world.npcs.find((npc) => npc.id === "lena")?.id ?? world.npcs[0]?.id;
-    if (!actorId) return null;
-    state.lastNudgeTick = world.tick;
-    return {
-      type: "remember",
-      actorId,
-      text: "Director beat: The lantern shadow is present; confronting it will force the night to resolve.",
-    };
-  }
-  return null;
+  const text = directorStoryBeatText(world);
+  const actorId = storyDirectorNpc(world)?.id;
+  if (!text || !actorId) return null;
+  state.lastNudgeTick = world.tick;
+  return { type: "remember", actorId, text };
 }
 
 function revealAction(world: World): Action | null {
@@ -66,10 +51,7 @@ function revealAction(world: World): Action | null {
   state.pendingReveals = state.pendingReveals?.slice(1) ?? [];
   state.lastNudgeTick = world.tick;
 
-  const witness =
-    world.npcs.find((npc) => npc.id === "lena") ??
-    world.npcs.find((npc) => npc.tier === "quest") ??
-    world.npcs[0];
+  const witness = storyDirectorNpc(world);
   if (!witness) return null;
 
   return {
@@ -124,7 +106,7 @@ async function tryLlmDirector(
 ): Promise<Action | null> {
   const result = await propose({
     tier: "quest",
-    system: "You are the village's narrative director. Inject one in-character event that pushes unresolved tension forward without railroading. Pick rumor, confront, or request. Stay short.",
+    system: "You are the world's narrative director. Inject one in-character event that pushes unresolved tension forward without railroading. Pick rumor, confront, or request. Stay short.",
     user: `Tension: ${tension.fromId} vs ${tension.toId} (relationship ${tension.score}). Locations and NPCs follow.\n\n${JSON.stringify({
       tick: world.tick,
       npcs: world.npcs.map((npc) => ({ id: npc.id, name: npc.name, locationId: npc.locationId })),

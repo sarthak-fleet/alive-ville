@@ -2,11 +2,16 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vitest";
 
+import { advanceStoryPressure } from "../src/agents.ts";
 import { createDirector, findHighestTension } from "../src/director.ts";
 import { createEngine } from "../src/simulation.ts";
 import type { Action, World } from "../src/types.ts";
+import { type WorldIngestSource, worldSourceToWorld } from "../src/world-ingest.ts";
 
 const fixture = (): World => JSON.parse(readFileSync(new URL("../worlds/village.json", import.meta.url), "utf8")) as World;
+const opmFixture = (): World => JSON.parse(readFileSync(new URL("../worlds/one-punch-man.json", import.meta.url), "utf8")) as World;
+const source = (path: string): WorldIngestSource =>
+  JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as WorldIngestSource;
 
 describe("director", () => {
   test("findHighestTension picks the most negative pair", () => {
@@ -81,6 +86,68 @@ describe("director", () => {
     const event = await engine.tick();
 
     expect(event.actions.some((entry) => entry.fromDirector && /Lantern Inn/.test(entry.text))).toBe(true);
+  });
+
+  test("generic imported worlds get source-derived director story beats", async () => {
+    const world = worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json"));
+    world.storyProgress = {
+      phase: "nightfall_warning",
+      unlockedCutsceneIds: [],
+      playedCutsceneIds: [],
+    };
+    world.directorState = { pressure: 45, quietTicks: 1, pendingReveals: [] };
+    for (const npc of world.npcs) npc.relationships = {};
+
+    const director = createDirector();
+    const engine = createEngine(world, { propose: async () => [], director });
+    const event = await engine.tick();
+    const directed = event.actions.find((entry) => entry.fromDirector);
+
+    expect(directed?.action.actorId).toBe("nell");
+    expect(directed?.text).toContain("Guild Counter");
+    expect(directed?.text).toContain("false pirate alarm");
+    expect(directed?.text).not.toMatch(/Lantern|Lena|Ashbend|village/i);
+  });
+
+  test("OPM world gets Z-City director story beats", async () => {
+    const world = opmFixture();
+    world.storyProgress = {
+      phase: "nightfall_warning",
+      unlockedCutsceneIds: [],
+      playedCutsceneIds: [],
+    };
+    world.directorState = { pressure: 45, quietTicks: 1, pendingReveals: [] };
+    for (const npc of world.npcs) npc.relationships = {};
+
+    const director = createDirector();
+    const engine = createEngine(world, { propose: async () => [], director });
+    const event = await engine.tick();
+    const directed = event.actions.find((entry) => entry.fromDirector);
+
+    expect(directed?.action.actorId).toBe("lena");
+    expect(directed?.text).toContain("Hero Association kiosk");
+    expect(directed?.text).toContain("monster alert");
+    expect(directed?.text).not.toMatch(/Lantern|Ashbend|village/i);
+  });
+
+  test("generic imported worlds get source-derived pressure reveals", () => {
+    const world = worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json"));
+    world.storyProgress = {
+      phase: "shadow_confrontation",
+      unlockedCutsceneIds: [],
+      playedCutsceneIds: [],
+    };
+    world.directorState = { pressure: 50, quietTicks: 1, pendingReveals: [] };
+    world.villainPlans![0]!.pressure = 74;
+    world.villainPlans![0]!.stage = 1;
+
+    advanceStoryPressure(world, []);
+
+    const reveals = world.directorState?.pendingReveals?.join("\n") ?? "";
+    expect(reveals).toContain("Skyfront Couriers Playable Slice has gone quiet enough");
+    expect(reveals).toContain("Vex is exposed while Nell watches");
+    expect(reveals).toContain("A false pirate alarm threatens the harbor route is close to breaking into the open");
+    expect(reveals).not.toMatch(/Lantern|Lena|Ashbend|village|bridge whisper|blue pulse/i);
   });
 
   test("ignored world tensions escalate into visible status", async () => {
