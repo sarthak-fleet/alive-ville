@@ -50,6 +50,36 @@ describe("long-running agent loop", () => {
     expect(cleared).toBe(true);
   });
 
+  test("skips overlapping interval ticks without killing a long-running loop", async () => {
+    const scheduled: Array<() => void> = [];
+    let releaseTick: () => void = () => {
+      throw new Error("agent loop tick was not scheduled");
+    };
+    const engine = createEngine(fixture(), {
+      propose: () => new Promise((resolve) => {
+        releaseTick = () => resolve([]);
+      }),
+    });
+    const loop = createAgentLoop(engine, {
+      intervalMs: 250,
+      setIntervalFn: (callback) => {
+        scheduled.push(callback);
+        return "timer";
+      },
+    });
+
+    expect(loop.start().state).toBe("running");
+    scheduled[0]?.();
+    await waitForMicrotasks();
+    scheduled[0]?.();
+    await waitForMicrotasks();
+
+    expect(loop.status()).toMatchObject({ state: "running", ticksRun: 0, lastError: null });
+    releaseTick();
+    await waitForMicrotasks();
+    expect(loop.status()).toMatchObject({ state: "running", ticksRun: 1, lastError: null });
+  });
+
   test("stops at a configured max tick limit", async () => {
     const engine = createEngine(fixture(), { propose: async () => [] });
     const loop = createAgentLoop(engine, { maxTicks: 1 });

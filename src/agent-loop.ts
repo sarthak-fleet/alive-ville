@@ -66,6 +66,7 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
       lastError = null;
       timer = setIntervalFn(() => {
         void loop.step().catch((error) => {
+          if ((error as Error).message === "agent_loop_step_in_progress") return;
           state = "error";
           lastError = (error as Error).message;
           clearTimer();
