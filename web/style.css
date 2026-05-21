@@ -212,6 +212,7 @@ button.primary:hover { filter: brightness(1.05); }
   pointer-events: none;
 }
 .three-camera-controls,
+.three-interact-button,
 .three-location-strip {
   pointer-events: auto;
 }
@@ -229,6 +230,24 @@ button.primary:hover { filter: brightness(1.05); }
   color: rgba(248, 212, 78, 0.94);
   font-size: 11px;
   line-height: 1.2;
+}
+.three-interact-button {
+  width: 100%;
+  min-height: 30px;
+  margin-bottom: 8px;
+  padding: 6px 9px;
+  border-color: rgba(248, 212, 78, 0.52);
+  background: rgba(248, 212, 78, 0.14);
+  color: #fff3b0;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.three-interact-button:disabled {
+  border-color: rgba(92, 105, 126, 0.34);
+  background: rgba(92, 105, 126, 0.12);
+  color: rgba(230, 233, 239, 0.48);
+  cursor: default;
 }
 .three-agent-feed {
   min-height: 18px;

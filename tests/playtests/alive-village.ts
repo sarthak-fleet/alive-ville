@@ -108,7 +108,8 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
     await page.locator(".three-host canvas").hover({ position: { x: 620, y: 320 } });
     await expect(page.getByLabel("3D target")).toContainText("Talk Mira");
-    await page.locator(".three-host canvas").click({ position: { x: 620, y: 320 } });
+    await expect(page.getByRole("button", { name: "Interact with Mira" })).toBeEnabled();
+    await page.getByRole("button", { name: "Interact with Mira" }).click();
     await expect(page.locator(".dialogue-panel")).toContainText("Mira");
     await page.getByRole("button", { name: "Close" }).click();
     await page.screenshot({ path: join(ARTIFACT_DIR, "03-three-world.png") });

@@ -76,6 +76,17 @@ export function ThreeWorld() {
         <strong className="three-target-readout" aria-label="3D target">
           {hoverTarget ? `${hoverTarget.action} ${hoverTarget.label}` : "Hover a scene target"}
         </strong>
+        <button
+          type="button"
+          className="three-interact-button"
+          disabled={!hoverTarget}
+          aria-label={hoverTarget ? `Interact with ${hoverTarget.label}` : "No scene target selected"}
+          onClick={() => {
+            if (hoverTarget) activateSceneTarget(hoverTarget);
+          }}
+        >
+          {hoverTarget ? hoverTarget.action : "Interact"}
+        </button>
         <p className="three-agent-feed" aria-label="3D agent activity">
           {agentActivity ?? "Autonomous agents waiting"}
         </p>
