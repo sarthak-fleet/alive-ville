@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "build": "tsc -p tsconfig.build.json && vite build",
+    "budget:bundle": "tsx src/bundle-budget.ts",
     "dev": "vite",
     "dev:server": "tsx watch --env-file-if-exists=.env src/server.ts",
     "eval:llm": "tsx --env-file-if-exists=.env src/eval.ts",

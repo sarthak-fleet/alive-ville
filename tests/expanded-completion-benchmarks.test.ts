@@ -11,6 +11,7 @@ describe("expanded completion gates", () => {
       "three_d_variant",
       "generic_world_ingest",
       "long_running_agents",
+      "performance_budget",
       "verification_surface",
     ]);
     expect(() => assertExpandedCompletion(report)).not.toThrow();
