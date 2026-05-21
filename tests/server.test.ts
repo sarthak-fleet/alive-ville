@@ -147,6 +147,33 @@ describe("server", () => {
       rmSync(checkpointDir, { recursive: true, force: true });
     }
   });
+
+  test("stops a running agent loop before replacing world state", async () => {
+    const port = 5700 + Math.floor(Math.random() * 200);
+    const child = await startServer(port);
+    try {
+      const start = await fetch(`http://localhost:${port}/api/agent-loop/start`, { method: "POST" });
+      expect(start.status).toBe(200);
+      expect((await start.json()) as { state: string }).toMatchObject({ state: "running" });
+
+      const animeSource = JSON.parse(readFileSync(new URL("../fixtures/anime/opm-ingest-source.json", import.meta.url), "utf8")) as unknown;
+      const imported = await fetch(`http://localhost:${port}/api/import-world-source`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ source: animeSource }),
+      });
+
+      expect(imported.status).toBe(200);
+      const body = (await imported.json()) as { state: { id: string }; agentLoopStatus: { state: string } };
+      expect(body.state.id).toBe("opm_ingested_z_city");
+      expect(body.agentLoopStatus.state).toBe("stopped");
+
+      const status = await fetch(`http://localhost:${port}/api/agent-loop/status`);
+      expect((await status.json()) as { state: string }).toMatchObject({ state: "stopped" });
+    } finally {
+      child.kill();
+    }
+  });
 });
 
 function waitForExit(child: ChildProcess): Promise<void> {

@@ -60,7 +60,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
     gate(rootDir, "long_running_agents", "Long-running AI agents", [
       file("src/agent-loop.ts"),
       file("src/agent-checkpoint-store.ts"),
-      source("src/server.ts", ["/api/agent-loop/status", "/api/agent-loop/start", "/api/agent-loop/stop", "/api/agent-loop/step", "/api/agent-loop/restore-checkpoint", "AGENT_LOOP_CHECKPOINT_FILE", "readAgentLoopCheckpoints", "upsertAgentLoopCheckpoint"]),
+      source("src/server.ts", ["/api/agent-loop/status", "/api/agent-loop/start", "/api/agent-loop/stop", "/api/agent-loop/step", "/api/agent-loop/restore-checkpoint", "AGENT_LOOP_CHECKPOINT_FILE", "readAgentLoopCheckpoints", "upsertAgentLoopCheckpoint", "replaceEngineState", "world_replaced"]),
       source("web/src/api/client.ts", ["fetchAgentLoopStatus", "startAgentLoop", "stopAgentLoop", "stepAgentLoop", "restoreAgentLoopCheckpoint"]),
       source("web/src/organisms/AgentLoopPanel.tsx", ["Agent loop controls", "Start", "Stop", "Step", "Restore latest", "Restored checkpoint", "applyServerTick", "refreshFromServer"]),
       source("web/src/store/world.ts", ["applyServerTick", "commitTick", "lastSummary", "bubbles"]),
@@ -69,7 +69,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("src/agent-checkpoint-store.ts", ["readAgentLoopCheckpoints", "writeAgentLoopCheckpoints", "upsertAgentLoopCheckpoint", "mkdirSync", "version: 1"]),
       source("tests/agent-loop.test.ts", ["skips overlapping interval ticks", "restores a captured checkpoint", "hydrates persisted checkpoints into a fresh loop", "caps retention", "agent_loop_checkpoint_not_found", "state: \"running\"", "lastError: null"]),
       source("tests/agent-checkpoint-store.test.ts", ["round-trips persisted checkpoints", "upserts checkpoint ticks", "drops malformed checkpoint files"]),
-      source("tests/server.test.ts", ["/api/agent-loop/status", "/api/agent-loop/step", "/api/agent-loop/restore-checkpoint", "restoredCheckpoint", "persists agent loop checkpoints across server restarts", "AGENT_LOOP_CHECKPOINT_FILE"]),
+      source("tests/server.test.ts", ["/api/agent-loop/status", "/api/agent-loop/step", "/api/agent-loop/restore-checkpoint", "restoredCheckpoint", "persists agent loop checkpoints across server restarts", "AGENT_LOOP_CHECKPOINT_FILE", "stops a running agent loop before replacing world state"]),
       source("tests/playtests/alive-village.ts", ["Agent loop controls", "1 autonomous ticks", "6 autonomous ticks", "Restore latest", "Restored checkpoint: world tick 5", "autonomousTickCount", "LIVE_LOOP_INTERVAL_MS", "3D agent activity", "Autonomous t1", "Autonomous t(?:[7-9]|\\d{2,})", "moved to", "running", "stopped"]),
     ]),
     gate(rootDir, "performance_budget", "Performance budget", [

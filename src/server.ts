@@ -69,8 +69,8 @@ const server = createServer(async (req, res) => {
       }
       const issues = validateStoryPackage(pkg as never);
       if (issues.length > 0) return json(res, 400, { error: "invalid_story_package", issues });
-      engine.setState(worldFromStoryPackage(pkg as never));
-      return json(res, 200, { ok: true, state: engine.state });
+      const agentLoopStatus = replaceEngineState(worldFromStoryPackage(pkg as never));
+      return json(res, 200, { ok: true, state: engine.state, agentLoopStatus });
     } catch (error) {
       return json(res, 400, { error: (error as Error).message });
     }
@@ -84,8 +84,8 @@ const server = createServer(async (req, res) => {
       }
       const issues = validateWorldIngestSource(source as never);
       if (issues.length > 0) return json(res, 400, { error: "invalid_world_source", issues });
-      engine.setState(worldSourceToWorld(source as never));
-      return json(res, 200, { ok: true, state: engine.state, issues: [] });
+      const agentLoopStatus = replaceEngineState(worldSourceToWorld(source as never));
+      return json(res, 200, { ok: true, state: engine.state, issues: [], agentLoopStatus });
     } catch (error) {
       return json(res, 400, { error: (error as Error).message });
     }
@@ -135,8 +135,8 @@ const server = createServer(async (req, res) => {
       if (!incoming || typeof incoming !== "object" || !("npcs" in incoming)) {
         return json(res, 400, { error: "invalid_snapshot" });
       }
-      engine.setState(incoming);
-      return json(res, 200, { ok: true, state: engine.state });
+      const agentLoopStatus = replaceEngineState(incoming);
+      return json(res, 200, { ok: true, state: engine.state, agentLoopStatus });
     } catch (error) {
       return json(res, 400, { error: (error as Error).message });
     }
@@ -178,6 +178,12 @@ function notFound(res: ServerResponse): void {
 function json(res: ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
+}
+
+function replaceEngineState(nextWorld: World) {
+  if (agentLoop.status().state === "running") agentLoop.stop("world_replaced");
+  engine.setState(nextWorld);
+  return agentLoop.status();
 }
 
 function readJson(req: IncomingMessage): Promise<unknown> {
