@@ -28,7 +28,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("web/src/world-travel.ts", ["movePlayerToward", "shortestLocationRoute", "keyboardDestinationFor", "keyDirection"]),
       source("tests/world-travel.test.ts", ["keyboardDestinationFor", "d", "ArrowDown", "ArrowLeft"]),
       file("fixtures/saves/not-json.json"),
-      source("tests/playtests/first-loop.ts", ["Slot Save", "page.reload", "clickThreeTarget", "Pick up Pruning shears", "importInvalidSave", "Restore failed: Save file is not valid JSON", "Slot Load", "three-host canvas", "At Herb Garden"]),
+      source("tests/playtests/first-loop.ts", ["Slot Save", "page.reload", "clickThreeTarget", "Pick up Pruning shears", "Inspect Sooty tool rack", "Fresh soot outlines", "importInvalidSave", "Restore failed: Save file is not valid JSON", "Slot Load", "three-host canvas", "At Herb Garden"]),
       source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels", "canvasPixelHash", "webglcontextlost", "webglcontextrestored", "3D renderer paused", "3D renderer restored", "travelStartHash", "Rotate camera right", "Reset camera", "keyboard.press(\"d\")", "keyboard.press(\"a\")", "Go Village Square", "Go Herb Garden", "At Village Square", "At Herb Garden", "Talk Mira", "dialogue-panel", "toHaveClass(/active/)", "Recoverable app error", "Dismiss", "header-actions", "expectWithinViewport", "expectNoVerticalOverlap"]),
       source("web/src/three/world-scene.ts", ["pickableItems", "pickableProps", "pickableActors", "SphereGeometry(0.32", "BoxGeometry(0.38", "firstHitTarget(this.pickableItems)"]),
       source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "atmosphere", "firefly", "dust"]),

@@ -77,6 +77,8 @@ async function runBrowserPlaytest(): Promise<void> {
     await expect(objective(page)).toContainText("Pick up");
     await clickThreeTarget(page, "Pick up Pruning shears");
     await expect(objective(page)).toContainText("Bring Pruning shears to Mira");
+    await clickThreeTarget(page, "Inspect Sooty tool rack");
+    await expect(page.locator(".outcome-toast")).toContainText("Fresh soot outlines a missing pair of shears");
     await page.reload();
     await page.waitForLoadState("domcontentloaded");
     await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
