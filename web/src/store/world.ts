@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { AgentLoopStatus } from "../../../src/agent-loop.ts";
 import { type CombatMove,combatMoveFor } from "../../../src/combat.ts";
 import type { PlayerAction, TickSummary, World } from "../../../src/types.ts";
 import {
@@ -35,6 +36,7 @@ interface WorldStore {
   error: string | null;
   drawerNpcId: string | null;
   lastSummary: TickSummary | null;
+  agentLoopStatus: AgentLoopStatus | null;
   bubbles: BubbleEvent[];
   init: () => Promise<void>;
   send: (action: PlayerAction | null) => Promise<void>;
@@ -44,6 +46,7 @@ interface WorldStore {
   importWorldSourceFromJson: (text: string) => Promise<void>;
   refreshFromServer: (summary?: TickSummary | null) => Promise<void>;
   applyServerTick: (world: World, summary: TickSummary) => void;
+  setAgentLoopStatus: (status: AgentLoopStatus | null) => void;
   openDrawer: (npcId: string) => void;
   closeDrawer: () => void;
   clearError: () => void;
@@ -58,6 +61,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   error: null,
   drawerNpcId: null,
   lastSummary: null,
+  agentLoopStatus: null,
   bubbles: [],
 
   async init() {
@@ -101,11 +105,11 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     if (!parsed || typeof parsed !== "object") {
       throw new Error("Save file is empty or malformed");
     }
-    const world = isStoryPackage(parsed)
+    const result = isStoryPackage(parsed)
       ? await importStoryPackage(parsed)
       : await restoreSnapshot(parsed as Snapshot);
-    updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
-    set({ world, error: null, bubbles: [], lastSummary: null });
+    updateMusicMood(result.state.storyProgress?.phase ? { worldId: result.state.id, phase: result.state.storyProgress.phase } : { worldId: result.state.id });
+    set({ world: result.state, agentLoopStatus: result.agentLoopStatus ?? null, error: null, bubbles: [], lastSummary: null });
   },
 
   async importWorldSourceFromJson(text) {
@@ -122,9 +126,9 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     if (!source || typeof source !== "object") {
       throw new Error("World source is missing");
     }
-    const world = await importWorldSource(source as never);
-    updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
-    set({ world, error: null, bubbles: [], lastSummary: null, drawerNpcId: null });
+    const result = await importWorldSource(source as never);
+    updateMusicMood(result.state.storyProgress?.phase ? { worldId: result.state.id, phase: result.state.storyProgress.phase } : { worldId: result.state.id });
+    set({ world: result.state, agentLoopStatus: result.agentLoopStatus ?? null, error: null, bubbles: [], lastSummary: null, drawerNpcId: null });
   },
 
   async refreshFromServer(summary = null) {
@@ -141,6 +145,9 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
     playActionCues(summary.actions, world);
     commitTick(set, get, world, summary, get().world);
+  },
+  setAgentLoopStatus(status) {
+    set({ agentLoopStatus: status });
   },
 
   openDrawer(npcId) {

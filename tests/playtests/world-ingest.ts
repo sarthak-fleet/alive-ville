@@ -56,9 +56,14 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await page.goto(BASE_URL);
     await page.waitForLoadState("domcontentloaded");
     await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
+    await openAgentsPanel(page);
+    await expect(page.getByLabel("Agent loop controls")).toContainText("idle");
+    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("running");
 
     await importSource(page, SKYFRONT);
     await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
     await expect(page.locator(".objective-tracker")).toContainText("Recover Route token for Mara");
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.locator(".three-host canvas")).toBeVisible();
@@ -194,6 +199,12 @@ async function importSource(page: Page, sourcePath: string): Promise<void> {
 async function importInvalidSource(page: Page, sourcePath: string): Promise<void> {
   await page.locator("input[aria-label='World source JSON']").setInputFiles(sourcePath);
   await expect(page.locator(".header-toast")).toContainText("World import failed: invalid_world_source", { timeout: 8_000 });
+}
+
+async function openAgentsPanel(page: Page): Promise<void> {
+  const agents = page.locator("details").filter({ has: page.locator("summary", { hasText: "Agents" }) });
+  await expect(agents).toHaveCount(1);
+  if ((await agents.getAttribute("open")) === null) await agents.locator("summary").click();
 }
 
 function objective(page: Page): Locator {

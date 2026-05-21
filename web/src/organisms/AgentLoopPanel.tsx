@@ -10,7 +10,8 @@ import { useWorldStore } from "../store/world.ts";
 export function AgentLoopPanel() {
   const applyServerTick = useWorldStore((state) => state.applyServerTick);
   const refreshFromServer = useWorldStore((state) => state.refreshFromServer);
-  const [status, setStatus] = useState<AgentLoopStatus | null>(null);
+  const status = useWorldStore((state) => state.agentLoopStatus);
+  const setAgentLoopStatus = useWorldStore((state) => state.setAgentLoopStatus);
   const [busy, setBusy] = useState<"" | "start" | "stop" | "step" | "restore">("");
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +21,7 @@ export function AgentLoopPanel() {
       try {
         const next = await fetchAgentLoopStatus();
         if (cancelled) return;
-        setStatus(next);
+        setAgentLoopStatus(next);
         setError(null);
         if (next.state === "running") await refreshFromServer(next.lastTick);
       } catch (err) {
@@ -33,14 +34,14 @@ export function AgentLoopPanel() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [refreshFromServer, status?.state]);
+  }, [refreshFromServer, setAgentLoopStatus, status?.state]);
 
   const run = async (label: typeof busy, action: () => Promise<RunResult>) => {
     setBusy(label);
     try {
       const result = await action();
       const next = "status" in result ? result.status : result;
-      setStatus(next);
+      setAgentLoopStatus(next);
       setError(null);
       if ("summary" in result) {
         applyServerTick(result.state, result.summary);

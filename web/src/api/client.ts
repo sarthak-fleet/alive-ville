@@ -29,6 +29,12 @@ export interface Snapshot {
   world: World;
 }
 
+export interface WorldMutationResponse {
+  ok: true;
+  state: World;
+  agentLoopStatus?: AgentLoopStatus;
+}
+
 export async function fetchSnapshot(): Promise<Snapshot> {
   const res = await fetch("/api/save");
   return readApiJson<Snapshot>(res, "fetchSnapshot");
@@ -39,43 +45,43 @@ export async function fetchStoryPackage(): Promise<{ package: StoryPackage; issu
   return readApiJson<{ package: StoryPackage; issues: unknown[] }>(res, "fetchStoryPackage");
 }
 
-export async function restoreSnapshot(snapshot: Snapshot | World): Promise<World> {
+export async function restoreSnapshot(snapshot: Snapshot | World): Promise<WorldMutationResponse> {
   const res = await fetch("/api/restore", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(snapshot),
   });
-  const data = await readApiJson<{ ok: true; state: World } | { error: string }>(res, "restoreSnapshot");
+  const data = await readApiJson<WorldMutationResponse | { error: string }>(res, "restoreSnapshot");
   if ("error" in data) throw new Error(data.error);
-  return data.state;
+  return data;
 }
 
-export async function importStoryPackage(pkg: StoryPackage): Promise<World> {
+export async function importStoryPackage(pkg: StoryPackage): Promise<WorldMutationResponse> {
   const res = await fetch("/api/import-story-package", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(pkg),
   });
-  const data = await readApiJson<{ ok: true; state: World } | { error: string; issues?: unknown[] }>(res, "importStoryPackage");
+  const data = await readApiJson<WorldMutationResponse | { error: string; issues?: unknown[] }>(res, "importStoryPackage");
   if ("error" in data) {
     const suffix = data.issues ? ` ${JSON.stringify(data.issues)}` : "";
     throw new Error(`${data.error}${suffix}`);
   }
-  return data.state;
+  return data;
 }
 
-export async function importWorldSource(source: WorldIngestSource): Promise<World> {
+export async function importWorldSource(source: WorldIngestSource): Promise<WorldMutationResponse> {
   const res = await fetch("/api/import-world-source", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ source }),
   });
-  const data = await readApiJson<{ ok: true; state: World } | { error: string; issues?: unknown[] }>(res, "importWorldSource");
+  const data = await readApiJson<WorldMutationResponse | { error: string; issues?: unknown[] }>(res, "importWorldSource");
   if ("error" in data) {
     const suffix = data.issues ? ` ${JSON.stringify(data.issues)}` : "";
     throw new Error(`${data.error}${suffix}`);
   }
-  return data.state;
+  return data;
 }
 
 export async function fetchAgentLoopStatus(): Promise<AgentLoopStatus> {
