@@ -1,0 +1,73 @@
+---
+---
+<div class="background-container">
+    <div class="bg-image bg-1"></div>
+    <div class="bg-image bg-2" style="opacity: 0;"></div>
+    <div class="overlay"></div>
+</div>
+
+<script>
+    const bg1 = document.querySelector('.bg-1') as HTMLElement;
+    const bg2 = document.querySelector('.bg-2') as HTMLElement;
+    let showBg1 = true;
+
+    if (bg1 && bg2) {
+        setInterval(() => {
+            if (showBg1) {
+                bg1.style.opacity = '0';
+                bg2.style.opacity = '1';
+                bg2.style.transform = 'scale(1.05)';
+                bg1.style.transform = 'scale(1)';
+            } else {
+                bg2.style.opacity = '0';
+                bg1.style.opacity = '1';
+                bg1.style.transform = 'scale(1.05)';
+                bg2.style.transform = 'scale(1)';
+            }
+            showBg1 = !showBg1;
+        }, 8000);
+    }
+</script>
+
+<style>
+.background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+}
+
+.bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 2s ease-in-out, transform 8s linear;
+    transform: scale(1);
+    will-change: transform, opacity;
+}
+
+.bg-1 {
+    background-image: url('/assets/bg.jpg');
+    transform: scale(1.05);
+}
+
+.bg-2 {
+    background-image: url('/assets/villain.jpg');
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(10, 10, 12, 0.3) 0%, rgba(10, 10, 12, 0.85) 100%);
+    box-shadow: inset 0 0 150px rgba(0, 0, 0, 0.9);
+}
+</style>

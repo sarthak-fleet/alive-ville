@@ -1,0 +1,44 @@
+---
+---
+<header class="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-zinc-950/60 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <a href="#" class="text-xl font-bold tracking-widest text-white">
+            ASHBEND
+        </a>
+        <nav class="hidden md:flex gap-8">
+            <a href="#features" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Features</a>
+            <a href="#technology" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Technology</a>
+            <a href="#world" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">World</a>
+        </nav>
+        <button id="nav-download-btn" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-full transition-all hover:shadow-[0_0_20px_rgba(79,70,229,0.4)]">
+            Get Prototype
+        </button>
+    </div>
+</header>
+
+<script>
+    const navBtn = document.getElementById('nav-download-btn');
+    if (navBtn) {
+        navBtn.addEventListener('click', () => {
+            navBtn.textContent = 'Downloading...';
+            setTimeout(() => {
+                navBtn.textContent = 'Downloaded!';
+                navBtn.classList.replace('bg-indigo-600', 'bg-emerald-600');
+                navBtn.classList.replace('hover:bg-indigo-500', 'hover:bg-emerald-500');
+                
+                const link = document.createElement('a');
+                link.href = '#';
+                link.download = 'Ashbend-Installer.dmg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => {
+                    navBtn.textContent = 'Get Prototype';
+                    navBtn.classList.replace('bg-emerald-600', 'bg-indigo-600');
+                    navBtn.classList.replace('hover:bg-emerald-500', 'hover:bg-indigo-500');
+                }, 3000);
+            }, 1000);
+        });
+    }
+</script>

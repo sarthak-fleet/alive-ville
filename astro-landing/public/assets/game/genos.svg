@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="blond cyborg disciple portrait">
+  <rect width="256" height="256" rx="28" fill="#17202f"/>
+  <path d="M51 235c7-58 38-91 77-91s70 33 77 91z" fill="#1f2735" stroke="#c58b42" stroke-width="6"/>
+  <circle cx="128" cy="89" r="45" fill="#dfad7a" stroke="#c58b42" stroke-width="6"/>
+  <path d="M78 82c9-38 28-58 55-58 25 0 42 17 49 51-21-12-41-17-104 7z" fill="#f2c64f" stroke="#2a1f15" stroke-width="5"/>
+  <path d="M83 63c32-21 64-28 91-1" stroke="#f7dc78" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="111" cy="91" r="7" fill="#f3d45d"/>
+  <circle cx="145" cy="91" r="7" fill="#f3d45d"/>
+  <path d="M108 118c14 7 27 7 40 0" stroke="#2a1f15" stroke-width="5" stroke-linecap="round"/>
+  <path d="M82 158l27 60h38l27-60" fill="none" stroke="#d48b3f" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="85" cy="198" r="18" fill="#d48b3f"/>
+  <circle cx="171" cy="198" r="18" fill="#d48b3f"/>
+</svg>

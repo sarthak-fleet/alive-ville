@@ -1,0 +1,199 @@
+---
+---
+<div id="three-ambient" class="fixed inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen opacity-70"></div>
+
+<script>
+    import * as THREE from 'three';
+
+    const container = document.getElementById('three-ambient');
+    if (container) {
+        const scene = new THREE.Scene();
+        
+        // Deep cinematic fog
+        scene.fog = new THREE.FogExp2(0x000000, 0.003);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.z = 300;
+        camera.position.y = 50;
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // --- 1. THE RIVER OF MEMORY (Custom Shader Particles) ---
+        const particleCount = 4000;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const randoms = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 800; // x
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 800 - 200; // y
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 600; // z
+            randoms[i] = Math.random();
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+        const vertexShader = `
+            attribute float aRandom;
+            varying float vAlpha;
+            uniform float uTime;
+            uniform float uScroll;
+            
+            void main() {
+                vec3 pos = position;
+                
+                // Fluid organic motion
+                pos.x += sin(uTime * 0.5 + pos.y * 0.01) * 20.0 * aRandom;
+                pos.y += sin(uTime * 0.3 + pos.x * 0.01) * 10.0;
+                
+                // Flow upward and wrap around
+                pos.y += uTime * 15.0 * (0.5 + aRandom);
+                
+                // Scroll interaction (parallax)
+                pos.y += uScroll * 0.1;
+
+                if (pos.y > 400.0) {
+                    pos.y -= 800.0;
+                }
+
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_Position = projectionMatrix * mvPosition;
+                
+                gl_PointSize = (3.0 * aRandom + 1.0) * (300.0 / -mvPosition.z);
+                
+                // Twinkle
+                vAlpha = 0.3 + 0.7 * sin(uTime * 2.0 + aRandom * 10.0);
+            }
+        `;
+
+        const fragmentShader = `
+            varying float vAlpha;
+            void main() {
+                float dist = distance(gl_PointCoord, vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                vec3 color = mix(vec3(0.9, 0.6, 0.2), vec3(1.0, 0.8, 0.4), vAlpha);
+                gl_FragColor = vec4(color, vAlpha * (1.0 - dist * 2.0));
+            }
+        `;
+
+        const particleMaterial = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            uniforms: {
+                uTime: { value: 0 },
+                uScroll: { value: 0 }
+            }
+        });
+
+        const particles = new THREE.Points(geometry, particleMaterial);
+        scene.add(particles);
+
+        // --- 2. FLOATING MONOLITHS (Abstract Geometry) ---
+        const monoliths = new THREE.Group();
+        scene.add(monoliths);
+
+        const monolithGeo = new THREE.IcosahedronGeometry(15, 0);
+        const monolithMat = new THREE.MeshBasicMaterial({
+            color: 0xc2a36b,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.15
+        });
+
+        const solidMat = new THREE.MeshBasicMaterial({
+            color: 0x050505,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        for(let i=0; i<15; i++) {
+            const mesh = new THREE.Mesh(monolithGeo, solidMat);
+            const wire = new THREE.Mesh(monolithGeo, monolithMat);
+            mesh.add(wire);
+            
+            mesh.position.set(
+                (Math.random() - 0.5) * 600,
+                (Math.random() - 0.5) * 600,
+                (Math.random() - 0.5) * 400 - 100
+            );
+            
+            const scale = Math.random() * 2 + 0.5;
+            mesh.scale.set(scale, scale, scale);
+            
+            mesh.userData = {
+                rx: (Math.random() - 0.5) * 0.005,
+                ry: (Math.random() - 0.5) * 0.005,
+                vy: Math.random() * 0.2 + 0.1
+            };
+            
+            monoliths.add(mesh);
+        }
+
+        // --- INTERACTION & ANIMATION ---
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        let scrollY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2);
+            mouseY = (e.clientY - window.innerHeight / 2);
+        });
+
+        document.addEventListener('scroll', () => {
+            scrollY = window.scrollY;
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            particleMaterial.uniforms.uTime.value = time;
+            particleMaterial.uniforms.uScroll.value = scrollY;
+
+            // Smooth follow for camera sway
+            targetX = mouseX * 0.1;
+            targetY = mouseY * 0.1;
+
+            camera.position.x += (targetX - camera.position.x) * 0.02;
+            camera.position.y += (-targetY - camera.position.y + 50) * 0.02;
+            
+            // Subtly move into the scene on scroll
+            camera.position.z = 300 - (scrollY * 0.05);
+            camera.lookAt(scene.position);
+
+            // Animate Monoliths
+            monoliths.children.forEach(m => {
+                m.rotation.x += m.userData.rx;
+                m.rotation.y += m.userData.ry;
+                m.position.y += m.userData.vy;
+                
+                // Wrap around
+                if (m.position.y > 300) {
+                    m.position.y = -300;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    }
+</script>

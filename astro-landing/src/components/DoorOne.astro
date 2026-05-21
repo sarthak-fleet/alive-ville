@@ -1,0 +1,41 @@
+---
+---
+<section id="door-1" class="relative w-full h-[100vh] sticky top-0 overflow-hidden">
+    
+    <!-- Cinematic Video Background -->
+    <div class="absolute inset-0 z-0">
+        <video autoplay loop muted playsinline class="w-full h-full object-cover scale-[1.05] transition-transform duration-[20s] hover:scale-[1.02]">
+            <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20 z-10 pointer-events-none"></div>
+    
+    <div class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center z-20">
+        <p class="animate-fade-up text-[#c2a36b] text-sm md:text-base tracking-[0.5em] uppercase mb-8 font-light" style="animation-delay: 0.2s; opacity: 0; animation-fill-mode: forwards;">
+            The Ultimate Sandbox
+        </p>
+        <h2 class="animate-fade-up thorgal-title text-7xl md:text-[9rem] lg:text-[11rem] font-black text-[#e2e2e2] uppercase leading-[0.85] tracking-tight mb-8" style="animation-delay: 0.4s; opacity: 0; animation-fill-mode: forwards;">
+            IMPORT <br/> YOUR LORE
+        </h2>
+        <p class="animate-fade-up font-serif-italic text-2xl md:text-4xl text-white/80 max-w-3xl leading-relaxed drop-shadow-2xl" style="animation-delay: 0.6s; opacity: 0; animation-fill-mode: forwards;">
+            Compile your world bible into a living, breathing RPG simulation where every character acts, reacts, and remembers.
+        </p>
+    </div>
+
+    <!-- Scroll Prompt -->
+    <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-20 opacity-60 animate-pulse">
+        <div class="w-px h-16 bg-gradient-to-b from-white to-transparent mb-4"></div>
+        <span class="text-[0.6rem] uppercase tracking-[0.4em] text-white">Scroll to explore</span>
+    </div>
+</section>
+
+<style>
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+        animation: fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+</style>

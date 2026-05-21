@@ -1,0 +1,538 @@
+---
+import ThreeBackground from '../components/ThreeBackground.astro';
+import '../styles/global.css';
+---
+<!doctype html>
+<html lang="en" class="bg-black scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aliveville | AI World Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Montserrat:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+</head>
+<body class="text-white antialiased overflow-x-clip cursor-none">
+    
+    <!-- Custom Cinematic Cursor -->
+    <div id="custom-cursor" class="fixed top-0 left-0 w-6 h-6 rounded-full border border-[#c2a36b]/60 pointer-events-none z-[9999] transition-transform duration-75 ease-out flex items-center justify-center mix-blend-screen">
+        <div class="w-1 h-1 bg-[#c2a36b] rounded-full shadow-[0_0_10px_#c2a36b]"></div>
+    </div>
+
+    <!-- Global Noise Overlay -->
+    <div class="fixed inset-0 z-[999] pointer-events-none opacity-[0.04] mix-blend-overlay" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+    
+    <!-- GLOBAL THREE.JS BACKGROUND -->
+    <ThreeBackground />
+
+    <!-- SLIDE 1: Value Proposition & Hero -->
+    <section class="relative w-full h-[100vh] flex flex-col items-center justify-center text-center overflow-hidden z-10 parallax-section bg-transparent">
+        <div class="absolute inset-0 z-0 transform parallax-bg">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-60 mix-blend-screen">
+                <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+        </div>
+        
+        <div class="relative z-10 px-6 mt-16 max-w-5xl reveal-anim">
+            <p class="text-[#c2a36b] font-montserrat tracking-[0.4em] uppercase text-sm mb-6 drop-shadow-md">The Ultimate Sandbox</p>
+            <h1 class="font-cinzel text-5xl sm:text-6xl md:text-8xl lg:text-[9rem] font-black leading-[0.85] mb-8 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] uppercase tracking-normal max-w-full">
+                ALIVEVILLE
+            </h1>
+            <p class="font-garamond italic text-xl sm:text-2xl md:text-4xl text-white/80 leading-relaxed drop-shadow-lg mx-auto max-w-[min(48rem,calc(100vw-2rem))]">
+                Don't just write a world bible. Compile it into a living, breathing RPG simulation where every character acts, reacts, and remembers.
+            </p>
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center opacity-60 animate-bounce">
+            <span class="font-montserrat text-xs uppercase tracking-widest mb-2">Scroll</span>
+            <div class="w-px h-12 bg-white/50"></div>
+        </div>
+    </section>
+
+    <!-- SLIDE 2: Features / Engine -->
+    <section class="relative w-full min-h-[100vh] flex items-center overflow-hidden bg-transparent z-20 py-24 parallax-section">
+        <div class="absolute inset-0 z-0 transform parallax-bg origin-left scale-105">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-30 mix-blend-luminosity">
+                <source src="/assets/forge_rekindled.mp4" type="video/mp4" />
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
+        </div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 w-full grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div class="reveal-anim translate-y-10 opacity-0 transition-all duration-1000 ease-out">
+                <h2 class="font-cinzel text-5xl md:text-7xl font-bold mb-10 leading-tight drop-shadow-lg">
+                    STATE OVER <br/> <span class="text-[#c2a36b]">SCRIPTING</span>
+                </h2>
+                <div class="space-y-8 font-montserrat">
+                    <div class="border-l-2 border-[#c2a36b] pl-6 hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-r-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Unbreakable Reality</h3>
+                        <p class="text-white/60 leading-relaxed">LLMs propose actions, but the game engine acts as the unbreakable Game Master. If an AI proposes giving you an item it doesn't possess, the engine rejects it.</p>
+                    </div>
+                    <div class="border-l-2 border-[#c2a36b] pl-6 hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-r-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Physical Logic</h3>
+                        <p class="text-white/60 leading-relaxed">Spatial awareness matters. NPCs cannot talk to characters across the map. The engine calculates Euclidean distance before allowing social interaction.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 3: Memory & Lore -->
+    <section class="relative w-full min-h-[100vh] flex items-center overflow-hidden bg-transparent z-20 py-24 parallax-section">
+        <div class="absolute inset-0 z-0 transform parallax-bg origin-right scale-105">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-30 mix-blend-luminosity">
+                <source src="/assets/bridge_whisper.mp4" type="video/mp4" />
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-l from-black via-black/80 to-transparent"></div>
+        </div>
+        
+        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 w-full flex justify-end">
+            <div class="max-w-2xl text-right reveal-anim translate-y-10 opacity-0 transition-all duration-1000 ease-out delay-100">
+                <h2 class="font-cinzel text-5xl md:text-7xl font-bold mb-10 leading-tight drop-shadow-lg">
+                    A WORLD THAT <br/> <span class="text-[#c2a36b]">REMEMBERS</span>
+                </h2>
+                <div class="space-y-8 font-montserrat text-left inline-block">
+                    <div class="border-r-2 border-[#c2a36b] pr-6 text-right hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-l-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">GraphRAG Memory</h3>
+                        <p class="text-white/60 leading-relaxed">NPCs observe events locally and retrieve relevant memories. They don't load the entire world history—only what matters right now.</p>
+                    </div>
+                    <div class="border-r-2 border-[#c2a36b] pr-6 text-right hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-l-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Dynamic Tension</h3>
+                        <p class="text-white/60 leading-relaxed">If the world gets boring, a background Director injects rumors based on unresolved tensions. Secrets spread organically through gossip.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE 4: THE PORTAL & INTERACTIVE GAME -->
+    <section id="portal-container" class="relative w-full h-[300vh] bg-transparent z-30 block">
+        
+        <div class="sticky top-0 w-full h-[100vh] overflow-hidden bg-transparent flex items-center justify-center">
+            
+            <div id="portal-video-wrapper" class="absolute inset-0 w-full h-full transform-gpu origin-center">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover filter contrast-125 saturate-110">
+                    <source src="/assets/garden_morning.mp4" type="video/mp4" />
+                </video>
+            </div>
+
+            <div id="portal-overlay" class="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-black z-10 pointer-events-none"></div>
+
+            <div id="portal-text" class="absolute z-20 flex flex-col items-center text-center px-6 pointer-events-none">
+                <span class="font-montserrat text-[#c2a36b] tracking-[0.4em] uppercase text-sm mb-4 drop-shadow-md">Prototype 01</span>
+                <h2 class="font-cinzel text-5xl sm:text-6xl md:text-[7rem] font-black uppercase mb-6 drop-shadow-2xl tracking-normal max-w-full">
+                    ALIVEVILLE
+                </h2>
+                <p class="font-garamond italic text-xl sm:text-2xl md:text-3xl max-w-[min(42rem,calc(100vw-2rem))] drop-shadow-xl mb-12 text-white/90">
+                    Stop observing. Scroll down to dive into the world.
+                </p>
+                <div class="w-px h-16 bg-gradient-to-b from-[#c2a36b] to-transparent animate-pulse"></div>
+            </div>
+
+            <!-- THE INTERACTIVE 2D GAME CANVAS -->
+            <div id="game-ui" class="absolute inset-0 z-50 opacity-0 pointer-events-none flex flex-col transition-opacity duration-1000 bg-transparent">
+                <!-- Atmospheric Vignette -->
+                <div class="absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.95)] pointer-events-none z-0"></div>
+
+                <!-- Game HUD -->
+                <div class="absolute top-8 left-8 z-20 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    <h3 class="font-cinzel text-3xl text-white tracking-wider">SIMULATION <span class="text-[#c2a36b]">ACTIVE</span></h3>
+                    <p class="font-montserrat text-xs text-white/80 tracking-[0.3em] mt-1 uppercase">Use W A S D to explore</p>
+                </div>
+
+                <div class="absolute top-8 right-8 z-20 pointer-events-none flex flex-col items-end gap-2">
+                    <div class="bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-sm text-right">
+                        <span class="font-montserrat text-[0.65rem] uppercase tracking-widest text-[#c2a36b]">Global Tension</span>
+                        <div class="w-32 h-1 bg-white/10 mt-1 rounded-full overflow-hidden">
+                            <div class="w-[65%] h-full bg-[#c2a36b]"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full h-full relative z-10">
+                    <canvas id="game-canvas" class="w-full h-full cursor-none"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- CUSTOM CURSOR ---
+            const cursor = document.getElementById('custom-cursor');
+            document.addEventListener('mousemove', (e) => {
+                if(cursor) {
+                    cursor.style.transform = `translate(${e.clientX - 12}px, ${e.clientY - 12}px)`;
+                }
+            });
+
+            // --- SCROLL REVEALS & PARALLAX ---
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.remove('opacity-0', 'translate-y-10');
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('.reveal-anim').forEach(el => observer.observe(el));
+
+            const parallaxBgs = document.querySelectorAll('.parallax-bg');
+            window.addEventListener('scroll', () => {
+                const scrolled = window.scrollY;
+                parallaxBgs.forEach(bg => {
+                    const el = bg as HTMLElement;
+                    el.style.transform = `translateY(${scrolled * 0.15}px) scale(1.05)`;
+                });
+            });
+
+            // --- PORTAL SCROLL LOGIC ---
+            const container = document.getElementById('portal-container');
+            const videoWrapper = document.getElementById('portal-video-wrapper');
+            const overlay = document.getElementById('portal-overlay');
+            const text = document.getElementById('portal-text');
+            const gameUi = document.getElementById('game-ui');
+            let isGameActive = false;
+
+            window.addEventListener('scroll', () => {
+                if (!container || !videoWrapper || !overlay || !text || !gameUi) return;
+
+                const rect = container.getBoundingClientRect();
+                const scrollDist = -rect.top; 
+                const maxScroll = rect.height - window.innerHeight;
+
+                if (scrollDist < 0) {
+                    videoWrapper.style.transform = 'scale(1)';
+                    overlay.style.opacity = '1';
+                    text.style.opacity = '1';
+                    text.style.transform = 'translateY(0)';
+                    gameUi.style.opacity = '0';
+                    gameUi.style.pointerEvents = 'none';
+                    isGameActive = false;
+                    return;
+                }
+
+                let progress = scrollDist / maxScroll;
+                if (progress > 1) progress = 1;
+
+                const scale = 1 + Math.pow(progress, 4) * 29;
+                videoWrapper.style.transform = `scale(${scale})`;
+
+                overlay.style.opacity = Math.max(0, 1 - (progress * 3)).toString();
+                text.style.opacity = Math.max(0, 1 - (progress * 5)).toString();
+                text.style.transform = `translateY(${-progress * 200}px) scale(${1 + progress*0.5})`;
+
+                if (progress > 0.98) {
+                    if (!isGameActive) {
+                        gameUi.style.opacity = '1';
+                        gameUi.style.pointerEvents = 'auto';
+                        isGameActive = true;
+                        initGame(); 
+                    }
+                } else {
+                    if (isGameActive) {
+                        gameUi.style.opacity = '0';
+                        gameUi.style.pointerEvents = 'none';
+                        isGameActive = false;
+                    }
+                }
+            });
+
+            // --- MASSIVELY UPGRADED RPG MINI GAME ---
+            const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+            let ctx: CanvasRenderingContext2D | null = null;
+            let gameInitialized = false;
+
+            // Sprites
+            const sprites = {
+                player: new Image(),
+                mira: new Image(),
+                arin: new Image(),
+                tovan: new Image()
+            };
+            sprites.player.src = '/assets/game/saitama.svg';
+            sprites.mira.src = '/assets/game/tatsumaki.svg';
+            sprites.arin.src = '/assets/game/genos.svg';
+            sprites.tovan.src = '/assets/game/mumen-rider.svg';
+
+            const player = { x: 0, y: 0, w: 80, h: 100, speed: 5, facing: 1 };
+            
+            // Advanced NPC State Machine
+            const npcs = [
+                { id: 'mira', x: 0, y: 0, w: 75, h: 95, img: sprites.mira, name: 'Mira', title: 'The Innkeeper', msg: "I've heard whispers near the old bridge. Be careful.", typingIdx: 0, flip: 1, targetX: 0, targetY: 0, state: 'idle', waitTimer: 0 },
+                { id: 'arin', x: 0, y: 0, w: 85, h: 105, img: sprites.arin, name: 'Arin', title: 'The Blacksmith', msg: "My forge runs cold today. The tension in town is thick.", typingIdx: 0, flip: -1, targetX: 0, targetY: 0, state: 'wander', waitTimer: 0 },
+                { id: 'tovan', x: 0, y: 0, w: 80, h: 100, img: sprites.tovan, name: 'Tovan', title: 'The Guard', msg: "Halt! Oh, it's you. Keep your hands where I can see them.", typingIdx: 0, flip: 1, targetX: 0, targetY: 0, state: 'idle', waitTimer: 0 }
+            ];
+
+            // Footstep Particles
+            const footstepParticles: any[] = [];
+
+            const keys = { w: false, a: false, s: false, d: false };
+
+            window.addEventListener('keydown', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || k === 'arrowup') keys.w = true;
+                if (k === 'a' || k === 'arrowleft') keys.a = true;
+                if (k === 's' || k === 'arrowdown') keys.s = true;
+                if (k === 'd' || k === 'arrowright') keys.d = true;
+                
+                if (isGameActive && ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) {
+                    e.preventDefault();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const k = e.key.toLowerCase();
+                if (k === 'w' || k === 'arrowup') keys.w = false;
+                if (k === 'a' || k === 'arrowleft') keys.a = false;
+                if (k === 's' || k === 'arrowdown') keys.s = false;
+                if (k === 'd' || k === 'arrowright') keys.d = false;
+            });
+
+            window.addEventListener('resize', () => {
+                if (canvas && gameInitialized) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                }
+            });
+
+            function initGame() {
+                if (gameInitialized || !canvas) return;
+                ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                player.x = canvas.width / 2;
+                player.y = canvas.height / 2 + 100;
+
+                npcs[0].x = canvas.width / 2 - 250; npcs[0].y = canvas.height / 2 - 20;
+                npcs[1].x = canvas.width / 2 + 300; npcs[1].y = canvas.height / 2 + 30;
+                npcs[2].x = canvas.width / 2 - 80;  npcs[2].y = canvas.height / 2 + 250;
+                
+                npcs.forEach(n => { n.targetX = n.x; n.targetY = n.y; });
+
+                gameInitialized = true;
+                requestAnimationFrame(gameLoop);
+            }
+
+            function updateNPCs() {
+                npcs.forEach(npc => {
+                    const distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
+                    
+                    // If player is close, stop and face player
+                    if (distToPlayer < 150) {
+                        npc.state = 'talk';
+                        npc.flip = player.x < npc.x ? -1 : 1;
+                        return;
+                    }
+
+                    // Autonomous Wandering AI
+                    if (npc.state === 'talk') {
+                        npc.state = 'idle';
+                        npc.waitTimer = 100;
+                    }
+
+                    if (npc.state === 'idle') {
+                        npc.waitTimer--;
+                        if (npc.waitTimer <= 0) {
+                            npc.state = 'wander';
+                            // Pick a random nearby spot to wander to
+                            npc.targetX = npc.x + (Math.random() - 0.5) * 200;
+                            npc.targetY = npc.y + (Math.random() - 0.5) * 100;
+                            
+                            // Keep on screen roughly
+                            npc.targetX = Math.max(100, Math.min(canvas!.width - 100, npc.targetX));
+                            npc.targetY = Math.max(100, Math.min(canvas!.height - 100, npc.targetY));
+                        }
+                    }
+
+                    if (npc.state === 'wander') {
+                        const dx = npc.targetX - npc.x;
+                        const dy = npc.targetY - npc.y;
+                        const dist = Math.hypot(dx, dy);
+                        
+                        if (dist < 5) {
+                            npc.state = 'idle';
+                            npc.waitTimer = 60 + Math.random() * 120;
+                        } else {
+                            npc.x += (dx / dist) * 1.5;
+                            npc.y += (dy / dist) * 1.5;
+                            npc.flip = dx > 0 ? 1 : -1;
+                        }
+                    }
+                });
+            }
+
+            function gameLoop() {
+                if (!isGameActive || !ctx || !canvas) return;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // --- DYNAMIC LANTERN LIGHTING ---
+                // Create a soft glowing mask around the player to simulate a lantern in the morning fog
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                const grad = ctx.createRadialGradient(player.x, player.y - 30, 0, player.x, player.y - 30, 400);
+                grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                grad.addColorStop(0.5, 'rgba(0, 0, 0, 0.4)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                // Player Movement
+                let isMoving = false;
+                if (keys.w && player.y > player.h) { player.y -= player.speed; isMoving = true; }
+                if (keys.s && player.y < canvas.height - 20) { player.y += player.speed; isMoving = true; }
+                if (keys.a && player.x > player.w/2) { player.x -= player.speed; isMoving = true; player.facing = -1; }
+                if (keys.d && player.x < canvas.width - player.w/2) { player.x += player.speed; isMoving = true; player.facing = 1; }
+
+                const bob = isMoving ? Math.sin(Date.now() / 120) * 6 : 0;
+
+                // Footstep Particles
+                if (isMoving && Math.random() > 0.7) {
+                    footstepParticles.push({
+                        x: player.x + (Math.random() - 0.5) * 20,
+                        y: player.y + (Math.random() - 0.5) * 10,
+                        life: 1.0,
+                        vx: -player.facing * (Math.random() * 0.5),
+                        vy: -Math.random() * 0.5
+                    });
+                }
+
+                // Draw Footsteps
+                ctx.fillStyle = 'rgba(200, 180, 150, 0.5)';
+                for (let i = footstepParticles.length - 1; i >= 0; i--) {
+                    const p = footstepParticles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.02;
+                    if (p.life <= 0) {
+                        footstepParticles.splice(i, 1);
+                    } else {
+                        ctx.globalAlpha = p.life;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.life * 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+
+                updateNPCs();
+
+                // Sort entities by Y
+                const entities = [
+                    { ...player, img: sprites.player, name: 'You', title: 'The Wanderer', isPlayer: true, bob: bob, flip: player.facing },
+                    ...npcs.map(npc => ({ ...npc, isPlayer: false, bob: npc.state === 'wander' ? Math.sin(Date.now()/120)*6 : Math.sin(Date.now()/400+npc.x)*2 }))
+                ].sort((a, b) => a.y - b.y);
+
+                // Draw Entities
+                entities.forEach(ent => {
+                    // Shadow
+                    ctx!.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx!.beginPath();
+                    ctx!.ellipse(ent.x, ent.y, ent.w * 0.35, ent.w * 0.12, 0, 0, Math.PI * 2);
+                    ctx!.fill();
+
+                    // Draw Sprite
+                    if (ent.img.complete && ent.img.naturalHeight !== 0) {
+                        ctx!.save();
+                        ctx!.translate(ent.x, ent.y - ent.h/2 + ent.bob);
+                        ctx!.scale(ent.flip, 1);
+                        ctx!.shadowColor = 'rgba(0,0,0,0.6)';
+                        ctx!.shadowBlur = 15;
+                        ctx!.shadowOffsetY = 15;
+                        ctx!.drawImage(ent.img, -ent.w/2, -ent.h/2, ent.w, ent.h);
+                        ctx!.restore();
+                    }
+
+                    // Hover / Name Tag
+                    ctx!.fillStyle = ent.isPlayer ? '#c2a36b' : 'rgba(255,255,255,0.9)';
+                    ctx!.font = 'bold 12px "Montserrat", sans-serif';
+                    ctx!.textAlign = 'center';
+                    ctx!.shadowColor = 'black';
+                    ctx!.shadowBlur = 4;
+                    ctx!.fillText(ent.name, ent.x, ent.y - ent.h - 15 + ent.bob);
+                    ctx!.shadowBlur = 0;
+
+                    // Interaction
+                    if (!ent.isPlayer) {
+                        const originalNpc = npcs.find(n => n.name === ent.name);
+                        const dist = Math.hypot(player.x - ent.x, player.y - ent.y);
+                        
+                        if (dist < 120) {
+                            if (!isMoving) {
+                                if (originalNpc!.typingIdx < originalNpc!.msg.length) {
+                                    originalNpc!.typingIdx += 0.8;
+                                }
+
+                                const boxW = 280;
+                                const boxH = 90;
+                                const boxX = ent.x - boxW/2;
+                                const boxY = ent.y - ent.h - 120;
+
+                                ctx!.fillStyle = 'rgba(10, 10, 12, 0.95)';
+                                ctx!.fillRect(boxX, boxY, boxW, boxH);
+                                
+                                ctx!.strokeStyle = '#c2a36b';
+                                ctx!.lineWidth = 1;
+                                ctx!.strokeRect(boxX, boxY, boxW, boxH);
+                                
+                                ctx!.fillStyle = '#c2a36b';
+                                ctx!.textAlign = 'left';
+                                ctx!.font = 'bold 11px "Montserrat", sans-serif';
+                                ctx!.fillText(`${ent.name} - ${ent.title}`, boxX + 15, boxY + 25);
+                                
+                                ctx!.beginPath();
+                                ctx!.moveTo(boxX + 15, boxY + 32);
+                                ctx!.lineTo(boxX + boxW - 15, boxY + 32);
+                                ctx!.strokeStyle = 'rgba(194, 163, 107, 0.3)';
+                                ctx!.stroke();
+
+                                ctx!.fillStyle = 'white';
+                                ctx!.font = 'italic 14px "Cormorant Garamond", serif';
+                                const visibleText = originalNpc!.msg.substring(0, Math.floor(originalNpc!.typingIdx));
+                                
+                                const words = visibleText.split(' ');
+                                let line = '';
+                                let lineY = boxY + 55;
+                                for(let n = 0; n < words.length; n++) {
+                                    const testLine = line + words[n] + ' ';
+                                    const metrics = ctx!.measureText(testLine);
+                                    if(metrics.width > boxW - 30 && n > 0) {
+                                        ctx!.fillText(line, boxX + 15, lineY);
+                                        line = words[n] + ' ';
+                                        lineY += 18;
+                                    } else {
+                                        line = testLine;
+                                    }
+                                }
+                                ctx!.fillText(line, boxX + 15, lineY);
+                            } else {
+                                originalNpc!.typingIdx = 0;
+                            }
+                        } else {
+                            originalNpc!.typingIdx = 0;
+                        }
+                    }
+                });
+
+                requestAnimationFrame(gameLoop);
+            }
+        });
+    </script>
+
+    <style>
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+        .font-garamond { font-family: 'Cormorant Garamond', serif; }
+    </style>
+</body>
+</html>

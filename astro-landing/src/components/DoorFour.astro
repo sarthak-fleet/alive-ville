@@ -1,0 +1,112 @@
+---
+---
+<section id="door-4" class="relative w-full h-[400vh] bg-black z-50">
+    
+    <!-- Sticky Container that stays on screen while we scroll through the 400vh -->
+    <div class="sticky top-0 w-full h-[100vh] overflow-hidden flex items-center justify-center">
+        
+        <!-- The Video Container that will scale up massively -->
+        <div id="portal-video" class="absolute inset-0 w-full h-full origin-center will-change-transform filter brightness-75">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover">
+                <source src="/assets/dawn_after_tasks.mp4" type="video/mp4" />
+            </video>
+        </div>
+
+        <!-- Atmospheric Overlay that fades away as we dive in -->
+        <div id="portal-overlay" class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent z-10"></div>
+
+        <!-- Initial UI: The Observer View -->
+        <div id="portal-text-1" class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center z-20 mt-32">
+            <span class="text-[#c2a36b] text-xl font-serif-italic mb-4 drop-shadow-md">Prototype 01</span>
+            <h2 class="thorgal-title text-7xl md:text-[8rem] font-black text-white uppercase tracking-tight mb-8">
+                ASHBEND
+            </h2>
+            <p class="font-serif-italic text-2xl md:text-3xl text-white/90 max-w-3xl leading-relaxed mb-16 drop-shadow-lg">
+                Stop observing. Start living. <br/><br/>
+                <span class="text-lg md:text-xl font-sans tracking-[0.3em] uppercase text-white/60 animate-pulse">Scroll to dive into the world</span>
+            </p>
+        </div>
+
+        <!-- Final UI: Inside the World (Player View) -->
+        <div id="portal-text-2" class="absolute inset-0 flex flex-col items-center justify-center px-6 text-center z-30 opacity-0 pointer-events-none transform scale-75">
+            <h2 class="thorgal-title text-5xl md:text-7xl font-black text-white uppercase tracking-widest mb-6">
+                SYSTEM ONLINE
+            </h2>
+            <p class="font-serif-italic text-3xl text-[#c2a36b] mb-12 drop-shadow-lg">
+                You are now a character in the simulation.
+            </p>
+            <button class="group flex items-center gap-6 text-white uppercase tracking-[0.3em] text-sm hover:text-[#c2a36b] transition-colors bg-black/40 backdrop-blur-md px-10 py-6 border border-white/20 hover:border-[#c2a36b] pointer-events-auto">
+                <span class="w-8 h-px bg-white/50 group-hover:bg-[#c2a36b] transition-colors"></span>
+                Initialize Session
+                <span class="w-8 h-px bg-white/50 group-hover:bg-[#c2a36b] transition-colors"></span>
+            </button>
+        </div>
+
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const section = document.getElementById('door-4');
+        const video = document.getElementById('portal-video');
+        const overlay = document.getElementById('portal-overlay');
+        const text1 = document.getElementById('portal-text-1');
+        const text2 = document.getElementById('portal-text-2');
+
+        if (!section || !video || !overlay || !text1 || !text2) return;
+
+        window.addEventListener('scroll', () => {
+            const rect = section.getBoundingClientRect();
+            
+            // Distance scrolled past the top of the section
+            const scrollDist = -rect.top; 
+            const maxScroll = rect.height - window.innerHeight;
+            
+            // Before the section reaches the top of the viewport
+            if (scrollDist < 0) {
+                video.style.transform = 'scale(1)';
+                video.style.filter = 'brightness(0.75)';
+                overlay.style.opacity = '1';
+                text1.style.opacity = '1';
+                text1.style.transform = 'translateY(0)';
+                text2.style.opacity = '0';
+                text2.style.transform = 'scale(0.75)';
+                text2.style.pointerEvents = 'none';
+                return;
+            }
+
+            // Calculate progress from 0 to 1
+            let progress = scrollDist / maxScroll;
+            if (progress > 1) progress = 1;
+
+            // Exponential scaling for the "dive" effect
+            // Starts slow, zooms massively at the end (from scale 1 up to scale 30)
+            const scale = 1 + Math.pow(progress, 4) * 30;
+            video.style.transform = `scale(${scale})`;
+
+            // Increase brightness as we dive in, removing the "cinematic darkness"
+            const brightness = 0.75 + (progress * 0.25);
+            video.style.filter = `brightness(${brightness})`;
+
+            // Fade out the dark overlay
+            overlay.style.opacity = Math.max(0, 1 - (progress * 3)).toString();
+
+            // Fade out initial text quickly and push it up
+            text1.style.opacity = Math.max(0, 1 - (progress * 4)).toString();
+            text1.style.transform = `translateY(${progress * -200}px)`;
+
+            // Fade in final text at the very end
+            if (progress > 0.8) {
+                const p2 = (progress - 0.8) * 5; // Normalize 0.8-1.0 to 0-1
+                text2.style.opacity = p2.toString();
+                text2.style.transform = `scale(${0.75 + (p2 * 0.25)})`; // Pops from scale 0.75 to 1.0
+                if (progress > 0.95) {
+                    text2.style.pointerEvents = 'auto';
+                }
+            } else {
+                text2.style.opacity = '0';
+                text2.style.pointerEvents = 'none';
+            }
+        });
+    });
+</script>

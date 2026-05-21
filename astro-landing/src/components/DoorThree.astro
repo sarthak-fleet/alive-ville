@@ -1,0 +1,48 @@
+---
+---
+<section id="door-3" class="relative w-full h-[100vh] sticky top-0 overflow-hidden shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+    
+    <!-- Cinematic Video Background -->
+    <div class="absolute inset-0 z-0">
+        <video autoplay loop muted playsinline class="w-full h-full object-cover origin-right scale-[1.05] transition-transform duration-[20s] hover:scale-[1.02] filter brightness-75">
+            <source src="/assets/bridge_whisper.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <div class="absolute inset-0 bg-gradient-to-l from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10 pointer-events-none"></div>
+
+    <div class="absolute inset-0 flex flex-col justify-center items-end text-right px-8 md:px-24 z-20">
+        <span class="text-[#c2a36b] text-6xl font-serif-italic opacity-30 absolute top-32 right-8 md:right-24">03</span>
+        
+        <div class="max-w-2xl mt-20 scroll-anim-target-3 flex flex-col items-end">
+            <h2 class="thorgal-title text-5xl md:text-7xl font-bold text-white uppercase leading-[0.9] mb-8 transition-all duration-1000 transform translate-y-10 opacity-0">
+                A WORLD THAT <br/> REMEMBERS
+            </h2>
+            <div class="space-y-6 font-serif-italic text-2xl md:text-3xl text-white/70 leading-relaxed text-right transition-all duration-1000 delay-200 transform translate-y-10 opacity-0">
+                <p>
+                    NPCs are not omniscient. They observe events locally, retrieve relevant memories via GraphRAG, and spread rumors dynamically.
+                </p>
+                <p class="text-lg md:text-xl font-sans font-light tracking-wide text-white/50 uppercase mt-8 border-r border-[#c2a36b] pr-6 text-right transition-all duration-1000 delay-400 transform translate-y-10 opacity-0">
+                    Secrets do not stay secret. The Narrative Director watches the social web, nudging NPCs to gossip, confront, and escalate.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const observer3 = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const children = entry.target.querySelectorAll('.opacity-0');
+                children.forEach(el => {
+                    el.classList.remove('opacity-0', 'translate-y-10');
+                    el.classList.add('opacity-100', 'translate-y-0');
+                });
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.scroll-anim-target-3').forEach(el => observer3.observe(el));
+</script>

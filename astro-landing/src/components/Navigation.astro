@@ -1,0 +1,42 @@
+---
+---
+<div class="fixed top-0 left-0 w-full z-[100] mix-blend-difference pointer-events-none transition-opacity duration-1000" id="global-nav">
+    <div class="flex justify-between items-start p-8 md:p-12">
+        
+        <div class="pointer-events-auto">
+            <h1 class="text-xl md:text-2xl font-bold tracking-[0.4em] uppercase text-white/90">
+                WORLD<br/><span class="text-xs font-light tracking-[0.6em] text-white/60">SIMULATOR</span>
+            </h1>
+        </div>
+
+        <div class="flex flex-col items-end gap-2 pointer-events-auto">
+            <button class="text-white/80 hover:text-[#c2a36b] transition-colors uppercase tracking-[0.3em] text-xs font-bold flex items-center gap-4 group">
+                <span class="w-8 h-px bg-white/50 group-hover:w-12 group-hover:bg-[#c2a36b] transition-all"></span>
+                MENU
+            </button>
+            <div class="mt-8 flex flex-col items-end gap-4 hidden md:flex">
+                <a href="#door-1" class="text-[0.65rem] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">01 / The Lore</a>
+                <a href="#door-2" class="text-[0.65rem] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">02 / The Engine</a>
+                <a href="#door-3" class="text-[0.65rem] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">03 / The Memory</a>
+                <a href="#door-4" class="text-[0.65rem] uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">04 / Ashbend</a>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+    // Fade out nav when scrolling down slightly to focus on art, bring back on top
+    let lastScroll = 0;
+    const nav = document.getElementById('global-nav');
+    
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.scrollY;
+        if (currentScroll > 100 && currentScroll > lastScroll) {
+            if (nav) nav.style.opacity = '0';
+        } else {
+            if (nav) nav.style.opacity = '1';
+        }
+        lastScroll = currentScroll;
+    });
+</script>

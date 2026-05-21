@@ -1,0 +1,49 @@
+---
+---
+<section class="relative w-full h-[100vh] min-h-[800px] flex items-center justify-center overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0 z-0">
+        <img src="/assets/villain.jpg" alt="The Lantern Shadow" class="w-full h-full object-cover object-top animate-slow-zoom opacity-70" />
+    </div>
+    
+    <!-- Gradient Overlays for RPG Atmospheric Feel -->
+    <div class="absolute inset-0 z-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/30"></div>
+    <div class="absolute inset-0 z-0 bg-gradient-to-r from-black/80 via-transparent to-black/80"></div>
+    
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center mt-20">
+        <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 backdrop-blur-md mb-8">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.8)]"></span>
+            <span class="text-xs font-bold tracking-[0.2em] text-amber-300 uppercase">Interactive AI Prototype</span>
+        </div>
+        
+        <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter mb-6 leading-none drop-shadow-2xl font-serif">
+            ASHBEND
+        </h1>
+        
+        <p class="text-xl md:text-2xl text-zinc-300 max-w-2xl mx-auto mb-10 leading-relaxed font-light drop-shadow-md">
+            A demon scout has been seen near the forest. Enter a persistent 2D village where 5 AI-driven NPCs remember your words, gossip behind your back, and react to your choices.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 mt-8">
+            <button id="hero-play-btn" class="group relative px-10 py-4 bg-amber-600 hover:bg-amber-500 text-zinc-950 font-bold text-lg rounded-sm overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(245,158,11,0.4)]">
+                <span class="relative flex items-center gap-3">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span class="btn-text tracking-wider uppercase">Play the Prototype</span>
+                </span>
+            </button>
+            <a href="#lore" class="px-8 py-4 text-zinc-400 font-medium hover:text-white transition-colors flex items-center gap-2 tracking-wide uppercase text-sm border-b border-transparent hover:border-white">
+                Read the Lore
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    @keyframes slow-zoom {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.08); }
+    }
+    .animate-slow-zoom {
+        animation: slow-zoom 20s ease-in-out infinite alternate;
+    }
+</style>
