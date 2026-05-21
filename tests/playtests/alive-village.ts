@@ -101,10 +101,12 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
     await expect(page.locator("header")).toContainText(/Day 1 \u00b7 18:00/);
     await expect(page.getByLabel("3D agent activity")).toContainText("Autonomous agents waiting");
+    const liveLoopBeforeHash = await canvasPixelHash(page, ".three-host canvas");
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("running");
     await expect(page.getByLabel("Agent loop controls")).toContainText(`${LIVE_LOOP_INTERVAL_MS}ms`);
     await expect.poll(() => autonomousTickCount(page)).toBeGreaterThan(6);
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "live agent loop should visibly update the 3D scene", timeout: 10_000 }).not.toEqual(liveLoopBeforeHash);
     await expect(page.getByLabel("3D agent activity")).toContainText(/Autonomous t(?:[7-9]|\d{2,})/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
