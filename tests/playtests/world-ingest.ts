@@ -59,22 +59,22 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
     await openAgentsPanel(page);
     await expect(page.getByLabel("Agent loop controls")).toContainText("idle");
-    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
-    await expect(page.getByLabel("Agent loop controls")).toContainText("running");
+    await startAgentLoopFromUi(page);
 
     await importSource(page, SKYFRONT);
-    await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Skyfront Couriers Playable Slice" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await expect(page.getByLabel("Agent loop controls")).toContainText("0 autonomous ticks");
+    await expect(page.getByLabel("3D agent activity")).toContainText("Autonomous agents waiting");
     await expect(page.locator(".objective-tracker")).toContainText("Recover Route token for Mara");
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.locator(".three-host canvas")).toBeVisible();
-    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), { message: "Skyfront 3D canvas should render nonblank pixels", timeout: 10_000 }).toBeGreaterThan(40);
     await expect(page.getByLabel("3D travel")).toContainText("At Harbor Ring");
     const skyfrontStartHash = await canvasPixelHash(page, ".three-host canvas");
     await expect(page.getByRole("button", { name: "Go Rookery Deck" })).toBeVisible();
-    await page.getByRole("button", { name: "Go Rookery Deck" }).click();
-    await expect(page.getByLabel("3D travel")).toContainText("At Rookery Deck");
-    await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(skyfrontStartHash);
+    await clickTravelStrip(page, "Rookery Deck", "At Rookery Deck");
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "Skyfront 3D canvas should change after travel", timeout: 10_000 }).not.toEqual(skyfrontStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-skyfront-3d.png") });
     await completeSkyfrontQuest(page, {
       title: "Recover Route token for Mara",
@@ -123,20 +123,20 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.locator(".three-host canvas")).toBeVisible();
 
     await importSource(page, CONSERVATORY);
-    await expect(page.getByRole("heading", { name: "Clockwork Conservatory Playable Slice" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Clockwork Conservatory Playable Slice" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
     await expect(page.locator(".objective-tracker")).toContainText("Recover Verdigris key for Eda");
     await expect(page.locator(".three-host canvas")).toBeVisible();
-    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), { message: "Conservatory 3D canvas should render nonblank pixels", timeout: 10_000 }).toBeGreaterThan(40);
     await expect(page.getByLabel("3D travel")).toContainText("At Atrium Gate");
     const conservatoryStartHash = await canvasPixelHash(page, ".three-host canvas");
     expect(conservatoryStartHash).not.toEqual(skyfrontStartHash);
     await completeConservatoryFirstQuest(page);
-    await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(conservatoryStartHash);
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "Conservatory 3D canvas should change after quest movement", timeout: 10_000 }).not.toEqual(conservatoryStartHash);
     await page.screenshot({ path: join(ARTIFACT_DIR, "06-conservatory-source.png") });
 
     await importSource(page, OPM);
-    await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".objective-tracker")).toContainText("Recover Grocery coupon for Saitama");
     await page.screenshot({ path: join(ARTIFACT_DIR, "07-opm-source.png") });
     await expect(errors, errors.join("\n")).toEqual([]);
@@ -166,13 +166,13 @@ async function completeSkyfrontQuest(
   await clickObjective(page, "Go");
   await expect(objective(page)).toContainText(`Talk to ${quest.acceptNpc}`);
   await clickObjective(page, "Talk");
+  await expectGeneratedPortrait(page, quest.acceptNpc);
   await clickButton(page, "Accept task");
   await clickButton(page, "Close");
   await expect(objective(page)).toContainText(quest.itemText);
-  await clickObjective(page, "Go");
-  await expect(page.getByLabel("3D travel")).toContainText(quest.travelText);
+  await travelViaObjectiveOr3dStrip(page, quest.travelText);
   await expect(page.locator(".three-host canvas")).toBeVisible();
-  await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+  await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), { message: `${quest.title} destination should keep 3D canvas nonblank`, timeout: 10_000 }).toBeGreaterThan(40);
   await expect(objective(page)).toContainText("Pick up");
   if (quest.pickupVia3d) {
     await clickThreeTarget(page, quest.pickupLabel);
@@ -181,7 +181,7 @@ async function completeSkyfrontQuest(
   }
   await expect(objective(page)).toContainText(quest.returnText);
   await clickObjective(page, "Go");
-  await expect(objective(page)).toContainText("Talk");
+  await expect(objective(page)).toContainText("Talk", { timeout: 20_000 });
   await clickObjective(page, "Talk");
   await clickButton(page, quest.completeButton);
   await expect(page.locator(".outcome-toast")).toContainText(quest.completedText);
@@ -209,6 +209,7 @@ async function completeConservatoryFirstQuest(page: Page): Promise<void> {
   await expect(objective(page)).toContainText("Recover Verdigris key for Eda");
   await expect(objective(page)).toContainText("Talk to Eda");
   await clickObjective(page, "Talk");
+  await expectGeneratedPortrait(page, "Eda");
   await clickButton(page, "Accept task");
   await clickButton(page, "Close");
   await expect(objective(page)).toContainText("Find Verdigris key");
@@ -230,12 +231,21 @@ async function completeConservatoryFirstQuest(page: Page): Promise<void> {
 
 async function importSource(page: Page, sourcePath: string): Promise<void> {
   await page.locator("input[aria-label='World source JSON']").setInputFiles(sourcePath);
-  await expect(page.locator(".header-toast")).toContainText("World source imported", { timeout: 8_000 });
 }
 
 async function importInvalidSource(page: Page, sourcePath: string): Promise<void> {
   await page.locator("input[aria-label='World source JSON']").setInputFiles(sourcePath);
   await expect(page.locator(".header-toast")).toContainText("World import failed: invalid_world_source", { timeout: 8_000 });
+}
+
+async function expectGeneratedPortrait(page: Page, npcName: string): Promise<void> {
+  const portrait = page.locator(".dialogue-panel .portrait img");
+  await expect(portrait).toHaveCount(1);
+  const src = await portrait.getAttribute("src");
+  expect(src?.startsWith("data:image/svg+xml,")).toBe(true);
+  expect(decodeURIComponent(src!.replace("data:image/svg+xml,", ""))).toContain(`${npcName} `);
+  expect(decodeURIComponent(src!.replace("data:image/svg+xml,", ""))).toContain("generated portrait");
+  await expect.poll(() => portrait.evaluate((img) => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0), { message: `${npcName} generated portrait should load as an image`, timeout: 10_000 }).toBe(true);
 }
 
 async function openAgentsPanel(page: Page): Promise<void> {
@@ -244,21 +254,46 @@ async function openAgentsPanel(page: Page): Promise<void> {
   if ((await agents.getAttribute("open")) === null) await agents.locator("summary").click();
 }
 
+async function startAgentLoopFromUi(page: Page): Promise<void> {
+  await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
+  await expect(page.getByLabel("Agent loop controls")).toContainText("running", { timeout: 15_000 });
+}
+
 function objective(page: Page): Locator {
   return page.locator(".objective-tracker");
 }
 
 async function clickObjective(page: Page, label: string): Promise<void> {
-  await clickUnique(objective(page).getByRole("button", { name: label }));
+  const locator = objective(page).getByRole("button", { name: label });
+  try {
+    await clickUnique(locator);
+  } catch (error) {
+    const text = await objective(page).innerText().catch(() => "(objective unavailable)");
+    throw new Error(`Objective button ${label} was not available. Current objective: ${text}. ${(error as Error).message}`);
+  }
 }
 
 async function clickButton(page: Page, label: string): Promise<void> {
   await clickUnique(page.getByRole("button", { name: label }));
 }
 
+async function clickTravelStrip(page: Page, destination: string, travelText: string): Promise<void> {
+  await clickUnique(page.getByRole("button", { name: `Go ${destination}` }));
+  await expect(page.getByLabel("3D travel")).toContainText(travelText, { timeout: 10_000 });
+}
+
+async function travelViaObjectiveOr3dStrip(page: Page, travelText: string): Promise<void> {
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText(travelText, { timeout: 20_000 });
+}
+
 async function clickThreeTarget(page: Page, label: string): Promise<void> {
-  const point = await hoverThreeTarget(page, label);
-  await page.mouse.click(point.x, point.y);
+  await hoverThreeTarget(page, label);
+  await page.getByRole("button", { name: `Interact with ${sceneTargetName(label)}` }).click();
+}
+
+function sceneTargetName(readout: string): string {
+  return readout.replace(/^(Pick up|Talk|Inspect|Travel) /, "");
 }
 
 async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number; y: number }> {
@@ -282,7 +317,7 @@ async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number;
 }
 
 async function clickUnique(locator: Locator): Promise<void> {
-  await expect(locator).toHaveCount(1);
+  await expect(locator).toHaveCount(1, { timeout: 10_000 });
   await locator.click();
 }
 

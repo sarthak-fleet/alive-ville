@@ -156,12 +156,44 @@ describe("long-running agent loop", () => {
     await loop.step();
 
     expect(loop.checkpoints().map((checkpoint) => checkpoint.tick)).toEqual([1]);
+    expect(loop.status().lastTick).not.toBeNull();
+    expect(loop.status().ticksRun).toBe(1);
     const status = loop.clearCheckpoints();
 
     expect(status.checkpoints).toEqual([]);
     expect(status.restoredCheckpoint).toBeNull();
+    expect(status.lastTick).toBeNull();
+    expect(status.ticksRun).toBe(0);
     expect(loop.checkpoints()).toEqual([]);
     expect(() => loop.restoreCheckpoint()).toThrow("agent_loop_checkpoint_missing");
+  });
+
+  test("waits for an in-flight autonomous step before replacement cleanup", async () => {
+    let releaseTick: () => void = () => {
+      throw new Error("agent loop tick was not scheduled");
+    };
+    const engine = createEngine(fixture(), {
+      propose: () => new Promise((resolve) => {
+        releaseTick = () => resolve([]);
+      }),
+    });
+    const loop = createAgentLoop(engine);
+
+    const step = loop.step();
+    let settled = false;
+    const idle = loop.waitForIdle().then(() => {
+      settled = true;
+      return undefined;
+    });
+    await waitForMicrotasks();
+
+    expect(settled).toBe(false);
+    releaseTick();
+    await step;
+    await idle;
+
+    expect(settled).toBe(true);
+    expect(loop.status().ticksRun).toBe(1);
   });
 });
 

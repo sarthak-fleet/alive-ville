@@ -175,13 +175,20 @@ describe("server", () => {
       });
 
       expect(imported.status).toBe(200);
-      const body = (await imported.json()) as { state: { id: string }; agentLoopStatus: { state: string; checkpoints: unknown[] } };
+      const body = (await imported.json()) as { state: { id: string }; agentLoopStatus: { state: string; ticksRun: number; lastTick: unknown; checkpoints: unknown[] } };
       expect(body.state.id).toBe("opm_ingested_z_city");
       expect(body.agentLoopStatus.state).toBe("stopped");
+      expect(body.agentLoopStatus.ticksRun).toBe(0);
+      expect(body.agentLoopStatus.lastTick).toBeNull();
       expect(body.agentLoopStatus.checkpoints).toEqual([]);
 
       const status = await fetch(`http://localhost:${port}/api/agent-loop/status`);
-      expect((await status.json()) as { state: string; checkpoints: unknown[] }).toMatchObject({ state: "stopped", checkpoints: [] });
+      expect((await status.json()) as { state: string; ticksRun: number; lastTick: unknown; checkpoints: unknown[] }).toMatchObject({
+        state: "stopped",
+        ticksRun: 0,
+        lastTick: null,
+        checkpoints: [],
+      });
 
       const restore = await fetch(`http://localhost:${port}/api/agent-loop/restore-checkpoint`, { method: "POST" });
       expect(restore.status).toBe(404);

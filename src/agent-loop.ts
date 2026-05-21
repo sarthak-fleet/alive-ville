@@ -41,6 +41,7 @@ export interface AgentLoop {
   step(): Promise<TickSummary>;
   restoreCheckpoint(tick?: number): AgentLoopCheckpoint;
   clearCheckpoints(): AgentLoopStatus;
+  waitForIdle(): Promise<void>;
   status(): AgentLoopStatus;
   checkpoints(): AgentLoopCheckpoint[];
 }
@@ -63,6 +64,8 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
   let lastTick: TickSummary | null = null;
   let lastError: string | null = null;
   let restoredCheckpoint: AgentLoopStatus["restoredCheckpoint"] = null;
+  let currentStep: Promise<void> | null = null;
+  let resolveCurrentStep: (() => void) | null = null;
 
   const loop: AgentLoop = {
     start() {
@@ -95,6 +98,9 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
         throw new Error("agent_loop_max_ticks_reached");
       }
       stepping = true;
+      currentStep = new Promise((resolve) => {
+        resolveCurrentStep = resolve;
+      });
       try {
         const summary = await engine.tick(undefined);
         ticksRun += 1;
@@ -111,6 +117,9 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
         throw error;
       } finally {
         stepping = false;
+        resolveCurrentStep?.();
+        resolveCurrentStep = null;
+        currentStep = null;
       }
     },
     restoreCheckpoint(tick) {
@@ -127,8 +136,14 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
     },
     clearCheckpoints() {
       checkpoints.length = 0;
+      ticksRun = 0;
+      lastTick = null;
+      lastError = null;
       restoredCheckpoint = null;
       return status();
+    },
+    async waitForIdle() {
+      await (currentStep ?? Promise.resolve());
     },
     status,
     checkpoints: () => checkpoints.map(cloneCheckpoint),

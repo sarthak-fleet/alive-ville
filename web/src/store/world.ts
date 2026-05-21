@@ -134,11 +134,11 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   async refreshFromServer(summary = null) {
     const world = await fetchState();
     updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
-    if (summary) {
+    if (summary && summary.tick === world.tick) {
       commitTick(set, get, world, summary, get().world);
       return;
     }
-    set({ world, error: null });
+    set({ world, error: null, lastSummary: null, bubbles: [] });
   },
 
   applyServerTick(world, summary) {
