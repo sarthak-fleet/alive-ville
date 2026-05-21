@@ -2,7 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { extname, normalize } from "node:path";
 
-import { readAgentLoopCheckpoints, upsertAgentLoopCheckpoint } from "./agent-checkpoint-store.ts";
+import { readAgentLoopCheckpoints, upsertAgentLoopCheckpoint, writeAgentLoopCheckpoints } from "./agent-checkpoint-store.ts";
 import { createAgentLoop } from "./agent-loop.ts";
 import { createDirector } from "./director.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
@@ -38,6 +38,8 @@ const MIME: Record<string, string> = {
 };
 
 const world = JSON.parse(readFileSync(WORLD_PATH, "utf8")) as World;
+const initialAgentLoopCheckpoints = readAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH)
+  .filter((checkpoint) => checkpoint.world.id === world.id);
 const propose = isLlmEnabled() ? createLlmProposer({ tier: "normal", maxNpcs: LLM_MAX_NPCS }) : undefined;
 const director = createDirector({ propose: isLlmEnabled() ? proposeAction : undefined });
 const engine = createEngine(world, { propose, director });
@@ -45,7 +47,7 @@ const agentLoop = createAgentLoop(engine, {
   intervalMs: AGENT_LOOP_INTERVAL_MS,
   maxTicks: AGENT_LOOP_MAX_TICKS,
   maxCheckpoints: AGENT_LOOP_MAX_CHECKPOINTS,
-  initialCheckpoints: readAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH),
+  initialCheckpoints: initialAgentLoopCheckpoints,
   onCheckpoint: (checkpoint) => upsertAgentLoopCheckpoint(AGENT_LOOP_CHECKPOINT_PATH, checkpoint, AGENT_LOOP_MAX_CHECKPOINTS),
 });
 if (AGENT_LOOP_AUTOSTART) agentLoop.start();
@@ -183,7 +185,9 @@ function json(res: ServerResponse, status: number, payload: unknown): void {
 function replaceEngineState(nextWorld: World) {
   if (agentLoop.status().state === "running") agentLoop.stop("world_replaced");
   engine.setState(nextWorld);
-  return agentLoop.status();
+  const status = agentLoop.clearCheckpoints();
+  writeAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH, []);
+  return status;
 }
 
 function readJson(req: IncomingMessage): Promise<unknown> {

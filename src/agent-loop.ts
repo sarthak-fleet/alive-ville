@@ -40,6 +40,7 @@ export interface AgentLoop {
   stop(reason?: string): AgentLoopStatus;
   step(): Promise<TickSummary>;
   restoreCheckpoint(tick?: number): AgentLoopCheckpoint;
+  clearCheckpoints(): AgentLoopStatus;
   status(): AgentLoopStatus;
   checkpoints(): AgentLoopCheckpoint[];
 }
@@ -123,6 +124,11 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
       engine.setState(checkpoint.world);
       restoredCheckpoint = checkpointSummary(checkpoint);
       return cloneCheckpoint(checkpoint);
+    },
+    clearCheckpoints() {
+      checkpoints.length = 0;
+      restoredCheckpoint = null;
+      return status();
     },
     status,
     checkpoints: () => checkpoints.map(cloneCheckpoint),

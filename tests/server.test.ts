@@ -150,8 +150,19 @@ describe("server", () => {
 
   test("stops a running agent loop before replacing world state", async () => {
     const port = 5700 + Math.floor(Math.random() * 200);
-    const child = await startServer(port);
+    const checkpointDir = mkdtempSync(join(tmpdir(), "ai-game-server-replace-"));
+    const checkpointFile = join(checkpointDir, "agent-loop.json");
+    const env = { AGENT_LOOP_CHECKPOINT_FILE: checkpointFile };
+    let child: ChildProcess | null = null;
     try {
+      child = await startServer(port, env);
+      for (let i = 0; i < 5; i += 1) {
+        const step = await fetch(`http://localhost:${port}/api/agent-loop/step`, { method: "POST" });
+        expect(step.status).toBe(200);
+      }
+      const checkpointStatus = await fetch(`http://localhost:${port}/api/agent-loop/status`);
+      expect((await checkpointStatus.json()) as { checkpoints: Array<{ tick: number }> }).toMatchObject({ checkpoints: [{ tick: 5 }] });
+
       const start = await fetch(`http://localhost:${port}/api/agent-loop/start`, { method: "POST" });
       expect(start.status).toBe(200);
       expect((await start.json()) as { state: string }).toMatchObject({ state: "running" });
@@ -164,14 +175,25 @@ describe("server", () => {
       });
 
       expect(imported.status).toBe(200);
-      const body = (await imported.json()) as { state: { id: string }; agentLoopStatus: { state: string } };
+      const body = (await imported.json()) as { state: { id: string }; agentLoopStatus: { state: string; checkpoints: unknown[] } };
       expect(body.state.id).toBe("opm_ingested_z_city");
       expect(body.agentLoopStatus.state).toBe("stopped");
+      expect(body.agentLoopStatus.checkpoints).toEqual([]);
 
       const status = await fetch(`http://localhost:${port}/api/agent-loop/status`);
-      expect((await status.json()) as { state: string }).toMatchObject({ state: "stopped" });
-    } finally {
+      expect((await status.json()) as { state: string; checkpoints: unknown[] }).toMatchObject({ state: "stopped", checkpoints: [] });
+
+      const restore = await fetch(`http://localhost:${port}/api/agent-loop/restore-checkpoint`, { method: "POST" });
+      expect(restore.status).toBe(404);
+
       child.kill();
+      await waitForExit(child);
+      child = await startServer(port, env);
+      const restarted = await fetch(`http://localhost:${port}/api/agent-loop/status`);
+      expect((await restarted.json()) as { checkpoints: unknown[] }).toMatchObject({ checkpoints: [] });
+    } finally {
+      child?.kill();
+      rmSync(checkpointDir, { recursive: true, force: true });
     }
   });
 });

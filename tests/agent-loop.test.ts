@@ -145,6 +145,24 @@ describe("long-running agent loop", () => {
     expect(nextLoop.checkpoints().map((checkpoint) => checkpoint.tick)).toEqual([2, 3]);
     expect(() => nextLoop.restoreCheckpoint(1)).toThrow("agent_loop_checkpoint_not_found");
   });
+
+  test("clears checkpoints when the owning world is replaced", async () => {
+    const engine = createEngine(fixture(), { propose: async () => [] });
+    const loop = createAgentLoop(engine, {
+      checkpointEveryTicks: 1,
+      now: () => new Date("2026-05-21T00:00:00.000Z"),
+    });
+
+    await loop.step();
+
+    expect(loop.checkpoints().map((checkpoint) => checkpoint.tick)).toEqual([1]);
+    const status = loop.clearCheckpoints();
+
+    expect(status.checkpoints).toEqual([]);
+    expect(status.restoredCheckpoint).toBeNull();
+    expect(loop.checkpoints()).toEqual([]);
+    expect(() => loop.restoreCheckpoint()).toThrow("agent_loop_checkpoint_missing");
+  });
 });
 
 function waitForMicrotasks(): Promise<void> {
