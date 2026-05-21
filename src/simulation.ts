@@ -7,6 +7,7 @@ import {
   scheduledBlockFor,
 } from "./agents.ts";
 import { combatMoveFor, combatMovesFor } from "./combat.ts";
+import { questItemTargetsFor } from "./quest-targets.ts";
 import {
   advanceNightfallTravel,
   ensureStoryProgress,
@@ -486,15 +487,9 @@ function questOutcomeText(world: World, quest: Quest, completerId: string): stri
 }
 
 function completeQuestForGift(world: World, giverId: string, targetId: string, itemId: string): Quest | null {
-  const questByGift: Record<string, { targetId: string; questId: string }> = {
-    shears: { targetId: "mira", questId: "return_shears" },
-    bellows_leather: { targetId: "tomas", questId: "rekindle_forge" },
-    blue_ember: { targetId: "lena", questId: "bridge_whisper" },
-    rumor_note: { targetId: "lena", questId: "bridge_whisper" },
-  };
-  const match = questByGift[itemId];
-  if (!match || match.targetId !== targetId) return null;
-  const quest = getQuest(world, match.questId);
+  const quest = (world.quests ?? []).find((candidate) =>
+    questItemTargetsFor(world, candidate).some((target) => target.itemId === itemId && target.returnNpcId === targetId)
+  );
   if (!quest || quest.status !== "active" || quest.acceptedBy !== giverId) return null;
   quest.status = "done";
   applyQuestDeltas(world, quest.rewards?.relationshipDelta, giverId);

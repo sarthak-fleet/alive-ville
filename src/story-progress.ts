@@ -75,7 +75,11 @@ export function isCutsceneUnlocked(world: World | null | undefined, cutsceneId: 
 }
 
 export function starterPathComplete(world: World): boolean {
-  return STARTER_QUEST_IDS.every((questId) => questById(world, questId)?.status === "done");
+  const starterQuests = STARTER_QUEST_IDS
+    .map((questId) => questById(world, questId))
+    .filter((quest): quest is Quest => Boolean(quest));
+  const requiredQuests = starterQuests.length > 0 ? starterQuests : (world.quests ?? []).slice(0, STARTER_QUEST_IDS.length);
+  return requiredQuests.length >= STARTER_QUEST_IDS.length && requiredQuests.every((quest) => quest.status === "done");
 }
 
 function unlockCompletedQuestCutscenes(world: World): void {

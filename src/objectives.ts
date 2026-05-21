@@ -1,3 +1,4 @@
+import { questItemTargetsFor } from "./quest-targets.ts";
 import { syncStoryProgress } from "./story-progress.ts";
 import type { Item, Npc, Quest, QuestStatus, World } from "./types.ts";
 
@@ -15,15 +16,6 @@ export interface Objective {
   storyAction?: "confront_shadow" | "fight_challenger";
   storyTargetId?: string;
 }
-
-const QUEST_ITEM_TARGETS: Record<string, Array<{ itemId: string; returnNpcId: string; searchLocationId: string }>> = {
-  return_shears: [{ itemId: "shears", returnNpcId: "mira", searchLocationId: "forge" }],
-  rekindle_forge: [{ itemId: "bellows_leather", returnNpcId: "tomas", searchLocationId: "wood" }],
-  bridge_whisper: [
-    { itemId: "blue_ember", returnNpcId: "lena", searchLocationId: "bridge" },
-    { itemId: "rumor_note", returnNpcId: "lena", searchLocationId: "bridge" },
-  ],
-};
 
 export function activeObjectives(world: World): Objective[] {
   const quests = world.quests ?? [];
@@ -128,7 +120,7 @@ export function objectiveForQuest(world: World, quest: Quest): Objective | null 
     };
   }
 
-  const targets = QUEST_ITEM_TARGETS[quest.id] ?? [];
+  const targets = questItemTargetsFor(world, quest);
   const heldTarget = targets.find(({ itemId }) => findItem(world, itemId)?.holderId === "player");
   if (heldTarget) {
     const npc = findNpc(world, heldTarget.returnNpcId);
