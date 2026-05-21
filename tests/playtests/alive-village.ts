@@ -27,20 +27,22 @@ async function main(): Promise<void> {
   try {
     await Promise.all([waitForHttp(`http://127.0.0.1:${API_PORT}/api/state`), waitForHttp(BASE_URL)]);
     await restoreWorld();
-    await runAliveVillagePlaytest();
+    await runAliveVillagePlaytest(api);
   } finally {
     stopProcess(web);
     stopProcess(api);
   }
 }
 
-async function runAliveVillagePlaytest(): Promise<void> {
+async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors: string[] = [];
+  let allowRecoverableNetworkError = false;
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    const text = message.text();
+    if (message.type() === "error" && !(allowRecoverableNetworkError && text.includes("502 (Bad Gateway)"))) errors.push(text);
   });
 
   try {
@@ -132,6 +134,15 @@ async function runAliveVillagePlaytest(): Promise<void> {
 
     await page.getByRole("button", { name: "Sound on" }).click();
     await expect(page.getByRole("button", { name: "Sound" })).toHaveAttribute("aria-pressed", "false");
+    stopProcess(api);
+    allowRecoverableNetworkError = true;
+    await page.getByRole("button", { name: "Wait" }).click();
+    await expect(page.getByLabel("Recoverable app error")).toContainText("Action failed");
+    await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await page.screenshot({ path: join(ARTIFACT_DIR, "05-recoverable-error.png") });
+    await page.getByRole("button", { name: "Dismiss" }).click();
+    await expect(page.getByLabel("Recoverable app error")).toHaveCount(0);
     await expect(errors, errors.join("\n")).toEqual([]);
   } finally {
     await page.close();

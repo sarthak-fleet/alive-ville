@@ -5,8 +5,7 @@ import type { WorldIngestSource } from "../../../src/world-ingest.ts";
 
 export async function fetchState(): Promise<World> {
   const res = await fetch("/api/state");
-  if (!res.ok) throw new Error(`fetchState failed: ${res.status}`);
-  return (await res.json()) as World;
+  return readApiJson<World>(res, "fetchState");
 }
 
 export interface TickResponse {
@@ -20,7 +19,7 @@ export async function postTick(action: PlayerAction | null): Promise<TickRespons
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ action }),
   });
-  const data = (await res.json()) as TickResponse | { error: string };
+  const data = await readApiJson<TickResponse | { error: string }>(res, "postTick");
   if ("error" in data) throw new Error(data.error);
   return data;
 }
@@ -32,14 +31,12 @@ export interface Snapshot {
 
 export async function fetchSnapshot(): Promise<Snapshot> {
   const res = await fetch("/api/save");
-  if (!res.ok) throw new Error(`fetchSnapshot failed: ${res.status}`);
-  return (await res.json()) as Snapshot;
+  return readApiJson<Snapshot>(res, "fetchSnapshot");
 }
 
 export async function fetchStoryPackage(): Promise<{ package: StoryPackage; issues: unknown[] }> {
   const res = await fetch("/api/story-package");
-  if (!res.ok) throw new Error(`fetchStoryPackage failed: ${res.status}`);
-  return (await res.json()) as { package: StoryPackage; issues: unknown[] };
+  return readApiJson<{ package: StoryPackage; issues: unknown[] }>(res, "fetchStoryPackage");
 }
 
 export async function restoreSnapshot(snapshot: Snapshot | World): Promise<World> {
@@ -48,7 +45,7 @@ export async function restoreSnapshot(snapshot: Snapshot | World): Promise<World
     headers: { "content-type": "application/json" },
     body: JSON.stringify(snapshot),
   });
-  const data = (await res.json()) as { ok: true; state: World } | { error: string };
+  const data = await readApiJson<{ ok: true; state: World } | { error: string }>(res, "restoreSnapshot");
   if ("error" in data) throw new Error(data.error);
   return data.state;
 }
@@ -59,7 +56,7 @@ export async function importStoryPackage(pkg: StoryPackage): Promise<World> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(pkg),
   });
-  const data = (await res.json()) as { ok: true; state: World } | { error: string; issues?: unknown[] };
+  const data = await readApiJson<{ ok: true; state: World } | { error: string; issues?: unknown[] }>(res, "importStoryPackage");
   if ("error" in data) {
     const suffix = data.issues ? ` ${JSON.stringify(data.issues)}` : "";
     throw new Error(`${data.error}${suffix}`);
@@ -73,7 +70,7 @@ export async function importWorldSource(source: WorldIngestSource): Promise<Worl
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ source }),
   });
-  const data = (await res.json()) as { ok: true; state: World } | { error: string; issues?: unknown[] };
+  const data = await readApiJson<{ ok: true; state: World } | { error: string; issues?: unknown[] }>(res, "importWorldSource");
   if ("error" in data) {
     const suffix = data.issues ? ` ${JSON.stringify(data.issues)}` : "";
     throw new Error(`${data.error}${suffix}`);
@@ -83,8 +80,7 @@ export async function importWorldSource(source: WorldIngestSource): Promise<Worl
 
 export async function fetchAgentLoopStatus(): Promise<AgentLoopStatus> {
   const res = await fetch("/api/agent-loop/status");
-  if (!res.ok) throw new Error(`fetchAgentLoopStatus failed: ${res.status}`);
-  return (await res.json()) as AgentLoopStatus;
+  return readApiJson<AgentLoopStatus>(res, "fetchAgentLoopStatus");
 }
 
 export async function startAgentLoop(): Promise<AgentLoopStatus> {
@@ -97,13 +93,35 @@ export async function stopAgentLoop(): Promise<AgentLoopStatus> {
 
 export async function stepAgentLoop(): Promise<{ status: AgentLoopStatus; state: World; summary: TickSummary }> {
   const res = await fetch("/api/agent-loop/step", { method: "POST" });
-  const data = (await res.json()) as { status: AgentLoopStatus; state: World; summary: TickSummary } | { error: string; status: AgentLoopStatus };
+  const data = await readApiJson<{ status: AgentLoopStatus; state: World; summary: TickSummary } | { error: string; status: AgentLoopStatus }>(res, "stepAgentLoop");
   if ("error" in data) throw new Error(data.error);
   return data;
 }
 
 async function postAgentLoopCommand(path: string): Promise<AgentLoopStatus> {
   const res = await fetch(path, { method: "POST" });
-  if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
-  return (await res.json()) as AgentLoopStatus;
+  return readApiJson<AgentLoopStatus>(res, path);
+}
+
+async function readApiJson<T>(res: Response, label: string): Promise<T> {
+  const text = await res.text();
+  let data: unknown = null;
+  if (text.trim()) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (!res.ok) throw new Error(`${label} failed: ${res.status}`);
+      throw new Error(`${label} returned invalid JSON`);
+    }
+  }
+  if (!res.ok) {
+    const error = isErrorPayload(data) ? data.error : `${label} failed: ${res.status}`;
+    const suffix = isErrorPayload(data) && data.issues ? ` ${JSON.stringify(data.issues)}` : "";
+    throw new Error(`${error}${suffix}`);
+  }
+  return data as T;
+}
+
+function isErrorPayload(value: unknown): value is { error: string; issues?: unknown[] } {
+  return Boolean(value && typeof value === "object" && typeof (value as { error?: unknown }).error === "string");
 }

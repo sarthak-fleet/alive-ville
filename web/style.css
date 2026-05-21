@@ -542,6 +542,35 @@ button.primary:hover { filter: brightness(1.05); }
 }
 .banner { padding: 32px; text-align: center; color: var(--muted); }
 .banner.error { color: #f47272; }
+.recoverable-error {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 35;
+  display: flex;
+  max-width: min(640px, calc(100vw - 32px));
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid rgba(244, 114, 114, 0.58);
+  border-radius: 8px;
+  background: rgba(32, 15, 20, 0.92);
+  color: #fecaca;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.38);
+  transform: translateX(-50%);
+}
+.recoverable-error span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recoverable-error button {
+  flex: 0 0 auto;
+  color: #fee2e2;
+  border: 1px solid rgba(254, 202, 202, 0.42);
+  background: rgba(127, 29, 29, 0.45);
+}
 #bubbles { position: absolute; inset: 0; pointer-events: none; }
 .bubble {
   position: absolute; transform: translate(-50%, calc(-100% - 14px));

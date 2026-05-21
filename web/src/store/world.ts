@@ -46,6 +46,7 @@ interface WorldStore {
   applyServerTick: (world: World, summary: TickSummary) => void;
   openDrawer: (npcId: string) => void;
   closeDrawer: () => void;
+  clearError: () => void;
   pruneBubbles: (now: number) => void;
 }
 
@@ -148,6 +149,9 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   },
   closeDrawer() {
     set({ drawerNpcId: null });
+  },
+  clearError() {
+    set({ error: null });
   },
   pruneBubbles(now) {
     set({ bubbles: get().bubbles.filter((b) => b.expiresAt > now) });
