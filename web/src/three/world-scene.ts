@@ -35,6 +35,8 @@ export interface SceneActorNode {
   x: number;
   z: number;
   color: string;
+  accentColor: string;
+  bodyShape: "average" | "broad" | "caped" | "mechanical" | "small" | "slim";
   player: boolean;
   quest: boolean;
 }
@@ -710,13 +712,16 @@ function sceneMoodForClock(world: World): SceneMoodNode {
 function playerNode(world: World, location: Location | undefined): SceneActorNode | null {
   if (!location) return null;
   const center = centerForLocation(location);
+  const visual = actorVisualFor(world.player.appearance, "#58a6ff");
   return {
     id: "player",
     name: world.player.name ?? "Player",
     locationId: location.id,
     x: center.x,
     z: center.z,
-    color: world.player.appearance?.palette?.[0] ?? "#58a6ff",
+    color: visual.color,
+    accentColor: visual.accentColor,
+    bodyShape: visual.bodyShape,
     player: true,
     quest: false,
   };
@@ -726,16 +731,42 @@ function actorNode(npc: Npc, location: Location | undefined): SceneActorNode | n
   if (!location) return null;
   const center = centerForLocation(location);
   const offset = stableOffset(npc.id, 0.42);
+  const visual = actorVisualFor(npc.appearance, npc.tier === "quest" ? "#b5e48c" : "#ff8a65");
   return {
     id: npc.id,
     name: npc.name,
     locationId: location.id,
     x: center.x + offset.x,
     z: center.z + offset.z,
-    color: npc.appearance?.palette?.[0] ?? (npc.tier === "quest" ? "#b5e48c" : "#ff8a65"),
+    color: visual.color,
+    accentColor: visual.accentColor,
+    bodyShape: visual.bodyShape,
     player: false,
     quest: npc.tier === "quest",
   };
+}
+
+function actorVisualFor(appearance: Npc["appearance"] | World["player"]["appearance"], fallbackColor: string): {
+  color: string;
+  accentColor: string;
+  bodyShape: SceneActorNode["bodyShape"];
+} {
+  const palette = appearance?.palette ?? [];
+  return {
+    color: palette[0] ?? fallbackColor,
+    accentColor: palette[2] ?? palette[1] ?? palette[0] ?? fallbackColor,
+    bodyShape: actorBodyShapeFor(appearance),
+  };
+}
+
+function actorBodyShapeFor(appearance: Npc["appearance"] | World["player"]["appearance"]): SceneActorNode["bodyShape"] {
+  const text = `${appearance?.sourceLook ?? ""} ${appearance?.bodyType ?? ""} ${appearance?.silhouette ?? ""} ${appearance?.outfit ?? ""} ${(appearance?.visualTags ?? []).join(" ")}`.toLowerCase();
+  if (/cyborg|mechanical|robot|armor|armored/.test(text)) return "mechanical";
+  if (/cape|caped|cloak/.test(text)) return "caped";
+  if (/child|small|short|quick/.test(text)) return "small";
+  if (/broad|strong|heavy|blacksmith|large|shoulder/.test(text)) return "broad";
+  if (/lean|slim|ninja|floating|psychic|athletic/.test(text)) return "slim";
+  return "average";
 }
 
 function itemNode(item: Item, location: Location | undefined): SceneItemNode | null {
@@ -1024,8 +1055,8 @@ function makeLabelSprite(text: string, x: number, y: number, z: number, active: 
 }
 
 function makeActorMesh(actor: SceneActorNode, motion: TravelMotion | null = null): THREE.Object3D {
-  const radius = actor.player ? 0.18 : 0.14;
-  const height = actor.player ? 0.72 : actor.quest ? 0.62 : 0.52;
+  const radius = actorRadius(actor);
+  const height = actorHeight(actor);
   const geometry = new THREE.CapsuleGeometry(radius, height, 5, 10);
   const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(actor.color), roughness: 0.48 });
   const mesh = new THREE.Mesh(geometry, material);
@@ -1045,8 +1076,59 @@ function makeActorMesh(actor: SceneActorNode, motion: TravelMotion | null = null
   const halo = makeTargetHalo(actor.player ? "#58a6ff" : actor.quest ? "#b5e48c" : actor.color, actor.player ? 0.38 : 0.3, actor.player ? 0.18 : 0.12);
   halo.userData["sceneAnimation"] = pulseAnimation(actor.id, 1, actor.player ? 0.08 : 0.05);
   group.add(shadow, halo, mesh);
+  const accessory = makeActorAccessoryMesh(actor, height, radius);
+  if (accessory) group.add(accessory);
   applyShadows(mesh, { cast: true });
   return group;
+}
+
+function actorRadius(actor: SceneActorNode): number {
+  if (actor.bodyShape === "broad") return actor.player ? 0.22 : 0.18;
+  if (actor.bodyShape === "small" || actor.bodyShape === "slim") return actor.player ? 0.16 : 0.12;
+  return actor.player ? 0.18 : 0.14;
+}
+
+function actorHeight(actor: SceneActorNode): number {
+  if (actor.bodyShape === "small") return actor.player ? 0.58 : 0.44;
+  if (actor.bodyShape === "broad") return actor.player ? 0.76 : 0.66;
+  if (actor.bodyShape === "slim") return actor.player ? 0.76 : 0.58;
+  return actor.player ? 0.72 : actor.quest ? 0.62 : 0.52;
+}
+
+function makeActorAccessoryMesh(actor: SceneActorNode, height: number, radius: number): THREE.Object3D | null {
+  const accent = new THREE.Color(actor.accentColor);
+  const material = new THREE.MeshStandardMaterial({ color: accent, roughness: 0.5, metalness: actor.bodyShape === "mechanical" ? 0.42 : 0.04 });
+  const group = new THREE.Group();
+  group.name = `actor-accessory:${actor.id}:${actor.bodyShape}`;
+  if (actor.bodyShape === "caped") {
+    const cape = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2.6, height * 0.82), material);
+    cape.position.set(0, height * 0.72, radius + 0.045);
+    cape.rotation.x = -0.18;
+    group.add(cape);
+  } else if (actor.bodyShape === "mechanical") {
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.32, radius * 0.32, height * 0.62, 8), material);
+      arm.position.set(side * radius * 1.42, height * 0.64, 0);
+      arm.rotation.z = side * 0.18;
+      group.add(arm);
+    }
+  } else if (actor.bodyShape === "broad") {
+    const shoulders = new THREE.Mesh(new THREE.BoxGeometry(radius * 2.7, 0.12, radius * 1.2), material);
+    shoulders.position.set(0, height + 0.28, 0);
+    group.add(shoulders);
+  } else if (actor.bodyShape === "small") {
+    const satchel = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.9, 0.12, radius * 0.5), material);
+    satchel.position.set(radius * 0.9, height * 0.62, -radius * 0.35);
+    group.add(satchel);
+  } else if (actor.bodyShape === "slim") {
+    const sash = new THREE.Mesh(new THREE.TorusGeometry(radius * 0.92, 0.018, 6, 18), material);
+    sash.position.set(0, height * 0.72, 0);
+    sash.rotation.x = Math.PI / 2;
+    sash.rotation.z = 0.35;
+    group.add(sash);
+  }
+  for (const child of group.children) applyShadows(child, { cast: true });
+  return group.children.length > 0 ? group : null;
 }
 
 function makeItemMesh(item: SceneItemNode): THREE.Object3D {

@@ -44,8 +44,20 @@ describe("3D world scene model", () => {
     const world = fixture("../worlds/one-punch-man.json");
     const model = buildWorldSceneModel(world);
 
-    expect(model.actors.find((actor) => actor.id === "mira")?.color).toBe("#f6d85f");
-    expect(model.actors.find((actor) => actor.id === "pax")?.color).toBe("#2b2337");
+    expect(model.actors.find((actor) => actor.id === "mira")).toMatchObject({
+      color: "#f6d85f",
+      accentColor: "#b41f2a",
+      bodyShape: "caped",
+    });
+    expect(model.actors.find((actor) => actor.id === "tomas")).toMatchObject({
+      color: "#d48b3f",
+      accentColor: "#f2c64f",
+      bodyShape: "mechanical",
+    });
+    expect(model.actors.find((actor) => actor.id === "pax")).toMatchObject({
+      color: "#2b2337",
+      bodyShape: "slim",
+    });
     expect(model.locations.find((location) => location.id === "bridge")).toMatchObject({
       accentColor: "#8d5cff",
       landmarks: ["bridge_span"],
@@ -127,6 +139,8 @@ describe("3D world scene model", () => {
       name: "Tomas",
       locationId: "forge",
       color: "#6f4b35",
+      accentColor: "#2c2a28",
+      bodyShape: "broad",
       player: true,
     });
     expect(model.actors.some((actor) => actor.id === "tomas")).toBe(false);
