@@ -21,7 +21,9 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       file("web/src/organisms/ThreeWorld.tsx"),
       packageDependency("three"),
       source("web/src/templates/AppShell.tsx", ["3D", "lazy", "ThreeWorld"]),
-      source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels"]),
+      source("web/src/three/world-scene.ts", ["Raycaster", "onLocationSelect", "makePathMesh", "makeLabelSprite"]),
+      source("web/src/organisms/ThreeWorld.tsx", ["3D travel", "movePlayerToward", "shortestLocationRoute"]),
+      source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels", "Go Herb Garden", "At Herb Garden"]),
       file("tests/three-world.test.ts"),
     ]),
     gate(rootDir, "generic_world_ingest", "Generic world ingest", [

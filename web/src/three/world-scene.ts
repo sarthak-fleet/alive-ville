@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import type { Item, Location, Npc, World } from "../../../src/types.ts";
+import type { Exit, Item, Location, Npc, World } from "../../../src/types.ts";
 
 const WORLD_SCALE = 0.018;
 const MIN_BUILDING_HEIGHT = 0.45;
@@ -34,8 +34,16 @@ export interface SceneItemNode {
   color: string;
 }
 
+export interface ScenePathNode {
+  fromId: string;
+  toId: string;
+  from: { x: number; z: number };
+  to: { x: number; z: number };
+}
+
 export interface WorldSceneModel {
   locations: SceneLocationNode[];
+  paths: ScenePathNode[];
   actors: SceneActorNode[];
   items: SceneItemNode[];
   bounds: { width: number; depth: number };
@@ -46,6 +54,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const bounds = worldBounds(world.locations);
   const activeLocation = world.locations.find((location) => location.id === world.player.locationId) ?? world.locations[0];
   const locations = world.locations.map((location) => locationNode(location, world.player.locationId));
+  const paths = world.exits.map((exit) => pathNode(exit, world.locations)).filter((node): node is ScenePathNode => Boolean(node));
   const actors = [
     playerNode(world, activeLocation),
     ...world.npcs.map((npc) => actorNode(npc, world.locations.find((location) => location.id === npc.locationId))),
@@ -56,6 +65,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const target = activeLocation ? centerForLocation(activeLocation) : { x: 0, z: 0 };
   return {
     locations,
+    paths,
     actors,
     items,
     bounds,
@@ -68,16 +78,23 @@ export class ThreeWorldRenderer {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(50, 1, 0.1, 120);
   private readonly root = new THREE.Group();
+  private readonly raycaster = new THREE.Raycaster();
+  private readonly pointer = new THREE.Vector2();
+  private readonly pickableLocations: THREE.Object3D[] = [];
   private frame = 0;
   private disposed = false;
+  private onLocationSelect: ((locationId: string) => void) | null = null;
 
-  constructor(private readonly container: HTMLElement) {
+  constructor(private readonly container: HTMLElement, options: { onLocationSelect?: (locationId: string) => void } = {}) {
+    this.onLocationSelect = options.onLocationSelect ?? null;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setClearColor(0x070a0f, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.container.appendChild(this.renderer.domElement);
+    this.renderer.domElement.addEventListener("pointerdown", this.handlePointerDown);
     this.scene.add(this.root);
+    this.scene.fog = new THREE.FogExp2(0x0a0d12, 0.035);
     this.scene.add(new THREE.HemisphereLight(0xcfe7ff, 0x222018, 1.7));
     const sun = new THREE.DirectionalLight(0xffe1a0, 2.2);
     sun.position.set(6, 10, 5);
@@ -96,9 +113,19 @@ export class ThreeWorldRenderer {
 
   renderWorld(world: World): void {
     const model = buildWorldSceneModel(world);
+    disposeObjectTree(this.root);
     this.root.clear();
+    this.pickableLocations.length = 0;
     this.root.add(makeGround(model));
-    for (const location of model.locations) this.root.add(makeLocationMesh(location));
+    this.root.add(makeSkyline(model));
+    for (const path of model.paths) this.root.add(makePathMesh(path));
+    for (const location of model.locations) {
+      const mesh = makeLocationMesh(location);
+      this.root.add(mesh);
+      const pickable = mesh.getObjectByName(`pick:${location.id}`);
+      if (pickable) this.pickableLocations.push(pickable);
+      this.root.add(makeLabelSprite(location.name, location.x, location.height + 0.34, location.z, location.active));
+    }
     for (const item of model.items) this.root.add(makeItemMesh(item));
     for (const actor of model.actors) this.root.add(makeActorMesh(actor));
     this.camera.position.set(model.cameraTarget.x + 4.8, 6.4, model.cameraTarget.z + 7.2);
@@ -123,19 +150,22 @@ export class ThreeWorldRenderer {
   dispose(): void {
     this.disposed = true;
     cancelAnimationFrame(this.frame);
-    this.root.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      mesh.geometry?.dispose();
-      const material = mesh.material;
-      if (Array.isArray(material)) {
-        for (const item of material) item.dispose();
-      } else {
-        material?.dispose();
-      }
-    });
+    this.renderer.domElement.removeEventListener("pointerdown", this.handlePointerDown);
+    disposeObjectTree(this.root);
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
+
+  private readonly handlePointerDown = (event: PointerEvent): void => {
+    if (!this.onLocationSelect || this.pickableLocations.length === 0) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const hit = this.raycaster.intersectObjects(this.pickableLocations, false)[0];
+    const locationId = hit?.object.userData["locationId"];
+    if (typeof locationId === "string") this.onLocationSelect(locationId);
+  };
 }
 
 function worldBounds(locations: Location[]): { width: number; depth: number } {
@@ -163,6 +193,18 @@ function locationNode(location: Location, activeLocationId: string): SceneLocati
     depth: Math.max(0.72, location.h * WORLD_SCALE),
     height: MIN_BUILDING_HEIGHT + Math.min(1.6, area / 90_000),
     active: location.id === activeLocationId,
+  };
+}
+
+function pathNode(exit: Exit, locations: Location[]): ScenePathNode | null {
+  const from = locations.find((location) => location.id === exit.from);
+  const to = locations.find((location) => location.id === exit.to);
+  if (!from || !to) return null;
+  return {
+    fromId: from.id,
+    toId: to.id,
+    from: centerForLocation(from),
+    to: centerForLocation(to),
   };
 }
 
@@ -224,12 +266,38 @@ function makeGround(model: WorldSceneModel): THREE.Object3D {
   return mesh;
 }
 
+function makeSkyline(model: WorldSceneModel): THREE.Object3D {
+  const group = new THREE.Group();
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.92, metalness: 0.02 });
+  const back = new THREE.Mesh(new THREE.BoxGeometry(model.bounds.width + 4, 2.6, 0.08), wallMaterial);
+  back.position.set(model.bounds.width / 2, 1.25, -1.2);
+  const side = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.2, model.bounds.depth + 2), wallMaterial);
+  side.position.set(-1.1, 1.05, model.bounds.depth / 2);
+  group.add(back, side);
+  return group;
+}
+
+function makePathMesh(path: ScenePathNode): THREE.Object3D {
+  const dx = path.to.x - path.from.x;
+  const dz = path.to.z - path.from.z;
+  const length = Math.hypot(dx, dz);
+  const geometry = new THREE.BoxGeometry(0.13, 0.045, Math.max(0.1, length));
+  const material = new THREE.MeshStandardMaterial({ color: 0x7d8796, roughness: 0.86, metalness: 0.03 });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set((path.from.x + path.to.x) / 2, 0.025, (path.from.z + path.to.z) / 2);
+  mesh.rotation.y = Math.atan2(dx, dz);
+  return mesh;
+}
+
 function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {
   const group = new THREE.Group();
+  group.name = `location:${location.id}`;
   const color = location.active ? 0x4a6fa5 : 0x273344;
   const geometry = new THREE.BoxGeometry(location.width, location.height, location.depth);
   const material = new THREE.MeshStandardMaterial({ color, roughness: 0.74, metalness: 0.04 });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = `pick:${location.id}`;
+  mesh.userData["locationId"] = location.id;
   mesh.position.set(location.x, location.height / 2, location.z);
   group.add(mesh);
 
@@ -239,7 +307,37 @@ function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {
   );
   ring.position.set(location.x, 0.02, location.z);
   group.add(ring);
+  if (location.active) {
+    const beacon = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.22, 0.9, 16, 1, true),
+      new THREE.MeshStandardMaterial({ color: 0xf8d44e, emissive: 0x5f4300, transparent: true, opacity: 0.42 })
+    );
+    beacon.position.set(location.x, location.height + 0.52, location.z);
+    group.add(beacon);
+  }
   return group;
+}
+
+function makeLabelSprite(text: string, x: number, y: number, z: number, active: boolean): THREE.Object3D {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = active ? "rgba(248, 212, 78, 0.92)" : "rgba(230, 233, 239, 0.82)";
+    ctx.font = "700 22px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text.slice(0, 22), canvas.width / 2, canvas.height / 2);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.position.set(x, y, z);
+  sprite.scale.set(1.8, 0.45, 1);
+  return sprite;
 }
 
 function makeActorMesh(actor: SceneActorNode): THREE.Object3D {
@@ -250,7 +348,15 @@ function makeActorMesh(actor: SceneActorNode): THREE.Object3D {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = actor.name;
   mesh.position.set(actor.x, height / 2 + 0.16, actor.z);
-  return mesh;
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(radius * 1.45, 18),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: actor.player ? 0.32 : 0.22 })
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(actor.x, 0.035, actor.z);
+  const group = new THREE.Group();
+  group.add(shadow, mesh);
+  return group;
 }
 
 function makeItemMesh(item: SceneItemNode): THREE.Object3D {
@@ -260,4 +366,17 @@ function makeItemMesh(item: SceneItemNode): THREE.Object3D {
   mesh.name = item.name;
   mesh.position.set(item.x, 0.24, item.z);
   return mesh;
+}
+
+function disposeObjectTree(root: THREE.Object3D): void {
+  root.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    mesh.geometry?.dispose();
+    const material = mesh.material;
+    if (Array.isArray(material)) {
+      for (const item of material) item.dispose();
+    } else {
+      material?.dispose();
+    }
+  });
 }

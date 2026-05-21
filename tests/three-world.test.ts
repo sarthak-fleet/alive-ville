@@ -15,6 +15,7 @@ describe("3D world scene model", () => {
 
     expect(model.locations.map((location) => location.id)).toContain("square");
     expect(model.locations.find((location) => location.id === world.player.locationId)?.active).toBe(true);
+    expect(model.paths.map((path) => `${path.fromId}->${path.toId}`)).toContain("square->garden");
     expect(model.actors.find((actor) => actor.id === "player")?.player).toBe(true);
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
     expect(model.items.some((item) => item.id === "shears")).toBe(true);

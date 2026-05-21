@@ -61,7 +61,11 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await page.getByRole("button", { name: "3D" }).click();
     await expect(page.locator(".three-host canvas")).toHaveCount(1);
     await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expect(page.getByLabel("3D travel")).toContainText("At Village Square");
+    await expect(page.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas")).toBeGreaterThan(40);
+    await page.getByRole("button", { name: "Go Herb Garden" }).click();
+    await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
     await page.screenshot({ path: join(ARTIFACT_DIR, "03-three-world.png") });
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 720 } });

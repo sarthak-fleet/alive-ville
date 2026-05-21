@@ -173,6 +173,10 @@ button.primary:hover { filter: brightness(1.05); }
   background: #0a0d12;
   overflow: hidden;
 }
+.three-stage {
+  position: absolute;
+  inset: 0;
+}
 .three-host {
   width: 100%;
   height: 100%;
@@ -183,6 +187,41 @@ button.primary:hover { filter: brightness(1.05); }
 }
 .three-host.loading {
   min-height: 100%;
+}
+.three-overlay {
+  position: absolute;
+  left: 16px;
+  top: 224px;
+  z-index: 16;
+  width: min(360px, calc(100vw - 32px));
+  padding: 9px;
+  border: 1px solid rgba(88, 166, 255, 0.42);
+  border-radius: 8px;
+  background: rgba(9, 12, 18, 0.64);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(12px);
+}
+.three-overlay span {
+  display: block;
+  margin-bottom: 7px;
+  color: #dcecff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.three-location-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.three-location-strip button {
+  max-width: 152px;
+  padding: 6px 8px;
+  border-color: rgba(88, 166, 255, 0.5);
+  background: rgba(88, 166, 255, 0.12);
+  color: #edf6ff;
+  font-size: 11px;
+  line-height: 1.1;
+  white-space: normal;
 }
 .phaser-host canvas,
 .three-host canvas {
@@ -948,6 +987,14 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
     left: 10px;
     bottom: 10px;
     max-width: calc(100vw - 20px);
+  }
+  .three-overlay {
+    top: 108px;
+    left: 10px;
+    width: min(300px, calc(100vw - 20px));
+  }
+  .three-location-strip button {
+    max-width: 132px;
   }
   .cutscene-player {
     left: 10px;
