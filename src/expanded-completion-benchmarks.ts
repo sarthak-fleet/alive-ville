@@ -31,7 +31,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("tests/playtests/first-loop.ts", ["Slot Save", "page.reload", "clickThreeTarget", "hoverThreeTarget", "keyboard.press(\"e\")", "Pick up Pruning shears", "Inspect Sooty tool rack", "Fresh soot outlines", "importInvalidSave", "Restore failed: Save file is not valid JSON", "Slot Load", "three-host canvas", "At Herb Garden"]),
       source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels", "canvasPixelHash", "webglcontextlost", "webglcontextrestored", "3D renderer paused", "3D renderer restored", "travelStartHash", "Rotate camera right", "Zoom camera in", "Zoom camera out", "3D camera zoom", "Reset camera", "keyboard.press(\"d\")", "keyboard.press(\"a\")", "Go Village Square", "Go Herb Garden", "At Village Square", "At Herb Garden", "Talk Mira", "Interact with Mira", "Focus", "HUD", "expectNoHorizontalOverlap", "dialogue-panel", "toHaveClass(/active/)", "Recoverable app error", "Dismiss", "header-actions", "expectWithinViewport", "expectNoVerticalOverlap"]),
       source("web/src/three/world-scene.ts", ["pickableItems", "pickableProps", "pickableActors", "SceneObjectiveNode", "makeObjectiveBeaconMesh", "SphereGeometry(0.32", "BoxGeometry(0.38", "firstHitTarget(this.pickableItems)"]),
-      source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "objectives[0]", "moves the primary 3D objective beacon", "changes 3D lighting mood with the world clock", "fogDensity", "atmosphere", "firefly", "dust"]),
+      source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "objectives[0]", "moves the primary 3D objective beacon", "changes 3D lighting mood with the world clock", "fogDensity", "atmosphere", "firefly", "dust", "source-derived artifact visuals", "shape: \"gear\"", "shape: \"scrap\""]),
       source("worlds/village.json", ["\"visual\"", "\"landmarks\"", "\"palette\""]),
     ]),
     gate(rootDir, "generic_world_ingest", "Generic world ingest", [
@@ -41,6 +41,8 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       file("fixtures/worlds/skyfront-source.json"),
       file("fixtures/worlds/invalid-source.json"),
       source("src/world-ingest.ts", ["WorldIngestSource", "worldSourceToWorld", "validateWorldIngestSource", "rebrandGenericWorld", "remapGenericWorldIds", "locationIdMap", "uniqueSlug", "World Ingest Slice", "Invalid world ingest source"]),
+      source("src/anime-ingest.ts", ["artifactVisualFor", "itemFromArtifact", "shape: \"token\"", "shape: \"gear\"", "shape: \"scrap\"", "material: \"radio\""]),
+      source("src/types.ts", ["ItemVisualDesign", "visual?: ItemVisualDesign"]),
       source("src/quest-targets.ts", ["questItemTargetsFor", "inferQuestItemTargets", "return_shears", "bridge_whisper"]),
       source("src/story-context.ts", ["storyPhaseLocations", "storyConfrontationTargetId", "storyWitnessNpc", "directorStoryBeatText", "quietWorldRevealText", "phasePressureRevealText", "planRevealText", "villainPlans"]),
       source("src/director.ts", ["directorStoryBeatText", "storyDirectorNpc", "world's narrative director"]),

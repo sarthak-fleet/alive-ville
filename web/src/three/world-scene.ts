@@ -46,6 +46,10 @@ export interface SceneItemNode {
   x: number;
   z: number;
   color: string;
+  emissiveColor: string;
+  material: NonNullable<Item["visual"]>["material"];
+  shape: NonNullable<Item["visual"]>["shape"];
+  visualTags: string[];
 }
 
 export interface ScenePropNode {
@@ -736,14 +740,68 @@ function itemNode(item: Item, location: Location | undefined): SceneItemNode | n
   if (!location || item.holderId) return null;
   const center = centerForLocation(location);
   const offset = stableOffset(item.id, 0.58);
+  const visual = itemVisualFor(item);
   return {
     id: item.id,
     name: item.name,
     locationId: location.id,
     x: center.x + offset.x,
     z: center.z + offset.z,
-    color: "#f8d44e",
+    color: visual.color,
+    emissiveColor: visual.emissiveColor,
+    material: visual.material,
+    shape: visual.shape,
+    visualTags: visual.visualTags,
   };
+}
+
+function itemVisualFor(item: Item): {
+  color: string;
+  emissiveColor: string;
+  material: NonNullable<Item["visual"]>["material"];
+  shape: NonNullable<Item["visual"]>["shape"];
+  visualTags: string[];
+} {
+  const fallback = itemVisualFallback(`${item.id} ${item.name} ${item.description ?? ""}`);
+  return {
+    color: item.visual?.palette?.primary ?? fallback.color,
+    emissiveColor: item.visual?.palette?.emissive ?? fallback.emissiveColor,
+    material: item.visual?.material ?? fallback.material,
+    shape: item.visual?.shape ?? fallback.shape,
+    visualTags: item.visual?.visualTags ?? fallback.visualTags,
+  };
+}
+
+function itemVisualFallback(text: string): {
+  color: string;
+  emissiveColor: string;
+  material: NonNullable<Item["visual"]>["material"];
+  shape: NonNullable<Item["visual"]>["shape"];
+  visualTags: string[];
+} {
+  if (/gear|core|crystal|prism|glass|ember/i.test(text)) {
+    return { color: "#9fc3ff", emissiveColor: "#12304a", material: "crystal", shape: /gear/i.test(text) ? "gear" : "core", visualTags: itemVisualTags(text) };
+  }
+  if (/flag|scrap|cloth|paint/i.test(text)) {
+    return { color: "#e05f7a", emissiveColor: "#3a1420", material: "cloth", shape: "scrap", visualTags: itemVisualTags(text) };
+  }
+  if (/coupon|note|paper|map|letter/i.test(text)) {
+    return { color: "#f7e8a5", emissiveColor: "#3d331a", material: "paper", shape: "note", visualTags: itemVisualTags(text) };
+  }
+  if (/radio|signal/i.test(text)) {
+    return { color: "#596477", emissiveColor: "#7fd0ff", material: "radio", shape: "radio", visualTags: itemVisualTags(text) };
+  }
+  if (/scale|bone|shell|fang/i.test(text)) {
+    return { color: "#7fd0ff", emissiveColor: "#17324a", material: "organic", shape: "scale", visualTags: itemVisualTags(text) };
+  }
+  if (/token|coin|brass|badge|key/i.test(text)) {
+    return { color: "#d8a441", emissiveColor: "#3d2a05", material: "metal", shape: "token", visualTags: itemVisualTags(text) };
+  }
+  return { color: "#f8d44e", emissiveColor: "#4a3300", material: "metal", shape: "trinket", visualTags: itemVisualTags(text) };
+}
+
+function itemVisualTags(text: string): string[] {
+  return text.toLowerCase().split(/[^a-z0-9]+/).filter((term) => term.length > 3).slice(0, 6);
 }
 
 function propNode(prop: InteractableProp, location: Location | undefined): ScenePropNode | null {
@@ -1001,9 +1059,7 @@ function makeItemMesh(item: SceneItemNode): THREE.Object3D {
   hitMesh.userData["itemId"] = item.id;
   hitMesh.userData["target"] = pickTarget;
   hitMesh.position.set(0, 0.28, 0);
-  const geometry = new THREE.IcosahedronGeometry(0.11, 1);
-  const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(item.color), emissive: 0x4a3300, roughness: 0.32 });
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = makeItemShapeMesh(item);
   mesh.name = `item:${item.id}`;
   mesh.userData["itemId"] = item.id;
   mesh.userData["target"] = pickTarget;
@@ -1012,6 +1068,34 @@ function makeItemMesh(item: SceneItemNode): THREE.Object3D {
   group.add(makeTargetHalo(item.color, 0.28, 0.16), hitMesh, mesh);
   applyShadows(mesh, { cast: true });
   return group;
+}
+
+function makeItemShapeMesh(item: SceneItemNode): THREE.Mesh {
+  const color = new THREE.Color(item.color);
+  const emissive = new THREE.Color(item.emissiveColor);
+  const material = new THREE.MeshStandardMaterial({
+    color,
+    emissive,
+    emissiveIntensity: item.material === "glass" || item.material === "crystal" ? 0.42 : item.material === "radio" ? 0.28 : 0.18,
+    roughness: item.material === "paper" || item.material === "cloth" ? 0.72 : 0.32,
+    metalness: item.material === "metal" || item.material === "radio" ? 0.38 : 0.04,
+    side: item.shape === "note" || item.shape === "scrap" ? THREE.DoubleSide : THREE.FrontSide,
+  });
+  if (item.shape === "token") return new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.045, 24), material);
+  if (item.shape === "gear") return new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.03, 8, 22), material);
+  if (item.shape === "note") return rotatedItemPlane(new THREE.PlaneGeometry(0.22, 0.15), material);
+  if (item.shape === "scrap") return rotatedItemPlane(new THREE.PlaneGeometry(0.25, 0.13), material);
+  if (item.shape === "radio") return new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.14, 0.11), material);
+  if (item.shape === "scale") return rotatedItemPlane(new THREE.CircleGeometry(0.12, 3), material);
+  if (item.shape === "core") return new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 1), material);
+  return new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 1), material);
+}
+
+function rotatedItemPlane(geometry: THREE.BufferGeometry, material: THREE.Material): THREE.Mesh {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2.6;
+  mesh.rotation.z = -0.22;
+  return mesh;
 }
 
 function makePropMesh(prop: ScenePropNode): THREE.Object3D {

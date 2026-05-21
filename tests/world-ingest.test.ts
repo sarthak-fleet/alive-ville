@@ -24,6 +24,21 @@ describe("generic world ingest", () => {
     expect((world.interactables ?? []).flatMap((prop) => prop.clueTags ?? [])).not.toContain("anime");
     expect(world.npcs.map((npc) => npc.id)).toEqual(["mara", "ivo", "nell", "orric", "vex"]);
     expect(world.items.map((item) => item.id)).toEqual(["route_token", "prism_gear", "painted_flag_scrap", "false_alarm_note", "guild_radio"]);
+    expect(world.items.find((item) => item.id === "route_token")?.visual).toMatchObject({
+      material: "metal",
+      shape: "token",
+      palette: { primary: "#d8a441" },
+    });
+    expect(world.items.find((item) => item.id === "prism_gear")?.visual).toMatchObject({
+      material: "metal",
+      shape: "gear",
+      palette: { primary: "#9fc3ff" },
+    });
+    expect(world.items.find((item) => item.id === "painted_flag_scrap")?.visual).toMatchObject({
+      material: "cloth",
+      shape: "scrap",
+      palette: { primary: "#e05f7a" },
+    });
     expect(world.quests?.map((quest) => [quest.id, quest.giverId])).toEqual([
       ["recover_route_token", "mara"],
       ["recover_prism_gear", "ivo"],

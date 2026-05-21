@@ -1,4 +1,4 @@
-import type { AgentNeedKey, CharacterAppearance, Npc, World } from "./types.ts";
+import type { AgentNeedKey, CharacterAppearance, Item, ItemVisualDesign, Npc, World } from "./types.ts";
 
 export interface AnimeIngestSource {
   title: string;
@@ -167,11 +167,11 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
     ],
     npcs: characters,
     items: [
-      { id: "shears", name: artifacts[0]!.name, description: artifacts[0]!.description, locationId: "forge" },
-      { id: "bellows_leather", name: artifacts[1]!.name, description: artifacts[1]!.description, locationId: "wood" },
-      { id: "blue_ember", name: artifacts[2]!.name, description: artifacts[2]!.description, locationId: "bridge" },
-      { id: "rumor_note", name: artifacts[3]!.name, description: artifacts[3]!.description, locationId: "bridge" },
-      { id: "lantern", name: artifacts[4]!.name, description: artifacts[4]!.description, locationId: "inn" },
+      itemFromArtifact("shears", artifacts[0]!, "forge"),
+      itemFromArtifact("bellows_leather", artifacts[1]!, "wood"),
+      itemFromArtifact("blue_ember", artifacts[2]!, "bridge"),
+      itemFromArtifact("rumor_note", artifacts[3]!, "bridge"),
+      itemFromArtifact("lantern", artifacts[4]!, "inn"),
     ],
     interactables: [
       {
@@ -302,6 +302,83 @@ function artifactSet(source: AnimeIngestSource): Required<AnimeArtifactDraft>[] 
     { name: "signal radio", description: "A local report device that makes pressure visible.", location: "inn", holder: "", clue: "The radio needs better evidence before sounding an alert." },
   ];
   return defaults.map((fallback, index) => ({ ...fallback, ...(source.artifacts?.[index] ?? {}) }));
+}
+
+function itemFromArtifact(id: string, artifact: Required<AnimeArtifactDraft>, locationId: string): Item {
+  return {
+    id,
+    name: artifact.name,
+    description: artifact.description,
+    locationId,
+    visual: artifactVisualFor(artifact),
+  };
+}
+
+function artifactVisualFor(artifact: Required<AnimeArtifactDraft>): ItemVisualDesign {
+  const text = `${artifact.name} ${artifact.description} ${artifact.clue}`.toLowerCase();
+  const visualTags = tokenize(text).slice(0, 6);
+  if (/token|coin|brass|badge|key/.test(text)) {
+    return {
+      material: "metal",
+      shape: "token",
+      palette: { primary: "#d8a441", emissive: "#3d2a05" },
+      visualTags,
+    };
+  }
+  if (/radio|receiver|transmitter|signal/.test(text)) {
+    return {
+      material: "radio",
+      shape: "radio",
+      palette: { primary: "#596477", emissive: "#7fd0ff" },
+      visualTags,
+    };
+  }
+  if (/gear/.test(text)) {
+    return {
+      material: "metal",
+      shape: "gear",
+      palette: { primary: "#9fc3ff", emissive: "#12304a" },
+      visualTags,
+    };
+  }
+  if (/gear|core|crystal|prism|glass|ember/.test(text)) {
+    return {
+      material: /core/.test(text) ? "metal" : /glass|prism/.test(text) ? "glass" : "crystal",
+      shape: "core",
+      palette: { primary: /ember/.test(text) ? "#f08a38" : "#9fc3ff", emissive: /ember/.test(text) ? "#7a2c08" : "#12304a" },
+      visualTags,
+    };
+  }
+  if (/flag|scrap|cloth|torn|paint/.test(text)) {
+    return {
+      material: "cloth",
+      shape: "scrap",
+      palette: { primary: "#e05f7a", emissive: "#3a1420" },
+      visualTags,
+    };
+  }
+  if (/coupon|note|paper|map|letter/.test(text)) {
+    return {
+      material: "paper",
+      shape: "note",
+      palette: { primary: "#f7e8a5", emissive: "#3d331a" },
+      visualTags,
+    };
+  }
+  if (/scale|bone|shell|fang/.test(text)) {
+    return {
+      material: "organic",
+      shape: "scale",
+      palette: { primary: "#7fd0ff", emissive: "#17324a" },
+      visualTags,
+    };
+  }
+  return {
+    material: "metal",
+    shape: "trinket",
+    palette: { primary: "#f8d44e", emissive: "#4a3300" },
+    visualTags,
+  };
 }
 
 function factionsFor(source: AnimeIngestSource) {

@@ -3,10 +3,13 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
 import type { World } from "../src/types.ts";
+import { type WorldIngestSource, worldSourceToWorld } from "../src/world-ingest.ts";
 import { buildWorldSceneModel } from "../web/src/three/world-scene.ts";
 
 const fixture = (path = "../worlds/village.json"): World =>
   JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as World;
+const source = (path: string): WorldIngestSource =>
+  JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as WorldIngestSource;
 
 describe("3D world scene model", () => {
   test("projects world locations, actors, and loose items into 3D coordinates", () => {
@@ -52,6 +55,31 @@ describe("3D world scene model", () => {
       label: "Recover Saitama's grocery coupon",
     });
     expect(model.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["spark", "dust", "signal"]));
+  });
+
+  test("projects source-derived artifact visuals into generic 3D item nodes", () => {
+    const world = worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json"));
+    const model = buildWorldSceneModel(world);
+
+    expect(model.items.find((item) => item.id === "route_token")).toMatchObject({
+      color: "#d8a441",
+      emissiveColor: "#3d2a05",
+      material: "metal",
+      shape: "token",
+      visualTags: expect.arrayContaining(["route", "token", "brass"]),
+    });
+    expect(model.items.find((item) => item.id === "prism_gear")).toMatchObject({
+      color: "#9fc3ff",
+      material: "metal",
+      shape: "gear",
+      visualTags: expect.arrayContaining(["prism", "gear", "glass"]),
+    });
+    expect(model.items.find((item) => item.id === "painted_flag_scrap")).toMatchObject({
+      color: "#e05f7a",
+      material: "cloth",
+      shape: "scrap",
+      visualTags: expect.arrayContaining(["painted", "flag", "scrap"]),
+    });
   });
 
   test("moves the camera target with the active player location", () => {

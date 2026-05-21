@@ -174,6 +174,16 @@ export interface LocationVisualDesign {
   elevation?: number;
 }
 
+export interface ItemVisualDesign {
+  material?: "cloth" | "crystal" | "glass" | "metal" | "organic" | "paper" | "radio";
+  shape?: "core" | "gear" | "note" | "radio" | "scale" | "scrap" | "token" | "trinket";
+  palette?: {
+    primary?: string;
+    emissive?: string;
+  };
+  visualTags?: string[];
+}
+
 export interface RelationshipAxes {
   trust?: number;
   affection?: number;
@@ -229,6 +239,7 @@ export interface Item {
   description?: string;
   locationId?: LocationId;
   holderId?: HolderId;
+  visual?: ItemVisualDesign;
 }
 
 export interface InteractableProp {
