@@ -84,11 +84,15 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       packageScript("budget:bundle"),
       packageScript("bench:completion"),
       packageScript("bench:expanded"),
+      packageScript("playtest:all"),
+      packageScript("verify:readiness"),
       packageScript("playtest:first-loop"),
       packageScript("playtest:basic-v0"),
       packageScript("playtest:alive"),
       packageScript("playtest:opm"),
       packageScript("playtest:world-ingest"),
+      packageScriptContains("playtest:all", ["playtest:first-loop", "playtest:basic-v0", "playtest:alive", "playtest:opm", "playtest:world-ingest"]),
+      packageScriptContains("verify:readiness", ["typecheck", "lint", "test", "build", "budget:bundle", "bench:completion", "bench:expanded", "playtest:all"]),
       file("tests/completion-benchmarks.test.ts"),
       file("tests/expanded-completion-benchmarks.test.ts"),
     ]),
@@ -144,6 +148,19 @@ function packageScript(name: string): Check {
       passed: typeof pkg.scripts?.[name] === "string",
       evidence: `package script ${name}`,
       missing: `missing package script ${name}`,
+    };
+  };
+}
+
+function packageScriptContains(name: string, terms: string[]): Check {
+  return (rootDir) => {
+    const pkg = readPackage(rootDir);
+    const script = pkg.scripts?.[name] ?? "";
+    const missing = terms.filter((term) => !script.includes(term));
+    return {
+      passed: missing.length === 0,
+      evidence: `package script ${name} runs ${terms.join(", ")}`,
+      missing: `package script ${name} missing ${missing.join(", ")}`,
     };
   };
 }
