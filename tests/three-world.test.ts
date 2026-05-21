@@ -82,6 +82,29 @@ describe("3D world scene model", () => {
     });
   });
 
+  test("uses source-derived location palettes for visually distinct imported worlds", () => {
+    const skyfront = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json")));
+    const conservatory = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/conservatory-source.json")));
+
+    expect(skyfront.locations.find((location) => location.id === "harbor_ring")).toMatchObject({
+      groundColor: "#1f3f58",
+      structureColor: "#6fa6c8",
+      accentColor: "#f5d782",
+    });
+    expect(conservatory.locations.find((location) => location.id === "atrium_gate")).toMatchObject({
+      groundColor: "#203d2d",
+      structureColor: "#5e8f68",
+      accentColor: "#d8c77a",
+    });
+    expect(conservatory.locations.find((location) => location.id === "moon_bridge")).toMatchObject({
+      groundColor: "#202b3d",
+      structureColor: "#6b7f99",
+      accentColor: "#9fc3ff",
+    });
+    expect(conservatory.locations.find((location) => location.id === "atrium_gate")?.groundColor)
+      .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
+  });
+
   test("moves the camera target with the active player location", () => {
     const world = fixture();
     const squareTarget = buildWorldSceneModel(world).cameraTarget;

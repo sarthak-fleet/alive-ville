@@ -103,7 +103,7 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
       visual: {
         role: draft.role,
         description: draft.description,
-        palette: locationPaletteFor(index),
+        palette: locationPaletteFor(index, draft),
         visualTags: tokenize(`${draft.role ?? ""} ${draft.description ?? ""}`).slice(0, 6),
         landmarks: locationLandmarksFor(index, draft),
         elevation: locationElevationFor(index, draft),
@@ -465,7 +465,26 @@ function paletteFor(index: number): string[] {
   ][index] ?? ["#9fc3ff", "#f4f1e8", "#273344"];
 }
 
-function locationPaletteFor(index: number): { ground: string; structure: string; accent: string } {
+function locationPaletteFor(index: number, draft: AnimeLocationDraft): { ground: string; structure: string; accent: string } {
+  const text = `${draft.name} ${draft.role ?? ""} ${draft.description ?? ""}`.toLowerCase();
+  if (/cloud|sky|harbor|dock|mast|rookery|courier|bird/.test(text)) {
+    return { ground: "#1f3f58", structure: "#6fa6c8", accent: "#f5d782" };
+  }
+  if (/engine|gear|clockwork|machine|piston|repair/.test(text)) {
+    return { ground: "#3a3028", structure: "#9b6438", accent: "#f08a38" };
+  }
+  if (/moon|glass|rune|bridge/.test(text)) {
+    return { ground: "#202b3d", structure: "#6b7f99", accent: "#9fc3ff" };
+  }
+  if (/greenhouse|botanical|conservatory|spore|seed|garden|vine|root|pond|mushroom/.test(text)) {
+    return { ground: "#203d2d", structure: "#5e8f68", accent: "#d8c77a" };
+  }
+  if (/city|plaza|association|kiosk|overpass|apartment/.test(text)) {
+    return { ground: "#2b3244", structure: "#687386", accent: "#8d5cff" };
+  }
+  if (/dojo|training|arena|gym/.test(text)) {
+    return { ground: "#362c26", structure: "#8a4c2e", accent: "#f2c64f" };
+  }
   return [
     { ground: "#283546", structure: "#5d718b", accent: "#f5d782" },
     { ground: "#3a3028", structure: "#8a4c2e", accent: "#f08a38" },

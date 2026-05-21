@@ -66,7 +66,11 @@ describe("generic world ingest", () => {
     expect(world.npcs.map((npc) => npc.name)).toContain("Vex");
     expect(world.locations.find((location) => location.id === "harbor_ring")?.visual).toMatchObject({
       role: "hub",
+      palette: { ground: "#1f3f58", structure: "#6fa6c8", accent: "#f5d782" },
       landmarks: ["notice_board"],
+    });
+    expect(world.locations.find((location) => location.id === "signal_mast")?.visual).toMatchObject({
+      palette: { ground: "#1f3f58", structure: "#6fa6c8" },
     });
     expect(world.locations.find((location) => location.id === "chain_bridge")?.visual?.description).toContain("false pirate flags");
     expect(activeObjectives(world)[0]?.questTitle).toBe("Recover Route token for Mara");
@@ -93,6 +97,15 @@ describe("generic world ingest", () => {
       "moon_bridge",
       "root_engine",
     ]);
+    expect(world.locations.find((location) => location.id === "atrium_gate")?.visual).toMatchObject({
+      palette: { ground: "#203d2d", structure: "#5e8f68", accent: "#d8c77a" },
+    });
+    expect(world.locations.find((location) => location.id === "gear_hall")?.visual).toMatchObject({
+      palette: { ground: "#3a3028", structure: "#9b6438", accent: "#f08a38" },
+    });
+    expect(world.locations.find((location) => location.id === "moon_bridge")?.visual).toMatchObject({
+      palette: { ground: "#202b3d", structure: "#6b7f99", accent: "#9fc3ff" },
+    });
     expect(world.npcs.map((npc) => npc.id)).toEqual(["eda", "brin", "sal", "merrow", "cale"]);
     expect(world.quests?.map((quest) => [quest.id, quest.giverId])).toEqual([
       ["recover_verdigris_key", "eda"],

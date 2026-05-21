@@ -31,7 +31,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("tests/playtests/first-loop.ts", ["Slot Save", "page.reload", "clickThreeTarget", "hoverThreeTarget", "keyboard.press(\"e\")", "Pick up Pruning shears", "Inspect Sooty tool rack", "Fresh soot outlines", "importInvalidSave", "Restore failed: Save file is not valid JSON", "Slot Load", "three-host canvas", "At Herb Garden"]),
       source("tests/playtests/alive-village.ts", ["three-host canvas", "nonBlankCanvasPixels", "canvasPixelHash", "webglcontextlost", "webglcontextrestored", "3D renderer paused", "3D renderer restored", "travelStartHash", "Rotate camera right", "Zoom camera in", "Zoom camera out", "3D camera zoom", "Reset camera", "keyboard.press(\"d\")", "keyboard.press(\"a\")", "Go Village Square", "Go Herb Garden", "At Village Square", "At Herb Garden", "Talk Mira", "Interact with Mira", "Focus", "HUD", "expectNoHorizontalOverlap", "dialogue-panel", "toHaveClass(/active/)", "Recoverable app error", "Dismiss", "header-actions", "expectWithinViewport", "expectNoVerticalOverlap"]),
       source("web/src/three/world-scene.ts", ["pickableItems", "pickableProps", "pickableActors", "SceneObjectiveNode", "makeObjectiveBeaconMesh", "SphereGeometry(0.32", "BoxGeometry(0.38", "firstHitTarget(this.pickableItems)"]),
-      source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "objectives[0]", "moves the primary 3D objective beacon", "changes 3D lighting mood with the world clock", "fogDensity", "atmosphere", "firefly", "dust", "source-derived artifact visuals", "shape: \"gear\"", "shape: \"scrap\""]),
+      source("tests/three-world.test.ts", ["structureColor", "landmarks", "forge_tool_rack", "objectives[0]", "moves the primary 3D objective beacon", "changes 3D lighting mood with the world clock", "fogDensity", "atmosphere", "firefly", "dust", "source-derived artifact visuals", "source-derived location palettes", "conservatory-source.json", "shape: \"gear\"", "shape: \"scrap\""]),
       source("worlds/village.json", ["\"visual\"", "\"landmarks\"", "\"palette\""]),
     ]),
     gate(rootDir, "generic_world_ingest", "Generic world ingest", [
@@ -49,7 +49,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       source("src/director.ts", ["directorStoryBeatText", "storyDirectorNpc", "world's narrative director"]),
       source("src/agents.ts", ["quietWorldRevealText", "phasePressureRevealText", "planRevealText"]),
       source("src/story-progress.ts", ["STARTER_QUEST_IDS", "(world.quests ?? []).slice(0, STARTER_QUEST_IDS.length)"]),
-      source("src/anime-ingest.ts", ["locationPaletteFor", "locationLandmarksFor", "visualTags"]),
+      source("src/anime-ingest.ts", ["locationPaletteFor", "locationLandmarksFor", "visualTags", "greenhouse|botanical", "cloud|sky|harbor"]),
       source("src/server.ts", ["/api/import-world-source", "validateWorldIngestSource", "worldSourceToWorld"]),
       source("web/src/store/world.ts", ["importWorldSource", "importWorldSourceFromJson"]),
       source("web/src/organisms/AppHeader.tsx", ["World source JSON", "World", "World import failed"]),
