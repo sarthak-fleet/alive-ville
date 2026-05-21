@@ -26,6 +26,12 @@ describe("3D world scene model", () => {
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
     expect(model.items.some((item) => item.id === "shears")).toBe(true);
     expect(model.props.some((prop) => prop.id === "forge_tool_rack")).toBe(true);
+    expect(model.objectives[0]).toMatchObject({
+      targetType: "npc",
+      targetId: "mira",
+      locationId: "garden",
+      primary: true,
+    });
     expect(model.bounds.width).toBeGreaterThan(0);
     expect(model.bounds.depth).toBeGreaterThan(0);
   });
@@ -40,6 +46,11 @@ describe("3D world scene model", () => {
       accentColor: "#8d5cff",
       landmarks: ["bridge_span"],
     });
+    expect(model.objectives[0]).toMatchObject({
+      targetType: "npc",
+      targetId: "mira",
+      label: "Recover Saitama's grocery coupon",
+    });
     expect(model.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["spark", "dust", "signal"]));
   });
 
@@ -52,5 +63,22 @@ describe("3D world scene model", () => {
     expect(bridgeTarget).not.toEqual(squareTarget);
     expect(bridgeTarget.x).toBeGreaterThanOrEqual(0);
     expect(bridgeTarget.z).toBeGreaterThanOrEqual(0);
+  });
+
+  test("moves the primary 3D objective beacon from giver to active item", () => {
+    const world = fixture();
+    const openObjective = buildWorldSceneModel(world).objectives[0];
+    world.quests!.find((quest) => quest.id === "return_shears")!.status = "active";
+    const activeObjective = buildWorldSceneModel(world).objectives[0];
+
+    expect(openObjective?.targetType).toBe("npc");
+    expect(activeObjective).toMatchObject({
+      targetType: "item",
+      targetId: "shears",
+      locationId: "forge",
+      primary: true,
+    });
+    expect(activeObjective?.x).not.toBe(openObjective?.x);
+    expect(activeObjective?.z).not.toBe(openObjective?.z);
   });
 });

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { activeObjectives, type Objective } from "../../../src/objectives.ts";
 import type { Exit, InteractableProp, Item, Location, Npc, World } from "../../../src/types.ts";
 
 const WORLD_SCALE = 0.018;
@@ -54,6 +55,19 @@ export interface ScenePropNode {
   inspected: boolean;
 }
 
+export interface SceneObjectiveNode {
+  id: string;
+  label: string;
+  text: string;
+  targetType: Objective["targetType"];
+  targetId: string;
+  locationId: string;
+  x: number;
+  z: number;
+  color: string;
+  primary: boolean;
+}
+
 export interface ScenePathNode {
   fromId: string;
   toId: string;
@@ -78,6 +92,7 @@ export interface WorldSceneModel {
   actors: SceneActorNode[];
   items: SceneItemNode[];
   props: ScenePropNode[];
+  objectives: SceneObjectiveNode[];
   bounds: { width: number; depth: number };
   cameraTarget: { x: number; z: number };
 }
@@ -98,6 +113,10 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const props = (world.interactables ?? [])
     .map((prop) => propNode(prop, world.locations.find((location) => location.id === prop.locationId)))
     .filter((node): node is ScenePropNode => Boolean(node));
+  const objectives = activeObjectives(world)
+    .slice(0, 3)
+    .map((objective, index) => objectiveNode(objective, index, locations, actors, items))
+    .filter((node): node is SceneObjectiveNode => Boolean(node));
   const target = activeLocation ? centerForLocation(activeLocation) : { x: 0, z: 0 };
   return {
     locations,
@@ -106,6 +125,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
     actors,
     items,
     props,
+    objectives,
     bounds,
     cameraTarget: target,
   };
@@ -233,6 +253,7 @@ export class ThreeWorldRenderer {
       const pickable = mesh.getObjectByName(`pick:actor:${actor.id}`);
       if (!actor.player && pickable) this.pickableActors.push(pickable);
     }
+    for (const objective of model.objectives) this.root.add(makeObjectiveBeaconMesh(objective));
     this.startCameraMotion(model.cameraTarget);
     this.previousActorPositions.clear();
     for (const actor of model.actors) this.previousActorPositions.set(actor.id, { x: actor.x, z: actor.z });
@@ -625,6 +646,36 @@ function propNode(prop: InteractableProp, location: Location | undefined): Scene
   };
 }
 
+function objectiveNode(
+  objective: Objective,
+  index: number,
+  locations: SceneLocationNode[],
+  actors: SceneActorNode[],
+  items: SceneItemNode[]
+): SceneObjectiveNode | null {
+  const target =
+    objective.targetType === "item"
+      ? items.find((item) => item.id === objective.targetId)
+      : objective.targetType === "npc"
+        ? actors.find((actor) => actor.id === objective.targetId)
+        : locations.find((location) => location.id === objective.locationId);
+  const fallback = locations.find((location) => location.id === objective.locationId);
+  const anchor = target ?? fallback;
+  if (!anchor) return null;
+  return {
+    id: objective.questId,
+    label: objective.questTitle,
+    text: objective.text,
+    targetType: objective.targetType,
+    targetId: objective.targetId,
+    locationId: objective.locationId,
+    x: anchor.x,
+    z: anchor.z,
+    color: objective.status === "active" ? "#f8d44e" : "#9fc3ff",
+    primary: index === 0,
+  };
+}
+
 function stableOffset(id: string, radius: number): { x: number; z: number } {
   let hash = 0;
   for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
@@ -868,6 +919,34 @@ function makePropMesh(prop: ScenePropNode): THREE.Object3D {
   mesh.position.set(0, prop.inspected ? 0.11 : 0.16, 0);
   if (!prop.inspected) mesh.userData["sceneAnimation"] = bobAnimation(prop.id, 0.16, 0.024);
   group.add(makeTargetHalo(prop.inspected ? "#7d8796" : "#9fc3ff", 0.25, prop.inspected ? 0.08 : 0.14), hitMesh, mesh);
+  return group;
+}
+
+function makeObjectiveBeaconMesh(objective: SceneObjectiveNode): THREE.Object3D {
+  const group = new THREE.Group();
+  group.name = `objective:${objective.id}`;
+  group.position.set(objective.x, 0, objective.z);
+  const color = new THREE.Color(objective.color);
+  const beam = new THREE.Mesh(
+    new THREE.CylinderGeometry(objective.primary ? 0.045 : 0.032, objective.primary ? 0.16 : 0.12, objective.primary ? 1.45 : 1.08, 18, 1, true),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: objective.primary ? 0.34 : 0.2, depthWrite: false })
+  );
+  beam.name = `objective:beam:${objective.id}`;
+  beam.position.set(0, objective.primary ? 0.72 : 0.54, 0);
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(objective.primary ? 0.36 : 0.28, objective.primary ? 0.48 : 0.38, 32),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: objective.primary ? 0.56 : 0.34, side: THREE.DoubleSide, depthWrite: false })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.07;
+  ring.userData["sceneAnimation"] = pulseAnimation(`objective:${objective.id}`, 1, objective.primary ? 0.1 : 0.06);
+  const marker = new THREE.Mesh(
+    new THREE.OctahedronGeometry(objective.primary ? 0.14 : 0.1, 1),
+    new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: objective.primary ? 0.75 : 0.42, roughness: 0.35 })
+  );
+  marker.position.y = objective.primary ? 1.52 : 1.16;
+  marker.userData["sceneAnimation"] = bobAnimation(`objective-marker:${objective.id}`, marker.position.y, objective.primary ? 0.08 : 0.05);
+  group.add(beam, ring, marker);
   return group;
 }
 
