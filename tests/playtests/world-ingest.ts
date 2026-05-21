@@ -172,6 +172,7 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
     await quickLoadImportedAbyssal(page);
+    await verifyImportedPackageReview(page);
     await expect(errors, errors.join("\n")).toEqual([]);
   } finally {
     await page.close();
@@ -327,6 +328,22 @@ async function quickLoadImportedAbyssal(page: Page): Promise<void> {
   await page.screenshot({ path: join(ARTIFACT_DIR, "10-abyssal-quick-load.png") });
 }
 
+async function verifyImportedPackageReview(page: Page): Promise<void> {
+  await clickButton(page, "Review");
+  await expect(page.locator(".header-toast")).toContainText("Package healthy.", { timeout: 5_000 });
+  const review = page.getByRole("dialog", { name: "Story package review" });
+  await expect(review).toBeVisible();
+  await expect(review).toContainText("Abyssal Salvage: World Ingest Slice");
+  await expectPackageMetric(review, "Locations", "6");
+  await expectPackageMetric(review, "NPCs", "5");
+  await expectPackageMetric(review, "Quests", "3");
+  await expectPackageMetric(review, "Props", "3");
+  await expect(review).toContainText("No structural issues found.");
+  await page.screenshot({ path: join(ARTIFACT_DIR, "11-abyssal-package-review.png") });
+  await page.getByRole("button", { name: "Close package review" }).click();
+  await expect(review).toHaveCount(0);
+}
+
 async function verifyMobileImportedAbyssal(browser: Awaited<ReturnType<typeof chromium.launch>>): Promise<void> {
   const mobile = await browser.newPage({ viewport: { width: 390, height: 720 } });
   try {
@@ -445,6 +462,14 @@ async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number;
 async function clickUnique(locator: Locator): Promise<void> {
   await expect(locator).toHaveCount(1, { timeout: 10_000 });
   await locator.click();
+}
+
+async function expectPackageMetric(review: Locator, label: string, value: string): Promise<void> {
+  await expect.poll(async () => review.evaluate((node, label) => {
+    const rows = [...node.querySelectorAll("dl > div")];
+    const row = rows.find((item) => item.querySelector("dt")?.textContent?.trim() === label);
+    return row?.querySelector("dd")?.textContent?.trim() ?? null;
+  }, label), { message: `${label} package metric should be ${value}` }).toBe(value);
 }
 
 async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerSelector: string): Promise<void> {
