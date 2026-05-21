@@ -185,6 +185,10 @@ button.primary:hover { filter: brightness(1.05); }
     #070a0f;
   overflow: hidden;
 }
+.three-host:focus-visible {
+  outline: 2px solid rgba(127, 208, 255, 0.72);
+  outline-offset: -3px;
+}
 .three-host.loading {
   min-height: 100%;
 }

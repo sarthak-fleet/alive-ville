@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import type { World } from "../../../src/types.ts";
 import { useWorldStore } from "../store/world.ts";
 import { type SceneTarget, ThreeWorldRenderer } from "../three/world-scene.ts";
-import { movePlayerToward } from "../world-travel.ts";
+import { keyboardDestinationFor, movePlayerToward } from "../world-travel.ts";
 
 export function ThreeWorld() {
   const world = useWorldStore((state) => state.world);
@@ -13,6 +13,15 @@ export function ThreeWorld() {
   const [cameraBearing, setCameraBearing] = useState(34);
   const currentLocation = world?.locations.find((location) => location.id === world.player.locationId) ?? null;
   const destinations = world ? reachableLocations(world) : [];
+  const handleKeyboardTravel = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (isInteractiveTarget(event.target)) return;
+    const latestWorld = useWorldStore.getState().world;
+    if (!latestWorld) return;
+    const destination = keyboardDestinationFor(latestWorld, event.key);
+    if (!destination) return;
+    event.preventDefault();
+    void movePlayerToward(destination);
+  };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -105,7 +114,14 @@ export function ThreeWorld() {
           ))}
         </div>
       </div>
-      <div ref={hostRef} className="three-host" aria-label="3D world view" />
+      <div
+        ref={hostRef}
+        className="three-host"
+        aria-label="3D world view"
+        tabIndex={0}
+        onKeyDown={handleKeyboardTravel}
+        onPointerDown={(event) => event.currentTarget.focus({ preventScroll: true })}
+      />
     </div>
   );
 }
@@ -117,4 +133,8 @@ function reachableLocations(world: World): World["locations"] {
     if (exit.bidirectional && exit.to === world.player.locationId) reachable.add(exit.from);
   }
   return world.locations.filter((location) => reachable.has(location.id));
+}
+
+function isInteractiveTarget(target: EventTarget): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest("button, input, select, textarea, summary, a"));
 }

@@ -78,6 +78,11 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas")).not.toEqual(cameraBefore);
     await page.getByRole("button", { name: "Reset camera" }).click();
     await expect(page.getByLabel("3D camera bearing")).toContainText("34 deg");
+    await page.locator(".three-host").focus();
+    await page.keyboard.press("d");
+    await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
+    await page.keyboard.press("a");
+    await expect(page.getByLabel("3D travel")).toContainText("At Village Square");
     await expect(page.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
     await page.getByRole("button", { name: "Go Herb Garden" }).click();
     await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
