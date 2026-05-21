@@ -16,6 +16,11 @@ describe("generic world ingest", () => {
 
     expect(world.id).toBe("skyfront_couriers");
     expect(world.name).toBe("Skyfront Couriers Playable Slice");
+    expect(world.story?.title).toBe("Skyfront Couriers: World Ingest Slice");
+    expect(world.story?.currentObjective).toBe("Stabilize Harbor Ring before the core conflict escalates.");
+    expect(world.rules?.find((rule) => rule.id === "canon_review")?.text).toContain("World ingest creates");
+    expect(world.interactables?.map((prop) => prop.id)).toContain("world_origin_clue");
+    expect((world.interactables ?? []).flatMap((prop) => prop.clueTags ?? [])).not.toContain("anime");
     expect(world.npcs.map((npc) => npc.name)).toContain("Vex");
     expect(world.locations.find((location) => location.id === "square")?.visual).toMatchObject({
       role: "hub",
@@ -39,6 +44,7 @@ describe("generic world ingest", () => {
     expect(validateWorldIngestSource(invalid).map((issue) => issue.path)).toEqual(
       expect.arrayContaining(["title", "synopsis", "locations", "characters"])
     );
-    expect(() => worldSourceToWorld(invalid)).toThrow("Invalid anime ingest source");
+    expect(validateWorldIngestSource(invalid).find((issue) => issue.path === "title")?.message).toBe("World title is required.");
+    expect(() => worldSourceToWorld(invalid)).toThrow("Invalid world ingest source");
   });
 });
