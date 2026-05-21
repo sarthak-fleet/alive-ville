@@ -58,4 +58,40 @@ describe("social consequences", () => {
     expect(tomas.mood!.stress).toBeGreaterThan(stressBefore);
     expect(tomas.relationshipAxes?.["mira"]?.suspicion).toBeGreaterThan(1);
   });
+
+  test("quest completion writes a trusted aftermath when the giver trusts the player", () => {
+    const world = fixture();
+    applyAction(world, {
+      type: "talk",
+      actorId: "player",
+      targetId: "mira",
+      text: "I will help, return the shears, and keep the garden safe.",
+    });
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "return_shears" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "forge" });
+    applyAction(world, { type: "pickup", actorId: "player", itemId: "shears" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "square" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "garden" });
+    const result = applyAction(world, { type: "give", actorId: "player", itemId: "shears", targetId: "mira" });
+
+    expect(result.applied).toBe(true);
+    const mira = world.npcs.find((npc) => npc.id === "mira")!;
+    expect(mira.memories.some((memory) => /Trusted quest outcome/i.test(memory.text))).toBe(true);
+  });
+
+  test("quest completion can leave a wary aftermath when suspicion is higher than trust", () => {
+    const world = fixture();
+    applyAction(world, { type: "confront", actorId: "player", targetId: "mira", text: "You hide bridge details and blame others." });
+    applyAction(world, { type: "confront", actorId: "player", targetId: "mira", text: "You are still hiding something about the missing tools." });
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "return_shears" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "forge" });
+    applyAction(world, { type: "pickup", actorId: "player", itemId: "shears" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "square" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "garden" });
+    const result = applyAction(world, { type: "give", actorId: "player", itemId: "shears", targetId: "mira" });
+
+    expect(result.applied).toBe(true);
+    const mira = world.npcs.find((npc) => npc.id === "mira")!;
+    expect(mira.memories.some((memory) => /Wary quest outcome/i.test(memory.text))).toBe(true);
+  });
 });

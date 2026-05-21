@@ -16,6 +16,9 @@ export function createDirector({ propose }: DirectorOptions = {}) {
     const reveal = revealAction(world);
     if (reveal) return reveal;
 
+    const storyBeat = storyBeatAction(world);
+    if (storyBeat) return storyBeat;
+
     const tension = findHighestTension(world);
     if (!tension) return null;
 
@@ -25,6 +28,34 @@ export function createDirector({ propose }: DirectorOptions = {}) {
     }
     return scriptedAction(world, tension);
   };
+}
+
+function storyBeatAction(world: World): Action | null {
+  const state = world.directorState;
+  if (!state || state.pressure < 40) return null;
+  if (state.lastNudgeTick === world.tick) return null;
+
+  if (world.storyProgress?.phase === "nightfall_warning") {
+    const actorId = world.npcs.find((npc) => npc.id === "lena")?.id ?? world.npcs[0]?.id;
+    if (!actorId) return null;
+    state.lastNudgeTick = world.tick;
+    return {
+      type: "remember",
+      actorId,
+      text: "Director beat: The Lantern Inn should be reached before the fog thickens.",
+    };
+  }
+  if (world.storyProgress?.phase === "shadow_confrontation") {
+    const actorId = world.npcs.find((npc) => npc.id === "lena")?.id ?? world.npcs[0]?.id;
+    if (!actorId) return null;
+    state.lastNudgeTick = world.tick;
+    return {
+      type: "remember",
+      actorId,
+      text: "Director beat: The lantern shadow is present; confronting it will force the night to resolve.",
+    };
+  }
+  return null;
 }
 
 function revealAction(world: World): Action | null {

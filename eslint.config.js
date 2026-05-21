@@ -1,3 +1,8 @@
 import config from "@saas-maker/eslint-config/vite-legacy";
 
-export default config;
+export default [
+  {
+    ignores: ["tmp/**"],
+  },
+  ...config,
+];

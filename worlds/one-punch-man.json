@@ -1,0 +1,314 @@
+{
+  "id": "opm_z_city",
+  "name": "Z-City Patrol",
+  "story": {
+    "title": "One Punch Man: Z-City Patrol Test",
+    "premise": "A compact local prototype world for testing anime-style characters inside the AI World Simulator loop. Z-City has a plaza, training lot, association kiosk, noodle shop, ruined overpass, and monster alley. A flashy rival keeps trying to turn errands into a duel while the heroes handle ordinary problems.",
+    "opening": "The player arrives in Z-City during a quiet morning that will not stay quiet. Heroes are scattered across the block, the Hero Association wants proof before raising an alert, and a ninja challenger is watching for a chance to make trouble.",
+    "currentObjective": "Help the heroes stabilize Z-City before the next monster alert.",
+    "mysteries": [
+      "Who keeps leaving challenge marks near the ruined overpass?",
+      "Why did a monster scale end up by the association kiosk?",
+      "Can ordinary errands stay ordinary in Z-City?"
+    ],
+    "beats": [
+      "Saitama needs his grocery coupon before the market closes.",
+      "Genos wants a spare core component from Monster Alley.",
+      "Mumen Rider needs proof before reporting the overpass threat.",
+      "Tatsumaki is annoyed that the threat is still only a rumor.",
+      "Speed-o'-Sound Sonic is waiting for a dramatic challenge."
+    ]
+  },
+  "storyProgress": {
+    "phase": "starter",
+    "unlockedCutsceneIds": [],
+    "playedCutsceneIds": []
+  },
+  "tick": 0,
+  "player": { "locationId": "square", "name": "New Hero" },
+  "clock": { "hoursPerTick": 2, "hour": 8, "day": 1 },
+  "rules": [
+    { "id": "hero_rank", "kind": "social", "text": "Hero Association reports matter more when backed by witnesses or physical proof." },
+    { "id": "monster_alerts", "kind": "story", "text": "Ignored monster signs increase public panic and director pressure." },
+    { "id": "saitama_rule", "kind": "physical", "text": "A direct punch from the caped bald hero resolves most combat instantly, so drama must come from timing, errands, witnesses, and consequences." }
+  ],
+  "factions": [
+    { "id": "heroes", "name": "Z-City heroes", "goals": ["keep citizens safe", "resolve alerts quickly"], "resources": ["association kiosk", "patrol routes"], "reputation": 2 },
+    { "id": "challengers", "name": "Overdramatic challengers", "goals": ["force a duel", "turn quiet errands into spectacle"], "resources": ["speed", "ambush routes"], "reputation": -2 }
+  ],
+  "tensions": [
+    { "id": "overpass_alert", "title": "A monster sign was found near the overpass", "pressure": 48, "status": "active", "involvedIds": ["lena", "pax", "bridge"] },
+    { "id": "sonic_challenge", "title": "A rival challenger wants attention", "pressure": 44, "status": "active", "involvedIds": ["pax", "mira", "square"] }
+  ],
+  "villainPlans": [
+    {
+      "id": "bridge_whisper_plan",
+      "actorId": "pax",
+      "title": "Stage a dramatic overpass challenge",
+      "objective": "Leave signs, collect monster scraps, and force the caped bald hero into a public duel before the alert clears.",
+      "stage": 1,
+      "hidden": true,
+      "pressure": 38,
+      "nextTrigger": "If proof is ignored until dusk, the challenger appears at the ruined overpass.",
+      "knownFacts": ["Sonic left challenge marks", "monster scraps make the alert look worse"]
+    }
+  ],
+  "directorState": { "pressure": 18, "quietTicks": 0, "pendingReveals": ["A challenge mark points from the overpass toward the plaza."] },
+  "locations": [
+    { "id": "square", "name": "Z-City Plaza", "x": 240, "y": 180, "w": 180, "h": 120 },
+    { "id": "forge", "name": "Training Lot", "x": 40, "y": 40, "w": 160, "h": 110 },
+    { "id": "garden", "name": "Apartment Block", "x": 460, "y": 40, "w": 160, "h": 110 },
+    { "id": "inn", "name": "Hero Association Kiosk", "x": 240, "y": 340, "w": 180, "h": 110 },
+    { "id": "bridge", "name": "Ruined Overpass", "x": 40, "y": 340, "w": 160, "h": 110 },
+    { "id": "wood", "name": "Monster Alley", "x": 460, "y": 340, "w": 160, "h": 110 }
+  ],
+  "exits": [
+    { "from": "square", "to": "forge", "bidirectional": true, "label": "north-west street" },
+    { "from": "square", "to": "garden", "bidirectional": true, "label": "apartment stairs" },
+    { "from": "square", "to": "inn", "bidirectional": true, "label": "kiosk road" },
+    { "from": "square", "to": "bridge", "bidirectional": true, "label": "overpass route" },
+    { "from": "square", "to": "wood", "bidirectional": true, "label": "back alley" },
+    { "from": "bridge", "to": "wood", "bidirectional": true, "label": "broken service lane" }
+  ],
+  "items": [
+    { "id": "shears", "name": "Grocery coupon", "description": "A limited supermarket discount coupon. Saitama cares about this more than the threat level.", "locationId": "forge" },
+    { "id": "lantern", "name": "Association radio", "description": "A small radio tuned to Hero Association alert chatter.", "locationId": "inn" },
+    { "id": "rumor_note", "name": "Challenge note", "description": "A dramatic note promising a duel near the overpass.", "locationId": "bridge" },
+    { "id": "bellows_leather", "name": "Spare cyborg core", "description": "A compact repair component Genos can use after patrol damage.", "locationId": "wood" },
+    { "id": "blue_ember", "name": "Monster scale", "description": "A jagged scale from an unknown monster. It proves the overpass alert is real.", "locationId": "bridge" }
+  ],
+  "interactables": [
+    {
+      "id": "training_timer",
+      "name": "Training timer",
+      "locationId": "forge",
+      "description": "A battered stopwatch left near the exercise mats.",
+      "inspectText": "The timer stopped beside a torn coupon edge after Saitama's morning exercise.",
+      "clueTags": ["training", "coupon", "saitama"],
+      "relatedQuestId": "return_shears",
+      "involvedIds": ["mira", "forge"],
+      "pressureDelta": -2
+    },
+    {
+      "id": "hero_kiosk_report",
+      "name": "Hero Association report board",
+      "locationId": "inn",
+      "description": "A pinned board of partial monster-alert reports.",
+      "inspectText": "The latest overpass report is missing physical proof, so Mumen Rider cannot file the alert yet.",
+      "clueTags": ["kiosk", "overpass", "proof", "mumen"],
+      "relatedQuestId": "bridge_whisper",
+      "involvedIds": ["lena", "bridge"],
+      "pressureDelta": -3
+    },
+    {
+      "id": "sonic_challenge_marks",
+      "name": "Sonic challenge marks",
+      "locationId": "bridge",
+      "description": "Sharp cuts in the overpass rail, arranged like a theatrical signature.",
+      "inspectText": "The marks point from the Ruined Overpass back toward the plaza. Sonic wants the alert to become a public duel.",
+      "clueTags": ["sonic", "challenge", "overpass", "duel"],
+      "relatedQuestId": "bridge_whisper",
+      "involvedIds": ["pax", "bridge"],
+      "pressureDelta": -4
+    }
+  ],
+  "npcs": [
+    {
+      "id": "mira",
+      "name": "Saitama",
+      "locationId": "garden",
+      "tier": "quest",
+      "role": "caped bald hero",
+      "factionId": "heroes",
+      "description": "An overwhelmingly strong hero who treats world-ending threats and grocery discounts with the same flat calm.",
+      "appearance": {
+        "sourceLook": "Saitama / caped bald hero",
+        "bodyType": "plain average build with relaxed posture",
+        "hair": "bald",
+        "outfit": "yellow bodysuit, white cape, red gloves",
+        "palette": ["#f6d85f", "#f2f2e8", "#b41f2a"],
+        "silhouette": "Simple bald head, round cape shape, and bright yellow suit.",
+        "visualTags": ["bald", "cape", "yellow suit", "deadpan"],
+        "portrait": "/assets/characters/opm_test/saitama.svg"
+      },
+      "traits": { "personality": ["deadpan", "casual", "direct"], "values": ["simplicity", "fairness", "discounts"], "flaws": ["underreacts to danger"], "fears": ["missing a sale"], "speechStyle": "flat and brief" },
+      "needs": { "safety": 80, "trust": 50, "resources": 74, "curiosity": 20, "duty": 58 },
+      "mood": { "emotion": "bored", "stress": 12, "confidence": 96, "suspicion": 12 },
+      "goals": ["finish errands before the market closes", "avoid unnecessary drama", "help if someone is actually in danger"],
+      "ambitions": [
+        { "id": "saitama_coupon", "title": "Recover the grocery coupon before the sale ends", "kind": "gain_status", "priority": 88, "status": "active", "targetId": "forge" },
+        { "id": "saitama_avoid_drama", "title": "Avoid turning every patrol into a duel", "kind": "protect", "priority": 66, "status": "active", "targetId": "square" }
+      ],
+      "relationshipAxes": { "tomas": { "trust": 2, "respect": 2 }, "pax": { "suspicion": 2 } },
+      "relationships": { "tomas": 2, "pax": -1 },
+      "memories": [
+        { "tick": 0, "text": "A grocery coupon fell out near the training lot after morning exercise.", "meta": { "importance": 7, "tags": ["coupon", "training", "sale"], "visibility": "private", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Sonic keeps trying to make everything into a dramatic challenge.", "meta": { "importance": 6, "tags": ["sonic", "challenge"], "visibility": "shared", "emotionalWeight": 2, "sourceActorId": "world" } }
+      ]
+    },
+    {
+      "id": "tomas",
+      "name": "Genos",
+      "locationId": "forge",
+      "tier": "quest",
+      "role": "cyborg disciple",
+      "factionId": "heroes",
+      "description": "A serious cyborg hero collecting evidence and repair parts while overanalyzing Saitama's routines.",
+      "appearance": {
+        "sourceLook": "Genos / blond cyborg disciple",
+        "bodyType": "lean athletic build with mechanical arms",
+        "hair": "spiky blond hair",
+        "outfit": "black tactical clothes with gold cyborg arms",
+        "palette": ["#d48b3f", "#1f2735", "#f2c64f"],
+        "silhouette": "Spiky hair, glowing eyes, and heavy mechanical forearms.",
+        "visualTags": ["cyborg", "blond", "disciple", "mechanical arms"],
+        "portrait": "/assets/characters/opm_test/genos.svg"
+      },
+      "traits": { "personality": ["serious", "loyal", "analytical"], "values": ["discipline", "improvement", "justice"], "flaws": ["overcommits"], "fears": ["failing civilians"], "speechStyle": "formal and intense" },
+      "needs": { "safety": 50, "trust": 62, "resources": 76, "status": 54, "curiosity": 65, "duty": 90 },
+      "mood": { "emotion": "focused", "stress": 48, "confidence": 70, "suspicion": 35 },
+      "goals": ["recover a spare cyborg core", "document the overpass threat", "learn from Saitama's choices"],
+      "ambitions": [
+        { "id": "genos_core", "title": "Recover the spare cyborg core from Monster Alley", "kind": "repair", "priority": 86, "status": "active", "targetId": "wood" },
+        { "id": "genos_document", "title": "Document every monster sign for the Hero Association", "kind": "investigate", "priority": 72, "status": "active", "targetId": "inn" }
+      ],
+      "relationshipAxes": { "mira": { "trust": 3, "respect": 4 }, "lena": { "trust": 1, "respect": 2 } },
+      "relationships": { "mira": 2, "lena": 1 },
+      "memories": [
+        { "tick": 0, "text": "A spare cyborg core was lost after a skirmish in Monster Alley.", "meta": { "importance": 8, "tags": ["core", "monster", "alley"], "visibility": "shared", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Saitama said the grocery coupon is important, so the coupon is important.", "meta": { "importance": 6, "tags": ["saitama", "coupon"], "visibility": "private", "emotionalWeight": 2, "sourceActorId": "world" } }
+      ]
+    },
+    {
+      "id": "lena",
+      "name": "Mumen Rider",
+      "locationId": "inn",
+      "tier": "quest",
+      "role": "steadfast witness hero",
+      "factionId": "heroes",
+      "description": "A brave cyclist hero who needs real proof before sending civilians into panic.",
+      "appearance": {
+        "sourceLook": "Mumen Rider / armored cyclist hero",
+        "bodyType": "average build, upright and determined",
+        "hair": "hidden under green helmet",
+        "outfit": "green cyclist armor, cream chest plate, utility belt",
+        "palette": ["#2f7d52", "#f7e8a5", "#102c22"],
+        "silhouette": "Helmet, cyclist armor, and square heroic stance.",
+        "visualTags": ["helmet", "cyclist", "brave", "green armor"],
+        "portrait": "/assets/characters/opm_test/mumen-rider.svg"
+      },
+      "traits": { "personality": ["brave", "earnest", "protective"], "values": ["duty", "civilians", "honesty"], "flaws": ["takes too much on himself"], "fears": ["failing people who need help"], "speechStyle": "earnest and direct" },
+      "needs": { "safety": 48, "trust": 76, "resources": 44, "status": 36, "curiosity": 58, "duty": 92 },
+      "mood": { "emotion": "determined", "stress": 55, "confidence": 62, "suspicion": 42 },
+      "goals": ["collect proof of the overpass threat", "keep citizens calm", "stand up even if outmatched"],
+      "ambitions": [
+        { "id": "mumen_proof", "title": "Collect proof before filing the overpass alert", "kind": "investigate", "priority": 84, "status": "active", "targetId": "bridge" },
+        { "id": "mumen_civilians", "title": "Keep civilians away from Monster Alley", "kind": "protect", "priority": 78, "status": "active", "targetId": "wood" }
+      ],
+      "relationshipAxes": { "mira": { "trust": 2, "respect": 3 }, "tomas": { "trust": 1, "respect": 2 }, "pax": { "suspicion": 2 } },
+      "relationships": { "mira": 1, "tomas": 1, "pax": -1 },
+      "memories": [
+        { "tick": 0, "text": "A jagged monster scale was seen near the ruined overpass.", "meta": { "importance": 8, "tags": ["monster", "scale", "overpass"], "visibility": "shared", "emotionalWeight": 4, "sourceActorId": "world" } },
+        { "tick": 0, "text": "The Association radio keeps catching static from Monster Alley.", "meta": { "importance": 7, "tags": ["association", "radio", "alley"], "visibility": "private", "emotionalWeight": 3, "sourceActorId": "world" } }
+      ]
+    },
+    {
+      "id": "orrin",
+      "name": "Tatsumaki",
+      "locationId": "square",
+      "tier": "normal",
+      "role": "psychic S-class hero",
+      "factionId": "heroes",
+      "description": "A powerful psychic hero annoyed that weaker heroes are taking too long to resolve a small threat.",
+      "appearance": {
+        "sourceLook": "Tatsumaki / green-haired psychic hero",
+        "bodyType": "small frame with floating posture",
+        "hair": "curled green hair",
+        "outfit": "black dress-like hero outfit with green psychic glow",
+        "palette": ["#66c26f", "#141b28", "#e7b07d"],
+        "silhouette": "Small floating psychic silhouette with curled green hair.",
+        "visualTags": ["psychic", "green hair", "floating", "S-class"],
+        "portrait": "/assets/characters/opm_test/tatsumaki.svg"
+      },
+      "traits": { "personality": ["sharp", "impatient", "protective"], "values": ["competence", "strength", "results"], "flaws": ["dismissive"], "fears": ["others wasting time"], "speechStyle": "cutting and confident" },
+      "needs": { "safety": 78, "trust": 36, "resources": 42, "status": 86, "curiosity": 64, "duty": 72 },
+      "mood": { "emotion": "irritated", "stress": 30, "confidence": 95, "suspicion": 66 },
+      "goals": ["resolve the threat quickly", "prove the alert is below S-class concern", "keep weaker heroes from getting hurt"],
+      "ambitions": [
+        { "id": "tatsumaki_resolve", "title": "Resolve the Z-City alert before it becomes embarrassing", "kind": "protect", "priority": 82, "status": "active", "targetId": "bridge" }
+      ],
+      "relationshipAxes": { "lena": { "trust": 0, "respect": 1 }, "pax": { "suspicion": 5 }, "tomas": { "respect": 2 } },
+      "relationships": { "lena": 0, "pax": -2, "tomas": 1 },
+      "memories": [
+        { "tick": 0, "text": "The overpass threat is probably small, but small threats still hurt civilians.", "meta": { "importance": 7, "tags": ["overpass", "threat", "civilians"], "visibility": "shared", "emotionalWeight": 3, "sourceActorId": "world" } },
+        { "tick": 0, "text": "Sonic's challenge marks are theatrical and annoying.", "meta": { "importance": 6, "tags": ["sonic", "challenge"], "visibility": "private", "emotionalWeight": 4, "sourceActorId": "world" } }
+      ]
+    },
+    {
+      "id": "pax",
+      "name": "Speed-o'-Sound Sonic",
+      "locationId": "square",
+      "tier": "quest",
+      "role": "ninja rival and accidental antagonist",
+      "factionId": "challengers",
+      "description": "A flashy ninja rival trying to manufacture a dramatic duel while the heroes handle practical patrol work.",
+      "appearance": {
+        "sourceLook": "Speed-o'-Sound Sonic / black-haired ninja rival",
+        "bodyType": "lean, fast, sharp posture",
+        "hair": "long black hair swept back",
+        "outfit": "dark ninja outfit with purple scarf and weapon straps",
+        "palette": ["#2b2337", "#8d5cff", "#ddb08a"],
+        "silhouette": "Sharp ninja silhouette with long hair, scarf, and blade straps.",
+        "visualTags": ["ninja", "rival", "black hair", "purple scarf"],
+        "portrait": "/assets/characters/opm_test/sonic.svg"
+      },
+      "traits": { "personality": ["dramatic", "competitive", "secretive"], "values": ["speed", "recognition", "duels"], "flaws": ["turns everything into a challenge"], "fears": ["being ignored"], "speechStyle": "theatrical and smug" },
+      "needs": { "safety": 45, "trust": 22, "resources": 46, "status": 84, "curiosity": 62, "revenge": 54, "duty": 20 },
+      "mood": { "emotion": "eager", "stress": 44, "confidence": 86, "suspicion": 58 },
+      "goals": ["force Saitama into a public duel", "leave challenge marks near the overpass", "avoid being dismissed as a nuisance"],
+      "ambitions": [
+        { "id": "sonic_duel", "title": "Force the caped bald hero into a public duel", "kind": "gain_status", "priority": 92, "status": "active", "targetId": "mira" },
+        { "id": "sonic_marks", "title": "Keep leaving challenge marks near the overpass", "kind": "hide", "priority": 74, "status": "active", "targetId": "bridge" }
+      ],
+      "secrets": [
+        { "id": "challenge_marks", "text": "Sonic planted challenge marks near the overpass to lure Saitama into a duel.", "risk": 88, "knownBy": ["pax"] }
+      ],
+      "relationshipAxes": { "mira": { "trust": -2, "respect": 4, "suspicion": 3 }, "lena": { "trust": -1, "suspicion": 4 }, "orrin": { "trust": -2, "fear": 1, "suspicion": 5 } },
+      "relationships": { "mira": -1, "lena": -1, "orrin": -2 },
+      "memories": [
+        { "tick": 0, "text": "The challenge note near the overpass is bait for Saitama.", "meta": { "importance": 9, "tags": ["challenge", "overpass", "saitama"], "visibility": "private", "emotionalWeight": 6, "sourceActorId": "world" } },
+        { "tick": 0, "text": "A monster scale makes the alert look more serious than the duel bait alone.", "meta": { "importance": 8, "tags": ["monster", "scale", "alert"], "visibility": "private", "emotionalWeight": 4, "sourceActorId": "world" } }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "return_shears",
+      "title": "Recover Saitama's grocery coupon",
+      "description": "Saitama lost a grocery coupon near the Training Lot. Recover it before the sale ends.",
+      "giverId": "mira",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "mira": 2 } },
+      "consequences": { "relationshipDelta": { "mira": -1 } }
+    },
+    {
+      "id": "rekindle_forge",
+      "title": "Recover Genos's spare cyborg core",
+      "description": "Genos needs a spare core component from Monster Alley before another patrol damages him further.",
+      "giverId": "tomas",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "tomas": 2, "mira": 1 } },
+      "consequences": { "relationshipDelta": { "tomas": -1 } }
+    },
+    {
+      "id": "bridge_whisper",
+      "title": "Verify the overpass monster sign",
+      "description": "Mumen Rider needs proof before filing an overpass alert. Find the challenge note or monster scale near the Ruined Overpass.",
+      "giverId": "lena",
+      "status": "open",
+      "rewards": { "relationshipDelta": { "lena": 2, "pax": -1 } },
+      "consequences": { "relationshipDelta": { "lena": -1 } }
+    }
+  ],
+  "eventLog": []
+}

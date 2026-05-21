@@ -63,6 +63,7 @@ describe("quests", () => {
   test("giving quest item completes accepted quest", () => {
     const world = fixture();
     applyAction(world, { type: "accept_quest", actorId: "player", questId: "bridge_whisper" });
+    const before = world.tensions?.find((tension) => tension.id === "missing_metal")?.pressure ?? 0;
     applyAction(world, { type: "move", actorId: "player", locationId: "bridge" });
     applyAction(world, { type: "pickup", actorId: "player", itemId: "blue_ember" });
     applyAction(world, { type: "move", actorId: "player", locationId: "square" });
@@ -72,5 +73,8 @@ describe("quests", () => {
     expect(give.applied).toBe(true);
     expect(getQuest(world, "bridge_whisper")!.status).toBe("done");
     expect(world.npcs.find((n) => n.id === "lena")!.relationships["player"]).toBe(2);
+    const after = world.tensions?.find((tension) => tension.id === "missing_metal");
+    expect(after?.pressure).toBeLessThan(before);
+    expect(after?.status).toBe("resolved");
   });
 });

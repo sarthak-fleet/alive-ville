@@ -76,6 +76,33 @@ describe("items", () => {
   });
 });
 
+describe("interactable props", () => {
+  test("inspect requires co-location and marks clues as inspected", () => {
+    const world = fixture();
+    const far = applyAction(world, { type: "inspect", actorId: "player", propId: "forge_tool_rack" });
+    expect(far.applied).toBe(false);
+    if (!far.applied) expect(far.reason).toBe("Prop is not here.");
+
+    applyAction(world, { type: "move", actorId: "player", locationId: "forge" });
+    const ok = applyAction(world, { type: "inspect", actorId: "player", propId: "forge_tool_rack" });
+
+    expect(ok.applied).toBe(true);
+    expect(world.interactables?.find((prop) => prop.id === "forge_tool_rack")?.inspected).toBe(true);
+    if (ok.applied) expect(ok.text).toMatch(/missing pair of shears/);
+  });
+
+  test("inspect can lower related tension pressure", () => {
+    const world = fixture();
+    const before = world.tensions?.find((tension) => tension.id === "missing_metal")?.pressure ?? 0;
+
+    applyAction(world, { type: "move", actorId: "player", locationId: "bridge" });
+    applyAction(world, { type: "inspect", actorId: "player", propId: "bridge_scars" });
+
+    const after = world.tensions?.find((tension) => tension.id === "missing_metal")?.pressure ?? 0;
+    expect(after).toBeLessThan(before);
+  });
+});
+
 describe("clock", () => {
   test("tick advances hours and wraps day", async () => {
     const engine = createEngine(fixture(), { propose: async () => [] });

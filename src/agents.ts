@@ -1,4 +1,4 @@
-import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, World } from "./types.ts";
+import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, ScheduleBlock, World } from "./types.ts";
 
 const DEFAULT_NEEDS = {
   safety: 50,
@@ -42,7 +42,9 @@ export function ensureAgentStateDefaults(world: World): void {
       npc.relationshipAxes[actorId] ??= axesFromScore(score);
     }
     npc.plan ??= {};
+    npc.plan.schedule ??= defaultScheduleFor(npc.id);
     npc.plan.currentIntent ??= planAgentIntent(world, npc);
+    npc.plan.nextActionHint = nextActionHint(world, npc);
     for (const memory of npc.memories) {
       memory.meta ??= memoryMetaFromText(memory.text);
     }
@@ -53,6 +55,7 @@ export function refreshAgentIntents(world: World): void {
   for (const npc of world.npcs) {
     npc.plan ??= {};
     npc.plan.currentIntent = planAgentIntent(world, npc);
+    npc.plan.nextActionHint = nextActionHint(world, npc);
   }
 }
 
@@ -62,6 +65,12 @@ export function advanceStoryPressure(world: World, actions: AppliedAction[]): vo
     world.directorState.pressure = clamp(world.directorState.pressure + (actions.length > 0 ? 2 : 8), 0, 100);
     if (world.directorState.quietTicks >= 2) {
       addPendingReveal(world, "The village has gone quiet enough for the bridge pattern to stand out.");
+    }
+    if (world.storyProgress?.phase === "nightfall_warning" && world.directorState.quietTicks >= 1) {
+      addPendingReveal(world, "The Lantern Inn windows dim when the bridge whisper crosses the square.");
+    }
+    if (world.storyProgress?.phase === "shadow_confrontation" && world.directorState.quietTicks >= 1) {
+      addPendingReveal(world, "Lena's lantern throws one shadow too many across the inn floor.");
     }
   }
 
@@ -82,6 +91,38 @@ export function advanceStoryPressure(world: World, actions: AppliedAction[]): vo
       addPendingReveal(world, revealForPlan(plan.id, plan.stage));
     }
   }
+  advanceTensions(world);
+}
+
+function advanceTensions(world: World): void {
+  const quietTicks = world.directorState?.quietTicks ?? 0;
+  const duskOrNight = world.clock.hour >= 18 || world.clock.hour < 6;
+  for (const tension of world.tensions ?? []) {
+    if (tension.status === "resolved") continue;
+    const previousStatus = tension.status ?? "quiet";
+    const hiddenPlanPressure = (world.villainPlans ?? []).some((plan) =>
+      plan.stage >= 2 && tension.involvedIds?.some((id) => id === plan.actorId || plan.knownFacts?.some((fact) => fact.toLowerCase().includes(id.toLowerCase())))
+    ) ? 6 : 0;
+    tension.pressure = clamp(tension.pressure + 2 + (quietTicks >= 2 ? 5 : 0) + (duskOrNight ? 4 : 0) + hiddenPlanPressure, 0, 100);
+    tension.status = tension.pressure >= 75 ? "escalating" : tension.pressure >= 40 ? "active" : "quiet";
+    if (tension.status === "escalating" && previousStatus !== "escalating") {
+      addPendingReveal(world, `Tension escalated: ${tension.title}. Counterplay: ${counterplayForTension(world.id, tension.id)}`);
+    }
+  }
+}
+
+export function counterplayForTension(worldId: string, tensionId: string): string {
+  const hints: Record<string, Record<string, string>> = {
+    ashbend: {
+      missing_metal: "inspect the bridge marks, return Mira's shears, or bring bridge proof to Lena",
+      forge_unlit: "recover dry bellows leather and rekindle Tomas's forge",
+    },
+    opm_z_city: {
+      overpass_alert: "inspect the report board, recover proof at the overpass, or file it with Mumen Rider",
+      sonic_challenge: "recover Saitama's coupon, inspect Sonic's marks, or defeat the challenger cleanly",
+    },
+  };
+  return hints[worldId]?.[tensionId] ?? "find proof, help an involved NPC, or confront the source directly";
 }
 
 export function retrieveRelevantMemories(world: World, npcId: string, query: string, limit = 5): RetrievedMemory[] {
@@ -96,6 +137,7 @@ export function retrieveRelevantMemories(world: World, npcId: string, query: str
 }
 
 export function planAgentIntent(world: World, npc: Npc): AgentIntent {
+  const scheduled = scheduledBlockFor(world, npc);
   const activeAmbition = [...(npc.ambitions ?? [])]
     .filter((goal) => (goal.status ?? "active") === "active")
     .sort((a, b) => b.priority - a.priority)[0];
@@ -110,6 +152,14 @@ export function planAgentIntent(world: World, npc: Npc): AgentIntent {
       kind: "escalate",
       reason: `Advance hidden plan: ${villainPlan.objective}`,
       targetId: villainPlan.id,
+      updatedTick: world.tick,
+    };
+  }
+  if (scheduled && scheduled.locationId !== npc.locationId) {
+    return {
+      kind: "move",
+      reason: scheduled.intent,
+      targetId: scheduled.locationId,
       updatedTick: world.tick,
     };
   }
@@ -160,6 +210,14 @@ export function planAgentIntent(world: World, npc: Npc): AgentIntent {
   };
 }
 
+export function scheduledBlockFor(world: World, npc: Npc): ScheduleBlock | null {
+  const schedule = npc.plan?.schedule ?? defaultScheduleFor(npc.id);
+  if (!schedule.length) return null;
+  return [...schedule]
+    .sort((a, b) => b.hour - a.hour)
+    .find((block) => world.clock.hour >= block.hour) ?? schedule.at(-1) ?? null;
+}
+
 export function memoryMetaFromText(text: string): NonNullable<Memory["meta"]> {
   const tags = tokenize(text).filter((term) => term.length > 3).slice(0, 6);
   const importance = /secret|bridge|missing|flame|whisper|danger|promise|blue|stole|hide/i.test(text) ? 7 : 4;
@@ -175,6 +233,53 @@ function goalsToAmbitions(npc: Npc) {
     priority: Math.max(30, 80 - index * 10),
     status: "active" as const,
   }));
+}
+
+function defaultScheduleFor(npcId: string): ScheduleBlock[] {
+  const schedules: Record<string, ScheduleBlock[]> = {
+    mira: [
+      { hour: 6, locationId: "garden", intent: "Tend moonmint and check for missing tools." },
+      { hour: 14, locationId: "square", intent: "Ask neighbors what they saw near the bridge." },
+      { hour: 20, locationId: "inn", intent: "Keep the moonmint cuttings safe indoors." },
+    ],
+    tomas: [
+      { hour: 6, locationId: "forge", intent: "Repair tools and listen for the old flame." },
+      { hour: 18, locationId: "bridge", intent: "Check whether the bridge quiets after forge work." },
+      { hour: 21, locationId: "inn", intent: "Avoid the bridge until morning." },
+    ],
+    lena: [
+      { hour: 6, locationId: "inn", intent: "Collect witness accounts from travelers." },
+      { hour: 12, locationId: "square", intent: "Compare rumors at the notice board." },
+      { hour: 18, locationId: "inn", intent: "Trim lanterns before nightfall." },
+    ],
+    orrin: [
+      { hour: 6, locationId: "square", intent: "Guard the notice board and watch patterns." },
+      { hour: 18, locationId: "inn", intent: "Trade rumors where people gather after dusk." },
+    ],
+    pax: [
+      { hour: 6, locationId: "square", intent: "Pretend nothing is hidden behind the board." },
+      { hour: 18, locationId: "bridge", intent: "Check whether the whisper still wants bright pieces." },
+      { hour: 21, locationId: "wood", intent: "Hide from anyone asking about metal." },
+    ],
+  };
+  return schedules[npcId] ?? [{ hour: 6, locationId: "square", intent: "Follow the village routine and watch for changes." }];
+}
+
+function nextActionHint(world: World, npc: Npc): string {
+  const scheduled = scheduledBlockFor(world, npc);
+  const intent = npc.plan?.currentIntent;
+  if (scheduled && scheduled.locationId !== npc.locationId) {
+    return `Should head to ${locationName(world, scheduled.locationId)}: ${scheduled.intent}`;
+  }
+  if (intent?.kind === "escalate") return "Will protect the hidden plan unless trust or evidence changes.";
+  if (intent?.kind === "investigate") return "Will follow the strongest unresolved clue.";
+  if (intent?.kind === "help") return "Will support the place or person they feel responsible for.";
+  if (intent?.kind === "hide") return "Will avoid direct answers until pressure drops.";
+  return scheduled?.intent ?? "Will keep routine and react to new information.";
+}
+
+function locationName(world: World, id: string): string {
+  return world.locations.find((location) => location.id === id)?.name ?? id;
 }
 
 function inferGoalKind(goal: string): AgentGoalKind {

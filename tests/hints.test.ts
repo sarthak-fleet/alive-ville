@@ -7,6 +7,7 @@ import { applyAction, getQuest } from "../src/simulation.ts";
 import type { World } from "../src/types.ts";
 
 const fixture = (): World => JSON.parse(readFileSync(new URL("../worlds/village.json", import.meta.url), "utf8")) as World;
+const opmFixture = (): World => JSON.parse(readFileSync(new URL("../worlds/one-punch-man.json", import.meta.url), "utf8")) as World;
 
 describe("learned quest hints", () => {
   test("active quests show non-spoilery starting hints", () => {
@@ -47,5 +48,36 @@ describe("learned quest hints", () => {
 
     const hints = questHintsFor(world, getQuest(world, "bridge_whisper")!);
     expect(hints.some((hint) => hint.source === "director")).toBe(true);
+  });
+
+  test("Z-City quests show world-specific route hints", () => {
+    const world = opmFixture();
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "return_shears" });
+
+    const hints = questHintsFor(world, getQuest(world, "return_shears")!);
+    const text = hints.map((hint) => hint.text).join(" ");
+    expect(text).toMatch(/Training Lot/);
+    expect(text).toMatch(/grocery coupon/i);
+    expect(text).not.toMatch(/Tomas|forge/i);
+  });
+
+  test("Z-City hints advance once the player holds the quest item", () => {
+    const world = opmFixture();
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "return_shears" });
+    applyAction(world, { type: "move", actorId: "player", locationId: "forge" });
+    applyAction(world, { type: "pickup", actorId: "player", itemId: "shears" });
+
+    const hints = questHintsFor(world, getQuest(world, "return_shears")!);
+    expect(hints.map((hint) => hint.text).join(" ")).toMatch(/Bring it back to Saitama at the Apartment Block/);
+  });
+
+  test("Z-City bridge quest points at the overpass proof loop", () => {
+    const world = opmFixture();
+    applyAction(world, { type: "accept_quest", actorId: "player", questId: "bridge_whisper" });
+
+    const hints = questHintsFor(world, getQuest(world, "bridge_whisper")!);
+    const text = hints.map((hint) => hint.text).join(" ");
+    expect(text).toMatch(/Ruined Overpass/);
+    expect(text).toMatch(/proof/i);
   });
 });

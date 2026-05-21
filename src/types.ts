@@ -10,6 +10,9 @@ export type ActionType =
   | "talk"
   | "gossip"
   | "confront"
+  | "fight"
+  | "choose_character"
+  | "inspect"
   | "remember"
   | "pickup"
   | "drop"
@@ -27,6 +30,9 @@ export interface MoveAction extends BaseAction { type: "move"; locationId: Locat
 export interface TalkAction extends BaseAction { type: "talk"; targetId: ActorId; text: string; }
 export interface GossipAction extends BaseAction { type: "gossip"; targetId: ActorId; aboutId: ActorId; text: string; }
 export interface ConfrontAction extends BaseAction { type: "confront"; targetId: ActorId; text: string; }
+export interface FightAction extends BaseAction { type: "fight"; targetId: ActorId; moveId?: string; text?: string; }
+export interface ChooseCharacterAction extends BaseAction { type: "choose_character"; targetId: ActorId; }
+export interface InspectAction extends BaseAction { type: "inspect"; propId: string; }
 export interface RememberAction extends BaseAction { type: "remember"; text: string; }
 export interface PickupAction extends BaseAction { type: "pickup"; itemId: ItemId; }
 export interface DropAction extends BaseAction { type: "drop"; itemId: ItemId; }
@@ -37,7 +43,7 @@ export interface CompleteQuestAction extends BaseAction { type: "complete_quest"
 export interface FailQuestAction extends BaseAction { type: "fail_quest"; questId: QuestId; }
 
 export type Action =
-  | MoveAction | TalkAction | GossipAction | ConfrontAction | RememberAction
+  | MoveAction | TalkAction | GossipAction | ConfrontAction | FightAction | ChooseCharacterAction | InspectAction | RememberAction
   | PickupAction | DropAction | GiveAction
   | OfferQuestAction | AcceptQuestAction | CompleteQuestAction | FailQuestAction;
 
@@ -47,6 +53,9 @@ export type PlayerAction =
   | WithoutActor<TalkAction>
   | WithoutActor<GossipAction>
   | WithoutActor<ConfrontAction>
+  | WithoutActor<FightAction>
+  | WithoutActor<ChooseCharacterAction>
+  | WithoutActor<InspectAction>
   | WithoutActor<RememberAction>
   | WithoutActor<PickupAction>
   | WithoutActor<DropAction>
@@ -113,6 +122,14 @@ export interface AgentSecret {
   knownBy?: Array<ActorId | "player">;
 }
 
+export interface CombatState {
+  hp: number;
+  maxHp: number;
+  posture: number;
+  defeated?: boolean;
+  lastMoveId?: string;
+}
+
 export interface AgentIntent {
   kind: AgentIntentKind;
   targetId?: ActorId | LocationId | ItemId;
@@ -130,6 +147,18 @@ export interface AgentPlan {
   currentIntent?: AgentIntent;
   nextActionHint?: string;
   schedule?: ScheduleBlock[];
+}
+
+export interface CharacterAppearance {
+  sourceLook?: string;
+  bodyType?: string;
+  hair?: string;
+  outfit?: string;
+  palette?: string[];
+  silhouette?: string;
+  visualTags?: string[];
+  portrait?: string;
+  spriteSheet?: string;
 }
 
 export interface RelationshipAxes {
@@ -156,6 +185,8 @@ export interface Npc {
   ambitions?: AgentGoal[];
   plan?: AgentPlan;
   secrets?: AgentSecret[];
+  combat?: CombatState;
+  appearance?: CharacterAppearance;
   relationships: Record<ActorId, number>;
   relationshipAxes?: Record<ActorId | "player", RelationshipAxes>;
   memories: Memory[];
@@ -186,6 +217,19 @@ export interface Item {
   holderId?: HolderId;
 }
 
+export interface InteractableProp {
+  id: string;
+  name: string;
+  locationId: LocationId;
+  description: string;
+  inspectText: string;
+  clueTags?: string[];
+  relatedQuestId?: QuestId;
+  involvedIds?: Array<ActorId | LocationId>;
+  pressureDelta?: number;
+  inspected?: boolean;
+}
+
 export interface Clock {
   hoursPerTick: number;
   hour: number;
@@ -207,6 +251,8 @@ export interface Quest {
 export interface Player {
   locationId: LocationId;
   name?: string;
+  characterId?: ActorId;
+  appearance?: CharacterAppearance;
 }
 
 export interface Story {
@@ -216,6 +262,13 @@ export interface Story {
   currentObjective?: string;
   mysteries?: string[];
   beats?: string[];
+}
+
+export type StoryPhase = "starter" | "nightfall_warning" | "shadow_confrontation" | "dawn_after_tasks";
+export interface StoryProgress {
+  phase: StoryPhase;
+  unlockedCutsceneIds: string[];
+  playedCutsceneIds: string[];
 }
 
 export interface WorldRule {
@@ -277,6 +330,7 @@ export interface World {
   id: string;
   name: string;
   story?: Story;
+  storyProgress?: StoryProgress;
   tick: TickIndex;
   player: Player;
   clock: Clock;
@@ -289,6 +343,7 @@ export interface World {
   exits: Exit[];
   npcs: Npc[];
   items: Item[];
+  interactables?: InteractableProp[];
   quests?: Quest[];
   eventLog: TickSummary[];
 }

@@ -4,13 +4,22 @@ import {
   memoryMetaFromText,
   refreshAgentIntents,
   retrieveRelevantMemories,
+  scheduledBlockFor,
 } from "./agents.ts";
+import { combatMoveFor, combatMovesFor } from "./combat.ts";
+import {
+  advanceNightfallTravel,
+  ensureStoryProgress,
+  resolveShadowConfrontation,
+  syncStoryProgress,
+} from "./story-progress.ts";
 import type {
   Action,
   ActionResult,
   ActionType,
   AgentMood,
   AppliedAction,
+  CombatState,
   Director,
   Item,
   Npc,
@@ -25,13 +34,17 @@ import type {
 import { HOURS_PER_DAY } from "./types.ts";
 
 const ACTION_TYPES: Set<ActionType> = new Set([
-  "move", "talk", "gossip", "confront", "remember",
-  "pickup", "drop", "give",
+  "move", "talk", "gossip", "confront", "fight", "choose_character", "remember",
+  "inspect", "pickup", "drop", "give",
   "offer_quest", "accept_quest", "complete_quest", "fail_quest",
 ]);
 
 export function cloneWorld(world: World): World {
   return JSON.parse(JSON.stringify(world)) as World;
+}
+
+function clonePlain<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 export interface EngineOptions {
@@ -72,9 +85,12 @@ export function createEngine(world: World, { propose, director }: EngineOptions 
 function ensureWorldDefaults(world: World): void {
   world.exits ??= [];
   world.items ??= [];
+  world.interactables ??= [];
   world.clock ??= { hoursPerTick: 1, hour: 8, day: 1 };
   world.eventLog ??= [];
   ensureAgentStateDefaults(world);
+  ensureCombatDefaults(world);
+  ensureStoryProgress(world);
 }
 
 export async function runTick(
@@ -109,6 +125,7 @@ export async function runTick(
 
   world.tick += 1;
   advanceClock(world);
+  syncStoryProgress(world);
   advanceStoryPressure(world, actions);
   refreshAgentIntents(world);
   const summary = summarizeTick(world, actions, rejected);
@@ -135,6 +152,7 @@ export function applyAction(world: World, action: Action): ActionResult {
     case "move": {
       if (action.actorId === "player") {
         world.player = { ...(world.player ?? { locationId: action.locationId }), locationId: action.locationId };
+        advanceNightfallTravel(world, action.locationId);
       } else {
         const npc = mustNpc(world, action.actorId);
         npc.locationId = action.locationId;
@@ -161,7 +179,48 @@ export function applyAction(world: World, action: Action): ActionResult {
       adjustRelationship(world, action.targetId, action.actorId, -1, { trust: -2, fear: 1, suspicion: 3 });
       nudgeMood(world, action.actorId, { confidence: 3, stress: 1 });
       nudgeMood(world, action.targetId, { stress: 8, suspicion: 5, confidence: -3 });
+      if (action.actorId === "player" && isStoryConfrontationTarget(world, action.targetId)) {
+        resolveShadowConfrontation(world);
+      }
       return applied(action, `${nameOf(world, action.actorId)} confronted ${nameOf(world, action.targetId)}.`);
+    case "fight":
+      applyFightDamage(world, action.targetId, action.moveId);
+      remember(world, action.targetId, `${nameOf(world, action.actorId)} used ${combatMoveFor(world, action.moveId).label}: ${action.text ?? "No speech, just action."}`);
+      remember(world, action.actorId, `Used ${combatMoveFor(world, action.moveId).label} on ${nameOf(world, action.targetId)}: ${action.text ?? "No speech, just action."}`);
+      adjustRelationship(world, action.actorId, action.targetId, -3, { trust: -2, respect: 2, suspicion: 2 });
+      adjustRelationship(world, action.targetId, action.actorId, -2, { trust: -2, fear: 2, respect: 1, suspicion: 3 });
+      nudgeMood(world, action.actorId, { confidence: 8, stress: 3 });
+      nudgeMood(world, action.targetId, { stress: 12, confidence: -8, suspicion: 5 });
+      if (getNpc(world, action.targetId)?.combat?.defeated) resolveFightConsequences(world, action.actorId, action.targetId);
+      return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId));
+    case "choose_character": {
+      const chosen = mustNpc(world, action.targetId);
+      world.player = {
+        ...world.player,
+        characterId: chosen.id,
+        name: chosen.name,
+        appearance: chosen.appearance ? clonePlain(chosen.appearance) : undefined,
+        locationId: chosen.locationId,
+      };
+      remember(world, chosen.id, `${nameOf(world, action.actorId)} chose to play as ${chosen.name}.`);
+      return applied(action, `${nameOf(world, action.actorId)} is now playing as ${chosen.name}.`);
+    }
+    case "inspect": {
+      const prop = mustProp(world, action.propId);
+      prop.inspected = true;
+      if (action.actorId !== "player") remember(world, action.actorId, `Inspected ${prop.name}: ${prop.inspectText}`);
+      if (prop.pressureDelta && world.directorState) {
+        world.directorState.pressure = clampPressure(world.directorState.pressure + prop.pressureDelta);
+      }
+      if (prop.involvedIds?.length) {
+        for (const tension of world.tensions ?? []) {
+          if (prop.involvedIds.some((id) => tension.involvedIds?.includes(id))) {
+            tension.pressure = clampPressure(tension.pressure + (prop.pressureDelta ?? -4));
+          }
+        }
+      }
+      return applied(action, `${nameOf(world, action.actorId)} inspected ${prop.name}: ${prop.inspectText}`);
+    }
     case "remember":
       remember(world, action.actorId, action.text);
       return applied(action, `${nameOf(world, action.actorId)} noted: ${action.text}`);
@@ -188,7 +247,8 @@ export function applyAction(world: World, action: Action): ActionResult {
       remember(world, action.actorId, `Gave ${item.name} to ${nameOf(world, action.targetId)}.`);
       adjustRelationshipAxes(world, action.targetId, action.actorId, { trust: 1, affection: 1, debt: 1 });
       const completed = completeQuestForGift(world, action.actorId, action.targetId, action.itemId);
-      const questText = completed ? ` ${completed.title} is complete.` : "";
+      syncStoryProgress(world);
+      const questText = completed ? ` ${completed.title} is complete. ${questOutcomeText(world, completed, action.actorId)}` : "";
       return applied(action, `${nameOf(world, action.actorId)} gave ${item.name} to ${nameOf(world, action.targetId)}.${questText}`);
     }
     case "offer_quest": {
@@ -214,10 +274,11 @@ export function applyAction(world: World, action: Action): ActionResult {
       const quest = mustQuest(world, action.questId);
       quest.status = "done";
       applyQuestDeltas(world, quest.rewards?.relationshipDelta, quest.acceptedBy);
-      if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, action.actorId)} finished: ${quest.title}`);
+      applyQuestCompletionConsequences(world, quest, action.actorId);
       if (action.actorId !== "player" && quest.giverId) remember(world, action.actorId, `Completed "${quest.title}" for ${nameOf(world, quest.giverId)}.`);
       markAmbitionProgress(world, quest);
-      return applied(action, `${nameOf(world, action.actorId)} completed "${quest.title}".`);
+      syncStoryProgress(world);
+      return applied(action, `${nameOf(world, action.actorId)} completed "${quest.title}". ${questOutcomeText(world, quest, action.actorId)}`);
     }
     case "fail_quest": {
       const quest = mustQuest(world, action.questId);
@@ -234,12 +295,194 @@ export function applyAction(world: World, action: Action): ActionResult {
   }
 }
 
+function isStoryConfrontationTarget(world: World, targetId: string): boolean {
+  return targetId === (world.id === "opm_z_city" ? "pax" : "lena");
+}
+
+function ensureCombatDefaults(world: World): void {
+  for (const npc of world.npcs) {
+    if (!shouldTrackCombat(npc)) continue;
+    npc.combat = normalizeCombatState(npc.combat);
+  }
+}
+
+function shouldTrackCombat(npc: Npc): boolean {
+  return npc.factionId === "challengers" || npc.id === "pax";
+}
+
+function normalizeCombatState(combat: CombatState | undefined): CombatState {
+  const maxHp = combat?.maxHp ?? 100;
+  const hp = Math.max(0, Math.min(maxHp, combat?.hp ?? maxHp));
+  const posture = Math.max(0, Math.min(100, combat?.posture ?? 100));
+  return { maxHp, hp, posture, defeated: combat?.defeated ?? hp <= 0, lastMoveId: combat?.lastMoveId };
+}
+
+function applyFightDamage(world: World, targetId: string, moveId: string | undefined): void {
+  const target = mustNpc(world, targetId);
+  target.combat = normalizeCombatState(target.combat);
+  const move = combatMoveFor(world, moveId);
+  const postureBroken = target.combat.posture <= 25;
+  const damage = move.damage + (postureBroken && move.style !== "guard" ? 8 : 0);
+  target.combat.hp = Math.max(0, target.combat.hp - damage);
+  target.combat.posture = Math.max(0, target.combat.posture - move.postureDamage);
+  target.combat.lastMoveId = move.id;
+  target.combat.defeated = target.combat.hp <= 0 || move.style === "finisher";
+  if (target.combat.defeated) {
+    target.combat.hp = 0;
+    target.combat.posture = 0;
+  }
+}
+
+function resolveFightConsequences(world: World, actorId: string, targetId: string): void {
+  if (actorId === "player" && isStoryConfrontationTarget(world, targetId)) {
+    resolveShadowConfrontation(world);
+  }
+  const tension = world.tensions?.find((candidate) => candidate.involvedIds?.includes(targetId) && candidate.status !== "resolved");
+  if (tension) {
+    tension.status = "resolved";
+    tension.pressure = Math.max(0, tension.pressure - 35);
+  }
+  const plan = world.villainPlans?.find((candidate) => candidate.actorId === targetId);
+  if (plan) {
+    plan.stage += 1;
+    plan.pressure = Math.max(0, plan.pressure - 30);
+    plan.nextTrigger = "Recovered after the first direct fight; future loops need stronger combat stakes.";
+  }
+}
+
+function fightOutcomeText(world: World, actorId: string, targetId: string, moveId: string | undefined): string {
+  const move = combatMoveFor(world, moveId);
+  const combat = getNpc(world, targetId)?.combat;
+  const hpText = combat ? ` ${nameOf(world, targetId)} has ${combat.hp}/${combat.maxHp} HP left.` : "";
+  if (world.id === "opm_z_city" && targetId === "pax") {
+    if (combat?.defeated) {
+      return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}. The overpass challenger is knocked out of the first patrol loop.`;
+    }
+    return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}`;
+  }
+  return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}`;
+}
+
 function applyQuestDeltas(world: World, deltas: Record<string, number> | undefined, completerId: string | undefined): void {
   if (!deltas || !completerId) return;
   for (const [npcId, delta] of Object.entries(deltas)) {
     adjustRelationship(world, npcId, completerId, delta);
     adjustRelationship(world, completerId, npcId, delta);
   }
+}
+
+function applyQuestCompletionConsequences(world: World, quest: Quest, completerId: string): void {
+  resolveQuestTensions(world, quest.id);
+  writeQuestAftermathMemories(world, quest, completerId);
+}
+
+function resolveQuestTensions(world: World, questId: string): void {
+  const impact: Record<string, Partial<Record<string, number>>> = {
+    ashbend: {
+      return_shears: -8,
+      rekindle_forge: -35,
+      bridge_whisper: -28,
+    },
+    opm_z_city: {
+      return_shears: -6,
+      rekindle_forge: -10,
+      bridge_whisper: -32,
+    },
+  };
+  const tensionByQuest: Record<string, Partial<Record<string, string[]>>> = {
+    ashbend: {
+      return_shears: ["missing_metal"],
+      rekindle_forge: ["forge_unlit"],
+      bridge_whisper: ["missing_metal"],
+    },
+    opm_z_city: {
+      return_shears: ["sonic_challenge"],
+      rekindle_forge: ["overpass_alert"],
+      bridge_whisper: ["overpass_alert"],
+    },
+  };
+  const ids = tensionByQuest[world.id]?.[questId] ?? [];
+  const delta = impact[world.id]?.[questId] ?? -10;
+  for (const tension of world.tensions ?? []) {
+    if (!ids.includes(tension.id) || tension.status === "resolved") continue;
+    tension.pressure = clampPressure(tension.pressure + delta);
+    if (questId === "rekindle_forge" && world.id === "ashbend") {
+      tension.status = "resolved";
+    } else if (questId === "bridge_whisper") {
+      tension.status = tension.pressure <= 20 ? "resolved" : "quiet";
+    } else if (tension.pressure <= 25) {
+      tension.status = "quiet";
+    }
+  }
+  if (world.directorState) {
+    world.directorState.pressure = clampPressure(world.directorState.pressure - Math.max(4, Math.abs(delta) / 4));
+  }
+}
+
+function writeQuestAftermathMemories(world: World, quest: Quest, completerId: string): void {
+  if (!quest.giverId) return;
+  const giver = getNpc(world, quest.giverId);
+  if (!giver) return;
+  const branch = questRelationshipBranch(giver, completerId);
+  const consequence = questConsequenceLine(world, quest.id, branch);
+  remember(world, quest.giverId, `${branch.label} quest outcome: ${nameOf(world, completerId)} finished "${quest.title}". ${consequence}`);
+  if (completerId !== "player") return;
+  remember(world, completerId, `Quest aftermath with ${giver.name}: ${consequence}`);
+}
+
+function questRelationshipBranch(npc: Npc, actorId: string): { label: "Trusted" | "Wary" | "Resolved"; tone: "trusted" | "wary" | "neutral" } {
+  const axes = npc.relationshipAxes?.[actorId] ?? {};
+  const trust = axes.trust ?? 0;
+  const suspicion = axes.suspicion ?? 0;
+  if (trust >= 3 && trust >= suspicion) return { label: "Trusted", tone: "trusted" };
+  if (suspicion >= 3 && suspicion > trust) return { label: "Wary", tone: "wary" };
+  return { label: "Resolved", tone: "neutral" };
+}
+
+function questConsequenceLine(world: World, questId: string, branch: { tone: "trusted" | "wary" | "neutral" }): string {
+  const lines: Record<string, Record<string, Record<string, string>>> = {
+    ashbend: {
+      return_shears: {
+        trusted: "Mira shares the bridge-dew clue without holding back.",
+        wary: "Mira accepts the shears but keeps watching how you handle Tomas.",
+        neutral: "The garden stabilizes and Mira has one less reason to suspect the forge.",
+      },
+      rekindle_forge: {
+        trusted: "Tomas admits the forge flame weakens the bridge whisper.",
+        wary: "Tomas restarts the forge but keeps his bridge fear half-hidden.",
+        neutral: "The forge breathes again and the bridge pressure drops.",
+      },
+      bridge_whisper: {
+        trusted: "Lena treats the proof as enough to prepare a calm night watch.",
+        wary: "Lena files the proof but keeps your name out of the first report.",
+        neutral: "The bridge clue becomes official and the village panic recedes.",
+      },
+    },
+    opm_z_city: {
+      return_shears: {
+        trusted: "Saitama treats you as reliable enough to handle errands without speeches.",
+        wary: "Saitama takes the coupon back, unimpressed but no longer blocked.",
+        neutral: "The coupon errand closes and the plaza drama drops slightly.",
+      },
+      rekindle_forge: {
+        trusted: "Genos logs you as tactically reliable for the next patrol.",
+        wary: "Genos accepts the core but keeps a backup scan running.",
+        neutral: "Genos repairs enough damage to keep the overpass patrol stable.",
+      },
+      bridge_whisper: {
+        trusted: "Mumen Rider trusts the proof and moves civilians away from the overpass.",
+        wary: "Mumen Rider files the alert carefully, separating proof from rumor.",
+        neutral: "The overpass alert becomes actionable instead of vague panic.",
+      },
+    },
+  };
+  return lines[world.id]?.[questId]?.[branch.tone] ?? "The task changes how the giver treats the next problem.";
+}
+
+function questOutcomeText(world: World, quest: Quest, completerId: string): string {
+  const giver = quest.giverId ? getNpc(world, quest.giverId) : undefined;
+  const branch = giver ? questRelationshipBranch(giver, completerId) : { label: "Resolved" as const, tone: "neutral" as const };
+  return questConsequenceLine(world, quest.id, branch);
 }
 
 function completeQuestForGift(world: World, giverId: string, targetId: string, itemId: string): Quest | null {
@@ -255,7 +498,7 @@ function completeQuestForGift(world: World, giverId: string, targetId: string, i
   if (!quest || quest.status !== "active" || quest.acceptedBy !== giverId) return null;
   quest.status = "done";
   applyQuestDeltas(world, quest.rewards?.relationshipDelta, giverId);
-  if (quest.giverId) remember(world, quest.giverId, `${nameOf(world, giverId)} finished: ${quest.title}`);
+  applyQuestCompletionConsequences(world, quest, giverId);
   remember(world, giverId, `Completed "${quest.title}" by giving ${getItem(world, itemId)?.name ?? itemId} to ${nameOf(world, targetId)}.`);
   markAmbitionProgress(world, quest);
   return quest;
@@ -309,13 +552,25 @@ export function validateAction(world: World, action: Action | unknown): Validati
   if (!a.type || !ACTION_TYPES.has(a.type as ActionType)) return invalid("Unsupported action type.");
   if (a.actorId !== "player" && !getNpc(world, a.actorId ?? "")) return invalid("Unknown actor.");
 
-  if (a.type === "talk" || a.type === "gossip" || a.type === "confront") {
+  if (a.type === "talk" || a.type === "gossip" || a.type === "confront" || a.type === "fight") {
     const targetId = (a as { targetId?: string }).targetId;
     if (!targetId || !getNpc(world, targetId)) return invalid("Unknown target.");
   }
   if (a.type === "gossip") {
     const aboutId = (a as { aboutId?: string }).aboutId;
     if (!aboutId || !getNpc(world, aboutId)) return invalid("Unknown gossip subject.");
+  }
+  if (a.type === "choose_character") {
+    const targetId = (a as { targetId?: string }).targetId;
+    if (a.actorId !== "player") return invalid("Only the player can choose a character.");
+    if (!targetId || !getNpc(world, targetId)) return invalid("Unknown character.");
+  }
+  if (a.type === "inspect") {
+    const propId = (a as { propId?: string }).propId;
+    const prop = getProp(world, propId ?? "");
+    if (!prop) return invalid("Unknown prop.");
+    const here = locationOf(world, a.actorId ?? "");
+    if (prop.locationId !== here) return invalid("Prop is not here.");
   }
   if (a.type === "move") {
     const locationId = (a as { locationId?: string }).locationId;
@@ -329,6 +584,20 @@ export function validateAction(world: World, action: Action | unknown): Validati
   }
   if (a.type === "talk" || a.type === "gossip" || a.type === "confront" || a.type === "remember") {
     if (typeof (a as { text?: unknown }).text !== "string") return invalid("Text is required.");
+  }
+  if (a.type === "fight") {
+    const here = locationOf(world, a.actorId ?? "");
+    const targetId = (a as { targetId?: string }).targetId;
+    const there = locationOf(world, targetId ?? "");
+    if (here !== there) return invalid("Target is not here.");
+    const text = (a as { text?: unknown }).text;
+    if (text !== undefined && typeof text !== "string") return invalid("Fight text must be a string.");
+    const moveId = (a as { moveId?: unknown }).moveId;
+    if (moveId !== undefined && typeof moveId !== "string") return invalid("Fight move must be a string.");
+    if (typeof moveId === "string" && !combatMovesFor(world).some((move) => move.id === moveId)) {
+      return invalid("Unknown fight move.");
+    }
+    if (getNpc(world, targetId ?? "")?.combat?.defeated) return invalid("Target is already defeated.");
   }
 
   if (a.type === "pickup" || a.type === "drop" || a.type === "give") {
@@ -383,6 +652,23 @@ export function proposeNpcActions(world: World): Action[] {
   const orrin = getNpc(world, "orrin");
   const pax = getNpc(world, "pax");
 
+  if (world.id === "opm_z_city") {
+    if (world.tick === 0 && pax && mira) {
+      actions.push({
+        type: "confront", actorId: "pax", targetId: "mira",
+        text: "Caped bald hero, stop pretending errands are more important than our duel.",
+      });
+    }
+    if (world.tick === 0 && orrin && pax) {
+      actions.push({
+        type: "gossip", actorId: "orrin", targetId: "lena", aboutId: "pax",
+        text: "Sonic is turning the overpass alert into a challenge stage.",
+      });
+    }
+    actions.push(...scheduledNpcMoveActions(world, actions));
+    return actions;
+  }
+
   if (world.tick === 0 && mira && tomas) {
     actions.push({
       type: "confront", actorId: "mira", targetId: "tomas",
@@ -402,7 +688,66 @@ export function proposeNpcActions(world: World): Action[] {
       text: "Mira is angry about the missing tools; return them before asking for herbs.",
     });
   }
+  actions.push(...scheduledNpcMoveActions(world, actions));
   return actions;
+}
+
+function scheduledNpcMoveActions(world: World, existingActions: Action[], limit = 2): Action[] {
+  const busyActors = new Set(existingActions.map((action) => action.actorId));
+  const moves: Action[] = [];
+  for (const npc of world.npcs) {
+    if (moves.length >= limit) break;
+    if (npc.id === world.player.characterId || busyActors.has(npc.id)) continue;
+    if (isQuestCriticalNpc(world, npc.id)) continue;
+    const scheduled = scheduledBlockFor(world, npc);
+    if (!scheduled || scheduled.locationId === npc.locationId) continue;
+    const nextStep = nextLocationStep(world, npc.locationId, scheduled.locationId);
+    if (!nextStep || nextStep === npc.locationId) continue;
+    moves.push({ type: "move", actorId: npc.id, locationId: nextStep });
+    busyActors.add(npc.id);
+  }
+  return moves;
+}
+
+function isQuestCriticalNpc(world: World, npcId: string): boolean {
+  return (world.quests ?? []).some((quest) => {
+    const status = quest.status ?? "open";
+    return quest.giverId === npcId && (status === "open" || status === "active");
+  });
+}
+
+function nextLocationStep(world: World, fromId: string, toId: string): string | null {
+  if (fromId === toId) return fromId;
+  const queue = [fromId];
+  const previous = new Map<string, string | null>([[fromId, null]]);
+
+  for (let i = 0; i < queue.length; i += 1) {
+    const current = queue[i]!;
+    if (current === toId) break;
+    for (const next of neighboringLocations(world, current)) {
+      if (previous.has(next)) continue;
+      previous.set(next, current);
+      queue.push(next);
+    }
+  }
+
+  if (!previous.has(toId)) return null;
+  const route: string[] = [];
+  let current: string | null = toId;
+  while (current && current !== fromId) {
+    route.push(current);
+    current = previous.get(current) ?? null;
+  }
+  return route.reverse()[0] ?? null;
+}
+
+function neighboringLocations(world: World, locationId: string): string[] {
+  const result = new Set<string>();
+  for (const exit of world.exits ?? []) {
+    if (exit.from === locationId) result.add(exit.to);
+    if (exit.bidirectional && exit.to === locationId) result.add(exit.from);
+  }
+  return [...result];
 }
 
 function applied(action: Action, text: string): AppliedAction {
@@ -495,6 +840,10 @@ function clampMood(value: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
+function clampPressure(value: number): number {
+  return Math.max(0, Math.min(100, value));
+}
+
 function summarizeTick(world: World, actions: AppliedAction[], rejected: RejectedAction[]): TickSummary {
   return {
     tick: world.tick,
@@ -517,6 +866,7 @@ function checksum(world: World): string {
     })),
     player: world.player ?? null,
     items: world.items?.map((item) => ({ id: item.id, holderId: item.holderId ?? null, locationId: item.locationId ?? null })) ?? [],
+    storyProgress: world.storyProgress ?? null,
   });
   let hash = 0;
   for (let i = 0; i < stable.length; i += 1) hash = (hash * 31 + stable.charCodeAt(i)) >>> 0;
@@ -525,6 +875,16 @@ function checksum(world: World): string {
 
 export function getNpc(world: World, id: string): Npc | undefined {
   return world.npcs.find((npc) => npc.id === id);
+}
+
+export function getProp(world: World, id: string) {
+  return (world.interactables ?? []).find((prop) => prop.id === id);
+}
+
+function mustProp(world: World, id: string) {
+  const prop = getProp(world, id);
+  if (!prop) throw new Error(`Unknown prop ${id}`);
+  return prop;
 }
 
 function mustNpc(world: World, id: string): Npc {

@@ -19,6 +19,11 @@
       "Pax knows where the trinkets are hidden and is scared to admit why."
     ]
   },
+  "storyProgress": {
+    "phase": "starter",
+    "unlockedCutsceneIds": ["ashbend_intro_square"],
+    "playedCutsceneIds": []
+  },
   "tick": 0,
   "player": { "locationId": "square", "name": "Wanderer" },
   "clock": { "hoursPerTick": 2, "hour": 8, "day": 1 },
@@ -72,6 +77,41 @@
     { "id": "bellows_leather", "name": "Dry bellows leather", "description": "A stiff leather patch that could help Tomas restart the old forge flame.", "locationId": "wood" },
     { "id": "blue_ember", "name": "Cold blue ember", "description": "A small ember that glows without heat. It pulses near the bridge.", "locationId": "bridge" }
   ],
+  "interactables": [
+    {
+      "id": "forge_tool_rack",
+      "name": "Sooty tool rack",
+      "locationId": "forge",
+      "description": "A rack of borrowed tools above the forge bench.",
+      "inspectText": "Fresh soot outlines a missing pair of shears. Tomas did not clean this up before leaving.",
+      "clueTags": ["forge", "shears", "tomas"],
+      "relatedQuestId": "return_shears",
+      "involvedIds": ["tomas", "mira", "forge"],
+      "pressureDelta": -2
+    },
+    {
+      "id": "bridge_scars",
+      "name": "Blue scrape marks",
+      "locationId": "bridge",
+      "description": "Cold blue scrapes run along the old bridge stones.",
+      "inspectText": "The scrape marks point toward the river and match the color of the cold ember.",
+      "clueTags": ["bridge", "blue", "ember", "metal"],
+      "relatedQuestId": "bridge_whisper",
+      "involvedIds": ["bridge", "pax"],
+      "pressureDelta": -4
+    },
+    {
+      "id": "inn_notice",
+      "name": "Lantern Inn notice board",
+      "locationId": "inn",
+      "description": "Traveler reports pinned beside the inn lanterns.",
+      "inspectText": "Several notes mention the bridge going silent whenever the forge flame dims.",
+      "clueTags": ["inn", "bridge", "forge", "lantern"],
+      "relatedQuestId": "bridge_whisper",
+      "involvedIds": ["lena", "bridge"],
+      "pressureDelta": -2
+    }
+  ],
   "npcs": [
     {
       "id": "mira", "name": "Mira",
@@ -80,6 +120,15 @@
       "role": "gardener and early ally",
       "factionId": "village",
       "description": "A practical gardener trying to keep the moonmint alive while the village blames the wrong people.",
+      "appearance": {
+        "sourceLook": "warm gardener heroine",
+        "bodyType": "average height, practical posture",
+        "hair": "brown hair tucked under an olive headscarf",
+        "outfit": "green apron over a cream shirt and brown skirt",
+        "palette": ["#708a4b", "#e2d58f", "#6d4930"],
+        "silhouette": "Soft garden-worker silhouette with apron, scarf, and flower basket energy.",
+        "visualTags": ["gardener", "kind", "earthy", "headscarf"]
+      },
       "traits": {
         "personality": ["kind", "direct", "observant"],
         "values": ["care", "honesty", "usefulness"],
@@ -109,6 +158,15 @@
       "role": "blacksmith with a guilty secret",
       "factionId": "village",
       "description": "A strong blacksmith who wants to fix the forge before anyone learns how scared the bridge made him.",
+      "appearance": {
+        "sourceLook": "broad forge craftsman",
+        "bodyType": "tall, broad-shouldered, heavy build",
+        "hair": "dark hair and beard under a charcoal headband",
+        "outfit": "brown leather apron, rolled cream sleeves, black work trousers",
+        "palette": ["#6f4b35", "#d2b16c", "#2c2a28"],
+        "silhouette": "Large blacksmith silhouette with apron, gloves, and squared stance.",
+        "visualTags": ["blacksmith", "bearded", "strong", "apron"]
+      },
       "traits": {
         "personality": ["stubborn", "protective", "ashamed"],
         "values": ["craft", "responsibility", "strength"],
@@ -141,6 +199,15 @@
       "role": "innkeeper and witness collector",
       "factionId": "village",
       "description": "A calm innkeeper who turns rumors into useful witness accounts.",
+      "appearance": {
+        "sourceLook": "calm lantern innkeeper",
+        "bodyType": "upright, composed, medium build",
+        "hair": "auburn hair tied neatly away from the face",
+        "outfit": "amber travel vest, long skirt, lantern keeper sash",
+        "palette": ["#a96a42", "#f1ca7a", "#5f3d2c"],
+        "silhouette": "Readable innkeeper silhouette with lantern colors and composed stance.",
+        "visualTags": ["innkeeper", "lantern", "witness", "calm"]
+      },
       "traits": {
         "personality": ["patient", "social", "strategic"],
         "values": ["hospitality", "truth", "safety"],
@@ -170,6 +237,15 @@
       "role": "merchant elder and rumor broker",
       "factionId": "village",
       "description": "An experienced elder who sees patterns but sometimes turns suspicion into rumor.",
+      "appearance": {
+        "sourceLook": "merchant elder with travel cloak",
+        "bodyType": "older, slightly stooped but alert",
+        "hair": "white hair and trimmed beard",
+        "outfit": "blue merchant cloak over tan robes, walking stick",
+        "palette": ["#355a82", "#e7dbbe", "#6b553d"],
+        "silhouette": "Elder silhouette with cloak, cane, and notice-board authority.",
+        "visualTags": ["elder", "merchant", "cloak", "cane"]
+      },
       "traits": {
         "personality": ["experienced", "proud", "pattern-seeking"],
         "values": ["evidence", "reputation", "preparedness"],
@@ -198,6 +274,15 @@
       "role": "frightened child and accidental antagonist",
       "factionId": "bridge_whisper",
       "description": "A nervous child hiding shiny things because the bridge whisper scares him into obeying.",
+      "appearance": {
+        "sourceLook": "nervous runaway kid",
+        "bodyType": "short, wiry, quick-footed",
+        "hair": "messy dark brown hair",
+        "outfit": "rust-red vest, patched blue trousers, small side satchel",
+        "palette": ["#b47657", "#2d3d56", "#8a6038"],
+        "silhouette": "Small anxious silhouette with satchel and hunched shoulders.",
+        "visualTags": ["child", "satchel", "secretive", "quick"]
+      },
       "traits": {
         "personality": ["playful", "secretive", "scared"],
         "values": ["belonging", "safety", "forgiveness"],

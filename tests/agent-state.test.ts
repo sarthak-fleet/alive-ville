@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, test } from "vitest";
 
-import { planAgentIntent, retrieveRelevantMemories } from "../src/agents.ts";
+import { planAgentIntent, retrieveRelevantMemories, scheduledBlockFor } from "../src/agents.ts";
 import { applyAction, createEngine } from "../src/simulation.ts";
 import type { World } from "../src/types.ts";
 
@@ -46,5 +46,28 @@ describe("Agent State v1", () => {
     const latest = world.npcs.find((npc) => npc.id === "lena")?.memories.at(-1);
     expect(latest?.meta?.tags).toContain("bridge");
     expect(retrieveRelevantMemories(world, "lena", "bridge unsafe", 1)[0]?.text).toMatch(/bridge is unsafe/);
+  });
+
+  test("agents expose deterministic schedules and next action hints", () => {
+    const engine = createEngine(fixture(), { propose: async () => [] });
+    const lena = engine.npc("lena")!;
+
+    expect(lena.plan?.schedule?.length).toBeGreaterThan(1);
+    expect(scheduledBlockFor(engine.state, lena)?.intent).toMatch(/witness|rumors|lantern/i);
+    expect(lena.plan?.nextActionHint).toMatch(/Collect|Compare|Trim|routine|clue|support/i);
+  });
+
+  test("default simulation moves NPCs along their schedules", async () => {
+    const world = fixture();
+    world.tick = 3;
+    world.clock.hour = 18;
+    const engine = createEngine(world);
+
+    const event = await engine.tick();
+    const orrinMove = event.actions.find((entry) => entry.action.type === "move" && entry.action.actorId === "orrin");
+
+    expect(orrinMove?.text).toMatch(/Orrin moved to Lantern Inn/);
+    expect(engine.npc("orrin")?.locationId).toBe("inn");
+    expect(engine.npc("orrin")?.plan?.currentIntent?.updatedTick).toBe(engine.state.tick);
   });
 });

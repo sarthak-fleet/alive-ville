@@ -1,3 +1,4 @@
+import { syncStoryProgress } from "./story-progress.ts";
 import type { Item, Npc, Quest, QuestStatus, World } from "./types.ts";
 
 export type ObjectiveTargetType = "location" | "item" | "npc";
@@ -10,6 +11,9 @@ export interface Objective {
   locationId: string;
   targetType: ObjectiveTargetType;
   targetId: string;
+  actionLabel?: string;
+  storyAction?: "confront_shadow" | "fight_challenger";
+  storyTargetId?: string;
 }
 
 const QUEST_ITEM_TARGETS: Record<string, Array<{ itemId: string; returnNpcId: string; searchLocationId: string }>> = {
@@ -23,10 +27,87 @@ const QUEST_ITEM_TARGETS: Record<string, Array<{ itemId: string; returnNpcId: st
 
 export function activeObjectives(world: World): Objective[] {
   const quests = world.quests ?? [];
-  return [
+  const questObjectives = [
     ...quests.filter((quest) => quest.status === "active").flatMap((quest) => objectiveForQuest(world, quest) ?? []),
     ...quests.filter((quest) => (quest.status ?? "open") === "open").flatMap((quest) => objectiveForQuest(world, quest) ?? []),
   ];
+  if (questObjectives.length > 0) return questObjectives;
+  const storyObjective = objectiveForStoryProgress(world);
+  return storyObjective ? [storyObjective] : [];
+}
+
+export function objectiveForStoryProgress(world: World): Objective | null {
+  const progress = syncStoryProgress(world);
+  const labels = storyLabelsFor(world);
+  if (progress.phase === "nightfall_warning") {
+    const targetLocation = world.player.locationId === "inn" ? "square" : "inn";
+    return {
+      questId: "story:nightfall_warning",
+      questTitle: labels.warningTitle,
+      status: "active",
+      text: targetLocation === "square" ? labels.warningHereText : labels.warningTravelText,
+      locationId: targetLocation,
+      targetType: "location",
+      targetId: targetLocation,
+      actionLabel: "Go",
+    };
+  }
+  if (progress.phase === "shadow_confrontation") {
+    const targetLocation = world.player.locationId === "inn" ? "inn" : "square";
+    return {
+      questId: "story:shadow_confrontation",
+      questTitle: labels.confrontTitle,
+      status: "active",
+      text: labels.confrontText,
+      locationId: targetLocation,
+      targetType: "location",
+      targetId: targetLocation,
+      actionLabel: labels.confrontActionLabel,
+      storyAction: labels.confrontAction,
+      storyTargetId: labels.confrontTargetId,
+    };
+  }
+  if (progress.phase === "dawn_after_tasks") {
+    return {
+      questId: "story:dawn_after_tasks",
+      questTitle: labels.doneTitle,
+      status: "done",
+      text: labels.doneText,
+      locationId: world.player.locationId,
+      targetType: "location",
+      targetId: world.player.locationId,
+    };
+  }
+  return null;
+}
+
+function storyLabelsFor(world: World) {
+  if (world.id === "opm_z_city") {
+    return {
+      warningTitle: "Report to Hero Association before the next monster alert",
+      warningTravelText: "Reach the Hero Association kiosk before the overpass alarm spreads.",
+      warningHereText: "Step into Z-City Plaza and watch for the overpass challenger.",
+      confrontTitle: "Confront the Overpass Challenger",
+      confrontText: "Fight the challenger with Mumen Rider as witness.",
+      confrontActionLabel: "Fight",
+      confrontAction: "fight_challenger" as const,
+      confrontTargetId: "pax",
+      doneTitle: "Z-City alert cleared",
+      doneText: "The first Z-City patrol loop is resolved. Keep exploring, talking, saving, or replaying scenes.",
+    };
+  }
+  return {
+    warningTitle: "Go to Lantern Inn before nightfall",
+    warningTravelText: "Reach the Lantern Inn before the river fog thickens.",
+    warningHereText: "Step into the plaza outside the inn and watch for the blue lantern shadow.",
+    confrontTitle: "Confront the Lantern Shadow",
+    confrontText: "Call the shadow into the open with Lena as witness.",
+    confrontActionLabel: "Confront",
+    confrontAction: "confront_shadow" as const,
+    confrontTargetId: "lena",
+    doneTitle: "Nightfall held",
+    doneText: "The first Ashbend night loop is resolved. Keep exploring, talking, saving, or replaying scenes.",
+  };
 }
 
 export function objectiveForQuest(world: World, quest: Quest): Objective | null {

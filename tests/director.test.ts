@@ -65,4 +65,40 @@ describe("director", () => {
     const reveal = await engine.tick();
     expect(reveal.actions.some((entry) => entry.fromDirector && /Director clue/.test(entry.text))).toBe(true);
   });
+
+  test("nightfall wait state produces a readable story beat", async () => {
+    const world = fixture();
+    world.storyProgress = {
+      phase: "nightfall_warning",
+      unlockedCutsceneIds: ["ashbend_intro_square", "villain_lantern_shadow"],
+      playedCutsceneIds: [],
+    };
+    world.directorState = { pressure: 45, quietTicks: 1, pendingReveals: [] };
+    for (const npc of world.npcs) npc.relationships = {};
+
+    const director = createDirector();
+    const engine = createEngine(world, { propose: async () => [], director });
+    const event = await engine.tick();
+
+    expect(event.actions.some((entry) => entry.fromDirector && /Lantern Inn/.test(entry.text))).toBe(true);
+  });
+
+  test("ignored world tensions escalate into visible status", async () => {
+    const world = fixture();
+    for (const npc of world.npcs) npc.relationships = {};
+    world.tensions = [{
+      id: "test_pressure",
+      title: "A test pressure is being ignored",
+      pressure: 73,
+      status: "active",
+      involvedIds: ["bridge"],
+    }];
+
+    const engine = createEngine(world, { propose: async () => [], director: createDirector() });
+    await engine.tick();
+
+    expect(engine.state.tensions?.[0]?.status).toBe("escalating");
+    expect(engine.state.directorState?.pendingReveals?.some((reveal) => /Tension escalated/.test(reveal))).toBe(true);
+    expect(engine.state.directorState?.pendingReveals?.some((reveal) => /Counterplay:/.test(reveal))).toBe(true);
+  });
 });
