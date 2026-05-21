@@ -56,6 +56,14 @@ async function runAliveVillagePlaytest(): Promise<void> {
     await expect(sound).toHaveCount(1);
     await sound.click();
     await expect(page.getByRole("button", { name: "Sound on" })).toHaveAttribute("aria-pressed", "true");
+    await openAgentsPanel(page);
+    await expect(page.getByLabel("Agent loop controls")).toContainText("idle");
+    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Step" }).click();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("1 autonomous ticks");
+    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("running");
+    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
 
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-sound-on.png") });
     await page.waitForTimeout(7_500);
@@ -119,6 +127,13 @@ async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerS
   }, { upperSelector, lowerSelector });
   expect(boxes).not.toBeNull();
   expect(boxes!.lowerTop).toBeGreaterThanOrEqual(boxes!.upperBottom + 6);
+}
+
+async function openAgentsPanel(page: Page): Promise<void> {
+  const agents = page.locator("details").filter({ has: page.locator("summary", { hasText: "Agents" }) });
+  if (await agents.getAttribute("open") === null) {
+    await agents.locator("summary").click();
+  }
 }
 
 async function restoreWorld(): Promise<void> {

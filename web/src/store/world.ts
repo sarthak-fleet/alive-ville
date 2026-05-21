@@ -42,6 +42,7 @@ interface WorldStore {
   exportStoryPackage: () => Promise<Awaited<ReturnType<typeof fetchStoryPackage>>>;
   restoreFromJson: (text: string) => Promise<void>;
   importWorldSourceFromJson: (text: string) => Promise<void>;
+  refreshFromServer: () => Promise<void>;
   openDrawer: (npcId: string) => void;
   closeDrawer: () => void;
   pruneBubbles: (now: number) => void;
@@ -152,6 +153,12 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     const world = await restoreSnapshot(draftWorld);
     updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
     set({ world, error: null, bubbles: [], lastSummary: null, drawerNpcId: null });
+  },
+
+  async refreshFromServer() {
+    const world = await fetchState();
+    updateMusicMood(world.storyProgress?.phase ? { worldId: world.id, phase: world.storyProgress.phase } : { worldId: world.id });
+    set({ world, error: null });
   },
 
   openDrawer(npcId) {

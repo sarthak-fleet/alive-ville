@@ -42,9 +42,13 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
     gate(rootDir, "long_running_agents", "Long-running AI agents", [
       file("src/agent-loop.ts"),
       source("src/server.ts", ["/api/agent-loop/status", "/api/agent-loop/start", "/api/agent-loop/stop", "/api/agent-loop/step"]),
+      source("web/src/api/client.ts", ["fetchAgentLoopStatus", "startAgentLoop", "stopAgentLoop", "stepAgentLoop"]),
+      source("web/src/organisms/AgentLoopPanel.tsx", ["Agent loop controls", "Start", "Stop", "Step", "refreshFromServer"]),
+      source("web/src/templates/AppShell.tsx", ["AgentLoopPanel", "Agents"]),
       source("src/agent-loop.ts", ["checkpointEveryTicks", "maxTicks", "start()", "stop("]),
       file("tests/agent-loop.test.ts"),
       source("tests/server.test.ts", ["/api/agent-loop/status", "/api/agent-loop/step"]),
+      source("tests/playtests/alive-village.ts", ["Agent loop controls", "1 autonomous ticks", "running", "stopped"]),
     ]),
     gate(rootDir, "verification_surface", "Everything tested", [
       packageScript("typecheck"),

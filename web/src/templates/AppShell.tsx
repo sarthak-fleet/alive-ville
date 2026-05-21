@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 
 import { ActionBar } from "../organisms/ActionBar.tsx";
+import { AgentLoopPanel } from "../organisms/AgentLoopPanel.tsx";
 import { AmbienceToggle } from "../organisms/AmbienceToggle.tsx";
 import { AppHeader } from "../organisms/AppHeader.tsx";
 import { CutsceneList } from "../organisms/CutsceneList.tsx";
@@ -88,6 +89,10 @@ export function AppShell() {
           <details className="journal-foldout">
             <summary>Activity</summary>
             <EventLog />
+          </details>
+          <details className="journal-foldout">
+            <summary>Agents</summary>
+            <AgentLoopPanel />
           </details>
           <details className="debug-foldout">
             <summary>Debug</summary>

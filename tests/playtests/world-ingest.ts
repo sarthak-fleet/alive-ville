@@ -45,6 +45,9 @@ async function runWorldIngestPlaytest(): Promise<void> {
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
+  page.on("response", (response) => {
+    if (response.status() === 404) errors.push(`404 ${response.url()}`);
+  });
 
   try {
     await page.goto(BASE_URL);

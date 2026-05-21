@@ -1,3 +1,4 @@
+import type { AgentLoopStatus } from "../../../src/agent-loop.ts";
 import type { StoryPackage } from "../../../src/story-package.ts";
 import type { PlayerAction, TickSummary, World } from "../../../src/types.ts";
 import type { WorldIngestSource } from "../../../src/world-ingest.ts";
@@ -78,4 +79,31 @@ export async function importWorldSource(source: WorldIngestSource): Promise<Worl
     throw new Error(`${data.error}${suffix}`);
   }
   return data.state;
+}
+
+export async function fetchAgentLoopStatus(): Promise<AgentLoopStatus> {
+  const res = await fetch("/api/agent-loop/status");
+  if (!res.ok) throw new Error(`fetchAgentLoopStatus failed: ${res.status}`);
+  return (await res.json()) as AgentLoopStatus;
+}
+
+export async function startAgentLoop(): Promise<AgentLoopStatus> {
+  return postAgentLoopCommand("/api/agent-loop/start");
+}
+
+export async function stopAgentLoop(): Promise<AgentLoopStatus> {
+  return postAgentLoopCommand("/api/agent-loop/stop");
+}
+
+export async function stepAgentLoop(): Promise<{ status: AgentLoopStatus; state: World; summary: TickSummary }> {
+  const res = await fetch("/api/agent-loop/step", { method: "POST" });
+  const data = (await res.json()) as { status: AgentLoopStatus; state: World; summary: TickSummary } | { error: string; status: AgentLoopStatus };
+  if ("error" in data) throw new Error(data.error);
+  return data;
+}
+
+async function postAgentLoopCommand(path: string): Promise<AgentLoopStatus> {
+  const res = await fetch(path, { method: "POST" });
+  if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
+  return (await res.json()) as AgentLoopStatus;
 }
