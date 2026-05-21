@@ -27,6 +27,7 @@ describe("anime ingest compiler", () => {
     ]);
     expect(engine.state.npcs.find((npc) => npc.id === "pax")?.secrets?.[0]?.text).toContain("challenge marks");
     expect(engine.state.items.find((item) => item.id === "shears")?.name).toBe("Grocery coupon");
+    expect(engine.state.npcs.find((npc) => npc.id === "mira")?.appearance?.portrait).toBe("/assets/characters/opm_test/saitama.svg");
     expect(activeObjectives(engine.state)[0]?.questTitle).toBe("Recover Grocery coupon for Saitama");
   });
 

@@ -23,6 +23,8 @@ describe("generic world ingest", () => {
     expect(world.interactables?.map((prop) => prop.id)).toContain("world_origin_clue");
     expect((world.interactables ?? []).flatMap((prop) => prop.clueTags ?? [])).not.toContain("anime");
     expect(world.npcs.map((npc) => npc.id)).toEqual(["mara", "ivo", "nell", "orric", "vex"]);
+    expect(world.npcs.every((npc) => npc.appearance?.portrait?.startsWith("data:image/svg+xml,"))).toBe(true);
+    expect(decodeURIComponent(world.npcs[0]!.appearance!.portrait!.replace("data:image/svg+xml,", ""))).toContain("Mara route captain generated portrait");
     expect(world.items.map((item) => item.id)).toEqual(["route_token", "prism_gear", "painted_flag_scrap", "false_alarm_note", "guild_radio"]);
     expect(world.items.find((item) => item.id === "route_token")?.visual).toMatchObject({
       material: "metal",
@@ -107,6 +109,7 @@ describe("generic world ingest", () => {
       palette: { ground: "#202b3d", structure: "#6b7f99", accent: "#9fc3ff" },
     });
     expect(world.npcs.map((npc) => npc.id)).toEqual(["eda", "brin", "sal", "merrow", "cale"]);
+    expect(world.npcs.every((npc) => npc.appearance?.portrait?.startsWith("data:image/svg+xml,"))).toBe(true);
     expect(world.quests?.map((quest) => [quest.id, quest.giverId])).toEqual([
       ["recover_verdigris_key", "eda"],
       ["recover_glass_gear", "brin"],

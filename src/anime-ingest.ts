@@ -229,6 +229,8 @@ function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[nu
   const draft = source.characters[index] ?? source.characters[source.characters.length - 1]!;
   const factionId = draft.faction ? slugId(draft.faction) : index === CHARACTER_SLOTS.length - 1 ? "challengers" : "allies";
   const needs = needsFor(index);
+  const palette = draft.look?.palette ?? paletteFor(index);
+  const visualTags = draft.look?.visualTags ?? [draft.role, ...(draft.traits ?? []).slice(0, 2)];
   return {
     id,
     name: draft.name,
@@ -242,10 +244,10 @@ function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[nu
       bodyType: draft.look?.bodyType,
       hair: draft.look?.hair,
       outfit: draft.look?.outfit,
-      palette: draft.look?.palette ?? paletteFor(index),
+      palette,
       silhouette: draft.look?.silhouette ?? `${draft.name}'s silhouette should read as ${draft.role}.`,
-      visualTags: draft.look?.visualTags ?? [draft.role, ...(draft.traits ?? []).slice(0, 2)],
-      portrait: draft.look?.portrait,
+      visualTags,
+      portrait: draft.look?.portrait ?? generatedPortraitDataUri(draft, palette, visualTags, index),
       spriteSheet: draft.look?.spriteSheet,
     },
     traits: {
@@ -291,6 +293,48 @@ function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[nu
       },
     })),
   };
+}
+
+function generatedPortraitDataUri(
+  draft: AnimeCharacterDraft,
+  palette: string[],
+  visualTags: string[],
+  index: number
+): string {
+  const primary = palette[0] ?? "#9fc3ff";
+  const secondary = palette[1] ?? "#f4f1e8";
+  const accent = palette[2] ?? "#273344";
+  const initial = escapeXml(draft.name.trim()[0]?.toUpperCase() ?? "?");
+  const label = escapeXml(`${draft.name} ${draft.role} generated portrait`);
+  const tagShapes = visualTags.slice(0, 3).map((tag, tagIndex) => {
+    const x = 48 + tagIndex * 34;
+    const y = 188 + (tagIndex % 2) * 10;
+    const width = Math.max(22, Math.min(44, tag.length * 4));
+    return `<rect x="${x}" y="${y}" width="${width}" height="10" rx="5" fill="${tagIndex % 2 === 0 ? secondary : accent}" opacity="0.82"/>`;
+  }).join("");
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="${label}">`,
+    `<rect width="256" height="256" rx="36" fill="${accent}"/>`,
+    `<circle cx="90" cy="76" r="74" fill="${primary}" opacity="0.34"/>`,
+    `<circle cx="170" cy="176" r="92" fill="${secondary}" opacity="0.22"/>`,
+    `<path d="M54 210c10-42 46-68 74-68s64 26 74 68" fill="${primary}"/>`,
+    `<circle cx="128" cy="100" r="48" fill="${secondary}"/>`,
+    `<path d="M82 ${88 + index * 2}c22-32 70-34 94 0-8-44-86-48-94 0z" fill="${accent}" opacity="0.84"/>`,
+    `<text x="128" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" font-weight="700" fill="${accent}">${initial}</text>`,
+    tagShapes,
+    `</svg>`,
+  ].join("");
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function escapeXml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&apos;",
+  })[character] ?? character);
 }
 
 function artifactSet(source: AnimeIngestSource): Required<AnimeArtifactDraft>[] {
