@@ -8,6 +8,7 @@ const API_PORT = Number(process.env["PLAYTEST_API_PORT"] ?? 5674);
 const WEB_PORT = Number(process.env["PLAYTEST_WEB_PORT"] ?? 5675);
 const BASE_URL = `http://127.0.0.1:${WEB_PORT}`;
 const ARTIFACT_DIR = process.env["PLAYTEST_ARTIFACT_DIR"] ?? "tmp/playtest-artifacts/world-ingest";
+const LIVE_LOOP_INTERVAL_MS = 500;
 const TSX = new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url).pathname;
 const VITE = new URL("../../node_modules/vite/bin/vite.js", import.meta.url).pathname;
 const SERVER = new URL("../../src/server.ts", import.meta.url).pathname;
@@ -21,7 +22,7 @@ async function main(): Promise<void> {
   mkdirSync(ARTIFACT_DIR, { recursive: true });
 
   const api = spawn(process.execPath, [TSX, SERVER], {
-    env: { ...process.env, PORT: String(API_PORT), LLM_API_KEY: "", LLM_BASE_URL: "" },
+    env: { ...process.env, PORT: String(API_PORT), LLM_API_KEY: "", LLM_BASE_URL: "", AGENT_LOOP_INTERVAL_MS: String(LIVE_LOOP_INTERVAL_MS) },
     stdio: ["ignore", "pipe", "pipe"],
   });
   const web = spawn(process.execPath, [VITE, "--host", "127.0.0.1", "--port", String(WEB_PORT), "--strictPort"], {
@@ -139,6 +140,20 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".objective-tracker")).toContainText("Recover Grocery coupon for Saitama");
     await page.screenshot({ path: join(ARTIFACT_DIR, "07-opm-source.png") });
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await expect(page.getByLabel("Agent loop controls")).toContainText("0 autonomous ticks");
+    const opmLiveLoopBeforeHash = await canvasPixelHash(page, ".three-host canvas");
+    await startAgentLoopFromUi(page);
+    await expect(page.getByLabel("Agent loop controls")).toContainText(`${LIVE_LOOP_INTERVAL_MS}ms`);
+    await expect.poll(() => autonomousTickCount(page), { timeout: 10_000 }).toBeGreaterThan(0);
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), {
+      message: "imported world live agent loop should visibly update the 3D scene",
+      timeout: 10_000,
+    }).not.toEqual(opmLiveLoopBeforeHash);
+    await expect(page.getByLabel("3D agent activity")).toContainText(/Autonomous t\d+/);
+    await page.screenshot({ path: join(ARTIFACT_DIR, "08-opm-live-loop.png") });
+    await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
     await expect(errors, errors.join("\n")).toEqual([]);
   } finally {
     await page.close();
@@ -257,6 +272,12 @@ async function openAgentsPanel(page: Page): Promise<void> {
 async function startAgentLoopFromUi(page: Page): Promise<void> {
   await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
   await expect(page.getByLabel("Agent loop controls")).toContainText("running", { timeout: 15_000 });
+}
+
+async function autonomousTickCount(page: Page): Promise<number> {
+  const text = await page.getByLabel("Agent loop controls").innerText();
+  const match = /(\d+) autonomous ticks/.exec(text);
+  return match ? Number(match[1]) : 0;
 }
 
 function objective(page: Page): Locator {
