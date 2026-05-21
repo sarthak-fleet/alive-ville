@@ -175,32 +175,34 @@ export function AppHeader() {
         onChange={(e) => void handleWorldSourceFile(e)}
         style={{ display: "none" }}
       />
-      <Button onClick={() => void handleSave()} disabled={busy !== ""} title="Download a JSON save of the current world">
-        {busy === "saving" ? "Saving…" : "Save"}
-      </Button>
-      <Button onClick={() => void handleQuickSave()} disabled={busy !== ""} title="Save the current world into this browser">
-        Slot Save
-      </Button>
-      <Button
-        onClick={() => void handleQuickLoad()}
-        disabled={busy !== "" || !quickSlot}
-        title={quickSlot ? `Restore ${describeQuickSlot(quickSlot)}` : "No browser quick save yet"}
-      >
-        Slot Load
-      </Button>
-      <Button onClick={() => void handleExportPackage()} disabled={busy !== ""} title="Download an importable story package">
-        Package
-      </Button>
-      <Button onClick={() => void handleReviewPackage()} disabled={busy !== ""} title="Inspect the current story package before importing or exporting">
-        Review
-      </Button>
-      <Button onClick={handleWorldSourceClick} disabled={busy !== ""} title="Import a reviewed world-source JSON draft">
-        World
-      </Button>
-      <Button onClick={handleLoadClick} disabled={busy !== ""} title="Restore the world from a saved JSON file">
-        {busy === "loading" ? "Loading…" : "Load"}
-      </Button>
-      <Button variant="primary" onClick={() => void send(null)}>Wait</Button>
+      <div className="header-actions" aria-label="Header actions">
+        <Button onClick={() => void handleSave()} disabled={busy !== ""} title="Download a JSON save of the current world">
+          {busy === "saving" ? "Saving…" : "Save"}
+        </Button>
+        <Button onClick={() => void handleQuickSave()} disabled={busy !== ""} title="Save the current world into this browser">
+          Slot Save
+        </Button>
+        <Button
+          onClick={() => void handleQuickLoad()}
+          disabled={busy !== "" || !quickSlot}
+          title={quickSlot ? `Restore ${describeQuickSlot(quickSlot)}` : "No browser quick save yet"}
+        >
+          Slot Load
+        </Button>
+        <Button onClick={() => void handleExportPackage()} disabled={busy !== ""} title="Download an importable story package">
+          Package
+        </Button>
+        <Button onClick={() => void handleReviewPackage()} disabled={busy !== ""} title="Inspect the current story package before importing or exporting">
+          Review
+        </Button>
+        <Button onClick={handleWorldSourceClick} disabled={busy !== ""} title="Import a reviewed world-source JSON draft">
+          World
+        </Button>
+        <Button onClick={handleLoadClick} disabled={busy !== ""} title="Restore the world from a saved JSON file">
+          {busy === "loading" ? "Loading…" : "Load"}
+        </Button>
+        <Button variant="primary" onClick={() => void send(null)}>Wait</Button>
+      </div>
       {packageReview && (
         <div className="package-review" role="dialog" aria-label="Story package review">
           <div>

@@ -30,6 +30,11 @@ header {
   pointer-events: none;
 }
 header > * { pointer-events: auto; }
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 h1 {
   font-size: 15px;
   margin: 0;
@@ -1059,10 +1064,53 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
 }
 
 @media (max-width: 900px) {
-  header { gap: 8px; top: 10px; left: 10px; right: 10px; }
+  header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    align-items: start;
+  }
   h1 { font-size: 14px; }
+  header .badge {
+    justify-self: start;
+    max-width: 96px;
+    white-space: normal;
+  }
+  .grow { display: none; }
+  .header-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 20px);
+    overflow: visible;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+  .header-actions button {
+    flex: 0 1 auto;
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: nowrap;
+  }
   .ambience-toggle {
-    top: 58px;
+    top: 148px;
+    left: 10px;
+  }
+  .sound-toggle {
+    top: 186px;
+    left: 10px;
+  }
+  .music-toggle {
+    top: 224px;
+    left: 10px;
+  }
+  .view-toggle {
+    top: 262px;
     left: 10px;
   }
   .hud-panel {
@@ -1110,7 +1158,7 @@ td, th { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: lef
     max-width: calc(100vw - 20px);
   }
   .three-overlay {
-    top: 216px;
+    top: 302px;
     left: 10px;
     width: min(300px, calc(100vw - 20px));
   }

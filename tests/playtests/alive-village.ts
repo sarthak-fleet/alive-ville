@@ -114,6 +114,8 @@ async function runAliveVillagePlaytest(): Promise<void> {
       await expect(mobile.getByRole("button", { name: "3D" })).toHaveClass(/active/);
       await expect(mobile.locator(".three-host canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, ".three-host canvas")).toBeGreaterThan(40);
+      await expectWithinViewport(mobile, ".header-actions");
+      await expectNoVerticalOverlap(mobile, ".header-actions", ".ambience-toggle");
       await expect(mobile.getByLabel("3D travel")).toContainText("At Herb Garden");
       await expect(mobile.getByRole("button", { name: "Go Village Square" })).toBeVisible();
       await mobile.getByRole("button", { name: "Go Village Square" }).click();
@@ -189,6 +191,18 @@ async function expectNoVerticalOverlap(page: Page, upperSelector: string, lowerS
   }, { upperSelector, lowerSelector });
   expect(boxes).not.toBeNull();
   expect(boxes!.lowerTop).toBeGreaterThanOrEqual(boxes!.upperBottom + 6);
+}
+
+async function expectWithinViewport(page: Page, selector: string): Promise<void> {
+  const box = await page.evaluate((selector) => {
+    const node = document.querySelector(selector)?.getBoundingClientRect();
+    return node ? { left: node.left, right: node.right, top: node.top, bottom: node.bottom, width: window.innerWidth, height: window.innerHeight } : null;
+  }, selector);
+  expect(box).not.toBeNull();
+  expect(box!.left).toBeGreaterThanOrEqual(0);
+  expect(box!.right).toBeLessThanOrEqual(box!.width);
+  expect(box!.top).toBeGreaterThanOrEqual(0);
+  expect(box!.bottom).toBeLessThanOrEqual(box!.height);
 }
 
 async function openAgentsPanel(page: Page): Promise<void> {
