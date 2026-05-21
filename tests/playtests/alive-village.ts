@@ -138,8 +138,7 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await expect(page.getByRole("button", { name: "Go Herb Garden" })).toBeVisible();
     await page.getByRole("button", { name: "Go Herb Garden" }).click();
     await expect(page.getByLabel("3D travel")).toContainText("At Herb Garden");
-    await page.locator(".three-host canvas").hover({ position: { x: 620, y: 320 } });
-    await expect(page.getByLabel("3D target")).toContainText("Talk Mira");
+    await hoverThreeTarget(page, "Talk Mira");
     await expect(page.getByRole("button", { name: "Interact with Mira" })).toBeEnabled();
     await page.getByRole("button", { name: "Interact with Mira" }).click();
     await expect(page.locator(".dialogue-panel")).toContainText("Mira");
@@ -274,6 +273,26 @@ async function openAgentsPanel(page: Page): Promise<void> {
   if (await agents.getAttribute("open") === null) {
     await agents.locator("summary").click();
   }
+}
+
+async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number; y: number }> {
+  const canvas = page.locator(".three-host canvas");
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("3D canvas is not visible");
+  const seen = new Set<string>();
+
+  for (const y of [0.5, 0.16, 0.24, 0.32, 0.4, 0.48, 0.56, 0.64, 0.72, 0.8, 0.88]) {
+    for (const x of [0.5, 0.08, 0.16, 0.24, 0.32, 0.4, 0.48, 0.56, 0.64, 0.72, 0.8, 0.88]) {
+      const point = { x: box.x + box.width * x, y: box.y + box.height * y };
+      await page.mouse.move(point.x, point.y);
+      await page.waitForTimeout(15);
+      const readout = await page.getByLabel("3D target").innerText();
+      if (readout !== "Hover a scene target") seen.add(readout);
+      if (readout.includes(label)) return point;
+    }
+  }
+
+  throw new Error(`Could not find 3D target: ${label}. Saw: ${[...seen].join(", ") || "none"}`);
 }
 
 async function restoreWorld(): Promise<void> {
