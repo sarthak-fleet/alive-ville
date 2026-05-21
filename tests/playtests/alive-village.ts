@@ -95,9 +95,11 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     }
     await expect(page.getByLabel("Agent loop controls")).toContainText("6 autonomous ticks");
     await expect(page.getByLabel("Agent loop controls")).toContainText(/Checkpoints\s*1/);
+    await expect(page.locator("header")).toContainText(/Day 1 \u00b7 20:00/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Restore latest" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("Restored checkpoint: world tick 5");
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await expect(page.locator("header")).toContainText(/Day 1 \u00b7 18:00/);
     await expect(page.getByLabel("3D agent activity")).toContainText(/moved to/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("running");
