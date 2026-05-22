@@ -11,6 +11,7 @@ import { createEngine } from "./simulation.ts";
 import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
 import type { PlayerAction, World } from "./types.ts";
+import { unrealWorldStateFromWorld } from "./unreal-bridge.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "./world-ingest.ts";
 
 const PORT = Number(process.env["PORT"] ?? 5174);
@@ -57,6 +58,24 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === "/api/state" && req.method === "GET") {
     return json(res, 200, engine.state);
+  }
+  if (url.pathname === "/api/unreal/state" && req.method === "GET") {
+    return json(res, 200, unrealWorldStateFromWorld(engine.state, agentLoop.status()));
+  }
+  if (url.pathname === "/api/unreal/action" && req.method === "POST") {
+    const body = await readJson(req).catch(() => null);
+    try {
+      const action = body && typeof body === "object" && "action" in body
+        ? (body as { action?: PlayerAction }).action
+        : body as PlayerAction | null;
+      const summary = await engine.tick(action ?? undefined);
+      return json(res, 200, {
+        summary,
+        state: unrealWorldStateFromWorld(engine.state, agentLoop.status()),
+      });
+    } catch (error) {
+      return json(res, 400, { error: (error as Error).message, state: unrealWorldStateFromWorld(engine.state, agentLoop.status()) });
+    }
   }
   if (url.pathname === "/api/story-package" && req.method === "GET") {
     const pkg = storyPackageFromWorld(engine.state, readCutsceneManifest());

@@ -20,6 +20,8 @@ export function commercialReadinessReport(rootDir = process.cwd()): CommercialRe
       packageScript("build"),
       packageScript("serve:production"),
       packageScript("verify:readiness"),
+      file("unreal/AshmentUnreal/AshmentUnreal.uproject"),
+      file("unreal/README.md"),
       file("astro-landing/src/pages/index.astro"),
       source("astro-landing/src/pages/index.astro", [
         "playable 3D RPG simulation",
@@ -36,6 +38,17 @@ export function commercialReadinessReport(rootDir = process.cwd()): CommercialRe
     ]),
     gate(rootDir, "three_d_graphics", "3D and good graphics", [
       packageDependency("three"),
+      source("unreal/AshmentUnreal/AshmentUnreal.uproject", ["EngineAssociation", "AshmentUnreal"]),
+      source("unreal/AshmentUnreal/Source/AshmentUnreal/AshmentWorldClient.cpp", [
+        "/api/unreal/state",
+        "SpawnPrimitive",
+        "SpawnLabel",
+        "locations",
+        "actors",
+        "items",
+        "objectives",
+      ]),
+      source("unreal/AshmentUnreal/Source/AshmentUnreal/AshmentPlayerPawn.cpp", ["MoveForward", "MoveRight", "MoveUp", "Turn", "LookUp"]),
       source("web/src/templates/AppShell.tsx", ["useState<\"2d\" | \"3d\">(\"3d\")", "ThreeWorld"]),
       source("web/src/three/world-scene.ts", [
         "PCFSoftShadowMap",
@@ -71,11 +84,12 @@ export function commercialReadinessReport(rootDir = process.cwd()): CommercialRe
     ]),
     gate(rootDir, "world_ingest", "Ability to ingest things", [
       file("src/world-ingest.ts"),
+      file("src/unreal-bridge.ts"),
       file("fixtures/worlds/skyfront-source.json"),
       file("fixtures/worlds/conservatory-source.json"),
       file("fixtures/worlds/abyssal-source.json"),
       file("fixtures/worlds/noir-source.json"),
-      source("src/server.ts", ["/api/import-world-source", "validateWorldIngestSource", "worldSourceToWorld"]),
+      source("src/server.ts", ["/api/import-world-source", "/api/unreal/state", "/api/unreal/action", "validateWorldIngestSource", "worldSourceToWorld", "unrealWorldStateFromWorld"]),
       source("web/src/organisms/AppHeader.tsx", ["World source JSON", "Import", "Reviewed sample worlds"]),
       source("tests/playtests/world-ingest.ts", [
         "Skyfront Couriers Playable Slice",
@@ -126,6 +140,8 @@ export function commercialReadinessReport(rootDir = process.cwd()): CommercialRe
         "verification_surface",
       ]),
       source("src/competitive-differentiation.ts", ["competitiveDifferentiationReport", "behavioral_proof"]),
+      source("tests/unreal-bridge.test.ts", ["projects world state into an Unreal-friendly scene contract", "moves objective targets as quest state changes"]),
+      source("tests/server.test.ts", ["/api/unreal/state", "/api/unreal/action", "ashment-unreal-v1"]),
     ]),
   ];
 

@@ -37,6 +37,19 @@ describe("server", () => {
       expect(state.id).toBe("ashment");
       expect(Array.isArray(state.npcs)).toBe(true);
 
+      const unrealStateRes = await fetch(`http://localhost:${port}/api/unreal/state`);
+      expect(unrealStateRes.status).toBe(200);
+      const unrealState = (await unrealStateRes.json()) as {
+        protocol: string;
+        worldId: string;
+        locations: Array<{ id: string; active: boolean }>;
+        objectives: Array<{ questTitle: string; actionLabel: string }>;
+      };
+      expect(unrealState.protocol).toBe("ashment-unreal-v1");
+      expect(unrealState.worldId).toBe("ashment");
+      expect(unrealState.locations.some((location) => location.id === "square" && location.active)).toBe(true);
+      expect(unrealState.objectives[0]).toMatchObject({ questTitle: "Return the pruning shears", actionLabel: "Talk" });
+
       const tickRes = await fetch(`http://localhost:${port}/api/tick`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -46,6 +59,16 @@ describe("server", () => {
       const body = (await tickRes.json()) as { summary: { tick: number; actions: { action: { type: string } }[] } };
       expect(body.summary.tick).toBe(1);
       expect(body.summary.actions.some((entry) => entry.action.type === "talk")).toBe(true);
+
+      const unrealActionRes = await fetch(`http://localhost:${port}/api/unreal/action`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: { type: "move", locationId: "garden" } }),
+      });
+      expect(unrealActionRes.status).toBe(200);
+      const unrealAction = (await unrealActionRes.json()) as { state: { playerLocationId: string; tick: number } };
+      expect(unrealAction.state.playerLocationId).toBe("garden");
+      expect(unrealAction.state.tick).toBe(2);
 
       const pkgRes = await fetch(`http://localhost:${port}/api/story-package`);
       expect(pkgRes.status).toBe(200);
