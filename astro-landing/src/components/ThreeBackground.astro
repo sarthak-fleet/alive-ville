@@ -1,6 +1,6 @@
 ---
 ---
-<div id="three-ambient" class="fixed inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen opacity-60"></div>
+<div id="three-ambient" class="fixed inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen opacity-50"></div>
 
 <script>
     import * as THREE from 'three';
@@ -8,151 +8,130 @@
     const container = document.getElementById('three-ambient');
     if (container) {
         const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
+        camera.position.z = 800;
 
-        // --- 0. ENGINE SETUP ---
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 3000);
-        camera.position.z = 400;
-
-        const renderer = new THREE.WebGLRenderer({
-            alpha: true,
-            antialias: true,
-            powerPreference: "high-performance",
-            preserveDrawingBuffer: true,
-            stencil: false,
-            depth: true
-        });
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x120d08, 0.5);
         container.appendChild(renderer.domElement);
 
-        // Keep a stable atmospheric field behind sparse particles so visual
-        // smoke tests can prove the WebGL layer actually rendered pixels.
         const atmosphere = new THREE.Mesh(
-            new THREE.PlaneGeometry(2200, 1400, 1, 1),
+            new THREE.PlaneGeometry(2600, 1600, 1, 1),
             new THREE.MeshBasicMaterial({
                 color: 0x6f4b1e,
                 transparent: true,
-                opacity: 0.7,
+                opacity: 0.55,
                 depthWrite: false
             })
         );
-        atmosphere.position.set(0, 0, -650);
+        atmosphere.position.set(0, 0, -900);
         scene.add(atmosphere);
 
-        // --- 1. THE NEXUS GRID (Geometric Core) ---
-        const gridGroup = new THREE.Group();
-        scene.add(gridGroup);
-
-        const gridSize = 2000;
-        const gridDivisions = 40;
-        const gridColor = new THREE.Color(0xf8d44e);
-
-        const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, gridColor, 0x111111);
-        gridHelper.rotation.x = Math.PI / 2.2;
-        gridHelper.position.y = -200;
-        gridHelper.position.z = -200;
-        gridGroup.add(gridHelper);
-
-        // --- 2. DATA NODES (Floating Tech Points) ---
-        const nodeCount = 60;
-        const nodes = new THREE.Group();
-        scene.add(nodes);
-
-        const nodeGeo = new THREE.SphereGeometry(1, 8, 8);
-        const nodeMat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, transparent: true, opacity: 0.8 });
-
-        const nodePositions: THREE.Vector3[] = [];
-        for (let i = 0; i < nodeCount; i++) {
-            const mesh = new THREE.Mesh(nodeGeo, nodeMat);
-            const pos = new THREE.Vector3(
-                (Math.random() - 0.5) * 1200,
-                (Math.random() - 0.5) * 1200,
-                (Math.random() - 0.5) * 800 - 400
-            );
-            mesh.position.copy(pos);
-            nodePositions.push(pos);
-            mesh.userData = {
-                originalPos: pos.clone(),
-                speed: Math.random() * 0.5 + 0.2,
-                phase: Math.random() * Math.PI * 2
-            };
-            nodes.add(mesh);
-        }
-
-        // --- 3. CONNECTION LINES ---
-        const lineMat = new THREE.LineBasicMaterial({ color: 0xf8d44e, transparent: true, opacity: 0.05 });
-        const lineSegments = 40;
-        const lineGeo = new THREE.BufferGeometry();
-        const linePos = new Float32Array(lineSegments * 2 * 3);
-        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
-        const connections = new THREE.LineSegments(lineGeo, lineMat);
-        scene.add(connections);
-
-        // --- 4. CLOUD OF INTELLIGENCE (Shader Particles) ---
-        const particleCount = 6000;
-        const partGeo = new THREE.BufferGeometry();
-        const partPos = new Float32Array(particleCount * 3);
-        const partSize = new Float32Array(particleCount);
+        // --- 1. THE DATA SEA (Custom Shader Particles) ---
+        const particleCount = 15000; // High density
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(particleCount * 3);
+        const randoms = new Float32Array(particleCount);
+        const sizes = new Float32Array(particleCount);
 
         for (let i = 0; i < particleCount; i++) {
-            partPos[i * 3] = (Math.random() - 0.5) * 2000;
-            partPos[i * 3 + 1] = (Math.random() - 0.5) * 2000;
-            partPos[i * 3 + 2] = (Math.random() - 0.5) * 1000 - 500;
-            partSize[i] = Math.random();
+            pos[i * 3] = (Math.random() - 0.5) * 3000;
+            pos[i * 3 + 1] = (Math.random() - 0.5) * 3000;
+            pos[i * 3 + 2] = (Math.random() - 0.5) * 2000 - 500;
+            randoms[i] = Math.random();
+            sizes[i] = Math.random() * 2.0 + 0.5;
         }
 
-        partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
-        partGeo.setAttribute('aSize', new THREE.BufferAttribute(partSize, 1));
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+        geo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
 
-        const partVertex = `
+        const vertexShader = `
+            attribute float aRandom;
             attribute float aSize;
             varying float vAlpha;
+            varying vec3 vColor;
             uniform float uTime;
             uniform float uScroll;
+            uniform vec2 uMouse;
 
             void main() {
                 vec3 pos = position;
-                pos.z += sin(uTime * 0.2 + pos.x * 0.001) * 100.0;
-                pos.y += uScroll * 0.5;
 
-                // Wrap around
-                pos.y = mod(pos.y + 1000.0, 2000.0) - 1000.0;
+                // Organic drift
+                pos.x += sin(uTime * 0.2 + pos.y * 0.001) * 40.0;
+                pos.y += cos(uTime * 0.15 + pos.x * 0.001) * 30.0;
 
-                vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-                gl_Position = projectionMatrix * mvPos;
-                gl_PointSize = (1.5 + aSize * 2.0) * (500.0 / -mvPos.z);
-                vAlpha = 0.2 + 0.8 * sin(uTime + pos.x);
+                // Mouse distortion field
+                float mouseDist = distance(uMouse, pos.xy * 0.001);
+                if (mouseDist < 0.4) {
+                    pos.z += (0.4 - mouseDist) * 300.0;
+                }
+
+                // Scroll flow
+                pos.y += uScroll * 0.8;
+                pos.y = mod(pos.y + 1500.0, 3000.0) - 1500.0;
+
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_Position = projectionMatrix * mvPosition;
+
+                gl_PointSize = aSize * (1000.0 / -mvPosition.z);
+
+                // Complex color/alpha shifting
+                vAlpha = 0.1 + 0.5 * sin(uTime * 0.5 + aRandom * 10.0);
+                vColor = mix(vec3(0.97, 0.83, 0.31), vec3(1.0, 1.0, 1.0), aRandom * 0.4);
             }
         `;
 
-        const partFragment = `
+        const fragmentShader = `
             varying float vAlpha;
+            varying vec3 vColor;
             void main() {
-                if (length(gl_PointCoord - 0.5) > 0.5) discard;
-                gl_FragColor = vec4(0.97, 0.83, 0.31, vAlpha * 0.4);
+                float dist = distance(gl_PointCoord, vec2(0.5));
+                if (dist > 0.5) discard;
+                gl_FragColor = vec4(vColor, vAlpha * (1.0 - dist * 2.0));
             }
         `;
 
-        const partMat = new THREE.ShaderMaterial({
-            vertexShader: partVertex,
-            fragmentShader: partFragment,
+        const mat = new THREE.ShaderMaterial({
+            vertexShader,
+            fragmentShader,
             transparent: true,
-            uniforms: { uTime: { value: 0 }, uScroll: { value: 0 } },
             blending: THREE.AdditiveBlending,
-            depthWrite: false
+            depthWrite: false,
+            uniforms: {
+                uTime: { value: 0 },
+                uScroll: { value: 0 },
+                uMouse: { value: new THREE.Vector2(0, 0) }
+            }
         });
 
-        const cloud = new THREE.Points(partGeo, partMat);
+        const cloud = new THREE.Points(geo, mat);
         scene.add(cloud);
 
-        // --- ANIMATION ENGINE ---
+        // --- 2. FLOATING DATA NODES ---
+        const nodeGroup = new THREE.Group();
+        scene.add(nodeGroup);
+        const nodeGeo = new THREE.IcosahedronGeometry(2, 0);
+        const nodeMat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.15 });
+
+        for(let i=0; i<30; i++) {
+            const mesh = new THREE.Mesh(nodeGeo, nodeMat);
+            mesh.position.set((Math.random()-0.5)*1500, (Math.random()-0.5)*1500, (Math.random()-0.5)*1000);
+            mesh.scale.setScalar(Math.random()*10+5);
+            mesh.userData = { speed: Math.random()*0.005, axis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize() };
+            nodeGroup.add(mesh);
+        }
+
+        // --- INTERACTION ---
         let mouseX = 0, mouseY = 0;
         let scrollY = 0;
 
         window.addEventListener('mousemove', (e) => {
             mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-            mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+            mouseY = (e.clientY / window.innerHeight - 0.5) * -2;
+            mat.uniforms.uMouse.value.set(mouseX, mouseY);
         });
 
         window.addEventListener('scroll', () => {
@@ -165,49 +144,22 @@
             requestAnimationFrame(animate);
             const t = clock.getElapsedTime();
 
-            partMat.uniforms.uTime.value = t;
-            partMat.uniforms.uScroll.value = scrollY;
+            mat.uniforms.uTime.value = t;
+            mat.uniforms.uScroll.value = scrollY;
 
             // Camera Sway
-            camera.position.x += (mouseX * 50 - camera.position.x) * 0.05;
-            camera.position.y += (-mouseY * 50 - camera.position.y) * 0.05;
-            camera.lookAt(0, 0, -200);
+            camera.position.x += (mouseX * 100 - camera.position.x) * 0.03;
+            camera.position.y += (mouseY * 100 - camera.position.y + 100) * 0.03;
+            camera.lookAt(0, 0, -500);
 
             // Animate Nodes
-            nodes.children.forEach((n, i) => {
-                const mesh = n as THREE.Mesh;
-                mesh.position.y = mesh.userData.originalPos.y + Math.sin(t * mesh.userData.speed + mesh.userData.phase) * 20;
-                mesh.position.x = mesh.userData.originalPos.x + Math.cos(t * mesh.userData.speed * 0.8) * 10;
+            nodeGroup.children.forEach((n: any) => {
+                n.rotateOnAxis(n.userData.axis, n.userData.speed);
+                n.position.y += Math.sin(t * 0.5 + n.position.x) * 0.2;
             });
-
-            // Dynamic Connections
-            const positions = connections.geometry.attributes.position.array as Float32Array;
-            let lineIdx = 0;
-            for (let i = 0; i < nodeCount && lineIdx < lineSegments; i++) {
-                for (let j = i + 1; j < nodeCount && lineIdx < lineSegments; j++) {
-                    const dist = nodes.children[i]!.position.distanceTo(nodes.children[j]!.position);
-                    if (dist < 180) {
-                        const p1 = nodes.children[i]!.position;
-                        const p2 = nodes.children[j]!.position;
-                        positions[lineIdx * 6] = p1.x;
-                        positions[lineIdx * 6 + 1] = p1.y;
-                        positions[lineIdx * 6 + 2] = p1.z;
-                        positions[lineIdx * 6 + 3] = p2.x;
-                        positions[lineIdx * 6 + 4] = p2.y;
-                        positions[lineIdx * 6 + 5] = p2.z;
-                        lineIdx++;
-                    }
-                }
-            }
-            connections.geometry.attributes.position.needsUpdate = true;
-
-            // Nexus Grid Reaction
-            gridGroup.rotation.y = t * 0.05;
-            gridGroup.position.z = -200 + (scrollY * 0.1);
 
             renderer.render(scene, camera);
         }
-
         animate();
 
         window.addEventListener('resize', () => {

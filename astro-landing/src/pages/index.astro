@@ -4,7 +4,7 @@ import ThreePortal from '../components/ThreePortal.astro';
 import '../styles/global.css';
 ---
 <!doctype html>
-<html lang="en" class="bg-[#020203] scroll-smooth">
+<html lang="en" class="bg-[#010102] scroll-smooth">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,9 +16,9 @@ import '../styles/global.css';
         :root {
             --accent: #f8d44e;
             --accent-muted: #c2a36b;
-            --bg: #020203;
+            --bg: #010102;
             --surface: #0a0a0c;
-            --border: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.04);
             --font-main: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --font-display: 'Cinzel Decorative', serif;
@@ -26,72 +26,131 @@ import '../styles/global.css';
 
         body {
             background-color: var(--bg);
-            color: #e6e6e6;
+            color: #d1d1d6;
             font-family: var(--font-main);
             margin: 0;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            cursor: none;
+        }
+
+        /* --- 99.9999% MAGNETIC CURSOR --- */
+        #custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            mix-blend-mode: difference;
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+        }
+
+        #cursor-follower {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: width 0.4s, height 0.4s, border-color 0.4s, background-color 0.4s;
+        }
+
+        body.cursor-hover #custom-cursor {
+            width: 4px;
+            height: 4px;
+            background-color: #fff;
+        }
+
+        body.cursor-hover #cursor-follower {
+            width: 80px;
+            height: 80px;
+            border-color: var(--accent);
+            background-color: rgba(248, 212, 78, 0.05);
         }
 
         /* --- PROFESSIONAL UI ELEMENTS --- */
         .glass-card {
-            background: rgba(10, 10, 12, 0.4);
-            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 12, 0.3);
+            backdrop-filter: blur(40px);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+            border-radius: 4px;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            overflow: hidden;
         }
 
         .glass-card:hover {
-            border-color: rgba(248, 212, 78, 0.2);
-            background: rgba(15, 15, 18, 0.6);
+            border-color: rgba(248, 212, 78, 0.3);
+            background: rgba(15, 15, 18, 0.5);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
         }
 
         .bento-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            grid-auto-rows: 240px;
-            gap: 16px;
+            grid-auto-rows: 280px;
+            gap: 20px;
         }
 
-        .bento-item {
-            position: relative;
-            overflow: hidden;
-        }
-
+        .bento-item { position: relative; overflow: hidden; }
         .col-span-2 { grid-column: span 2; }
         .row-span-2 { grid-row: span 2; }
 
         .btn-pro {
-            padding: 12px 28px;
+            position: relative;
+            padding: 14px 32px;
             background: #fff;
             color: #000;
-            font-weight: 600;
-            font-size: 0.85rem;
-            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.7rem;
+            border-radius: 2px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            letter-spacing: 0.2em;
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            border: none;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .btn-pro::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            transition: left 0.5s;
         }
 
         .btn-pro:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.25em;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-pro:hover::after {
+            left: 100%;
         }
 
         .tag {
             font-family: var(--font-mono);
-            font-size: 0.65rem;
-            padding: 4px 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            color: #888;
+            font-size: 0.6rem;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            color: rgba(255, 255, 255, 0.4);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.2em;
         }
 
         /* --- NAVIGATION --- */
@@ -101,54 +160,50 @@ import '../styles/global.css';
             left: 0;
             width: 100%;
             z-index: 1000;
-            padding: 24px 40px;
+            padding: 32px 60px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(to bottom, var(--bg), transparent);
-            transition: opacity 0.5s ease;
+            transition: all 0.5s ease;
         }
 
         .logo {
             font-family: var(--font-display);
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 900;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.4em;
             color: #fff;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
         }
 
         .nav-links a {
-            font-size: 0.75rem;
-            font-weight: 500;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #888;
+            letter-spacing: 0.2em;
+            color: rgba(255, 255, 255, 0.3);
+            margin: 0 20px;
+            transition: color 0.3s, letter-spacing 0.3s;
             text-decoration: none;
-            transition: color 0.3s;
         }
 
         .nav-links a:hover {
-            color: #fff;
+            color: var(--accent);
+            letter-spacing: 0.25em;
         }
 
         /* --- HERO --- */
         .hero-title {
             font-family: var(--font-display);
-            font-size: clamp(3rem, 10vw, 9rem);
-            line-height: 0.9;
+            font-size: clamp(3rem, 12vw, 12rem);
+            line-height: 0.85;
             font-weight: 900;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.05em;
             text-align: center;
             margin: 0;
         }
 
         .gradient-text {
-            background: linear-gradient(180deg, #fff 30%, rgba(255, 255, 255, 0.3) 100%);
+            background: linear-gradient(180deg, #fff 40%, rgba(255, 255, 255, 0.1) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -161,30 +216,33 @@ import '../styles/global.css';
 
         .animate-reveal {
             animation: reveal 1s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+            opacity: 0;
         }
 
         .noise-overlay {
             position: fixed;
             inset: 0;
-            z-index: 9999;
+            z-index: 99999;
             pointer-events: none;
-            opacity: 0.04;
-            background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');
+            opacity: 0.06;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');
         }
 
-        /* --- GAME CONTROL INTERFACE --- */
+        /* --- GAME CONTROL CENTER --- */
         .control-center {
             background: #050507;
             border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.9);
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            width: 100%;
+            height: 100%;
         }
 
         .control-header {
-            padding: 16px 24px;
+            padding: 20px 32px;
             background: #0a0a0c;
             border-bottom: 1px solid var(--border);
             display: flex;
@@ -193,110 +251,132 @@ import '../styles/global.css';
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: #4caf50;
-            box-shadow: 0 0 10px #4caf50;
+            box-shadow: 0 0 12px #4caf50;
         }
 
         .ticker-line {
             font-family: var(--font-mono);
-            font-size: 0.65rem;
-            color: #555;
+            font-size: 0.6rem;
+            color: #444;
             letter-spacing: 0.05em;
+            margin: 0;
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .animate-ticker {
+            animation: ticker 40s linear infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .glitch-hover:hover {
+            animation: glitch 0.3s infinite;
+            color: var(--accent) !important;
         }
     </style>
 </head>
 <body>
+    <div id="custom-cursor"></div>
+    <div id="cursor-follower"></div>
     <div class="noise-overlay"></div>
     <ThreeBackground />
 
-    <nav>
+    <nav id="main-nav">
         <div class="logo">ASHMENT</div>
         <div class="nav-links">
-            <a href="#about">World</a>
-            <a href="#features">Protocols</a>
-            <a href="#portal">Access</a>
-            <a href="https://github.com">Source</a>
+            <a href="#about" class="glitch-hover">World</a>
+            <a href="#features" class="glitch-hover">Protocols</a>
+            <a href="#portal" class="glitch-hover">Access</a>
         </div>
-        <button class="btn-pro" onclick="document.getElementById('portal-section').scrollIntoView({behavior: 'smooth'})">
-            Enter Ashment
+        <button class="btn-pro magnetic-target" onclick="document.getElementById('portal-section').scrollIntoView({behavior: 'smooth'})">
+            INITIALIZE_CORE
         </button>
     </nav>
 
     <!-- HERO -->
     <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
         <div class="absolute inset-0 z-0 overflow-hidden">
-            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-30 grayscale filter contrast-125">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150">
                 <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
             </video>
-            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#020203]/80 to-[#020203]"></div>
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#010102]/90 to-[#010102]"></div>
         </div>
 
-        <div class="relative z-10 max-w-5xl mx-auto text-center space-y-8">
+        <div class="relative z-10 max-w-6xl mx-auto text-center space-y-12">
             <div class="flex justify-center">
-                <span class="tag">Active AI Ecosystem v1.0.4</span>
+                <span class="tag border-white/20 text-white/60">ESTABLISHING_LINK... OK</span>
             </div>
             <h1 class="hero-title animate-reveal">
-                <span class="gradient-text">ASHMENT</span>
+                <span class="gradient-text scramble-text" data-value="ASHMENT">ASHMENT</span>
             </h1>
-            <p class="max-w-2xl mx-auto text-lg text-white/50 font-light leading-relaxed animate-reveal" style="animation-delay: 0.2s">
-                Ashment is a playable 3D RPG simulation where autonomous agents live, remember, and evolve. Beyond scripts. Beyond trees. A singular living world.
+            <p class="max-w-3xl mx-auto text-xl text-white/40 font-light leading-relaxed animate-reveal" style="animation-delay: 0.2s">
+                Ashment is a playable 3D RPG simulation where autonomous agents inhabit a singular living world. Beyond scripts. Beyond prediction. Absolute emergence.
             </p>
-            <div class="flex justify-center gap-6 pt-8 animate-reveal" style="animation-delay: 0.4s">
-                <button class="btn-pro" onclick="document.getElementById('portal-section').scrollIntoView({behavior: 'smooth'})">
-                    Enter Ashment
+            <div class="flex justify-center gap-10 pt-8 animate-reveal" style="animation-delay: 0.4s">
+                <button class="btn-pro magnetic-target" onclick="document.getElementById('portal-section').scrollIntoView({behavior: 'smooth'})">
+                    ACCESS_INTERFACE
                 </button>
-                <button class="px-8 py-3 border border-white/10 rounded-lg text-sm font-medium hover:bg-white/5 transition-all">
-                    Read Whitepaper
+                <button class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all border-b border-white/0 hover:border-white/20 pb-1 magnetic-target">
+                    DEEP_DIVE_SPECS
                 </button>
             </div>
         </div>
 
-        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 opacity-20 flex flex-col items-center gap-4">
-            <div class="w-px h-20 bg-white"></div>
-            <span class="text-[0.6rem] uppercase tracking-[0.4em]">Scroll to Access</span>
+        <div class="absolute bottom-16 left-1/2 -translate-x-1/2 opacity-20 flex flex-col items-center gap-6">
+            <span class="font-mono text-[0.5rem] uppercase tracking-[0.5em] text-white/40">Continuum Scroll</span>
+            <div class="w-[1px] h-24 bg-gradient-to-b from-white via-white/50 to-transparent"></div>
         </div>
     </section>
 
     <!-- BENTO FEATURES -->
     <section class="max-w-7xl mx-auto px-6 py-40" id="features">
-        <div class="mb-20 space-y-4">
-            <span class="text-[#f8d44e] font-mono text-xs uppercase tracking-[0.3em]">Core Protocols</span>
-            <h2 class="text-4xl md:text-6xl font-bold tracking-tight">Built for persistent <br/> intelligence.</h2>
+        <div class="mb-24 space-y-4">
+            <span class="text-[#f8d44e] font-mono text-[0.6rem] uppercase tracking-[0.4em]">Core Protocols</span>
+            <h2 class="text-5xl md:text-7xl font-black tracking-tight text-white">Built for persistent <br/> intelligence.</h2>
         </div>
 
         <div class="bento-grid">
-            <!-- 1. GraphRAG -->
-            <div class="glass-card bento-item col-span-2 row-span-2 p-10 flex flex-col justify-end group">
+            <div class="glass-card bento-item col-span-2 row-span-2 p-12 flex flex-col justify-end group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 group-hover:opacity-40 transition-opacity" data-type="network"></canvas>
                 <div class="relative z-10">
-                    <div class="flex gap-2 mb-6">
+                    <div class="flex gap-2 mb-8">
                         <span class="tag">Engine / Intelligence</span>
                         <span class="tag border-[#f8d44e]/20 text-[#f8d44e]">v2.0 Upgrade</span>
                     </div>
-                    <h3 class="text-3xl font-bold mb-4">Local GraphRAG</h3>
-                    <p class="text-white/50 text-sm leading-relaxed max-w-sm">
+                    <h3 class="text-4xl font-bold mb-6 text-white">Local GraphRAG</h3>
+                    <p class="text-white/40 text-sm leading-relaxed max-w-sm font-light">
                         NPCs navigate their world using location-aware memory retrieval. They only recall what is relevant to their current context, state, and social bonds.
                     </p>
                 </div>
             </div>
 
-            <!-- 2. Agents -->
-            <div class="glass-card bento-item col-span-2 p-10 flex flex-col justify-center group">
+            <div class="glass-card bento-item col-span-2 p-12 flex flex-col justify-center group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-10 group-hover:opacity-30 transition-opacity" data-type="cycles"></canvas>
                 <div class="relative z-10">
-                    <div class="flex gap-2 mb-4">
+                    <div class="flex gap-2 mb-6">
                         <span class="tag border-[#f8d44e]/20 text-[#f8d44e]">New: Persistent Loops</span>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Long-Running Agents</h3>
-                    <p class="text-white/40 text-sm">Autonomous loops continue even when you are away. The world ticks forward, aging and evolving.</p>
+                    <h3 class="text-2xl font-bold mb-3 text-white">Long-Running Agents</h3>
+                    <p class="text-white/40 text-sm font-light leading-relaxed">Autonomous loops continue even when you are away. The world ticks forward, aging and evolving.</p>
                 </div>
             </div>
 
-            <!-- 3. Tensions -->
-            <div class="glass-card bento-item p-8 flex flex-col justify-between group">
+            <div class="glass-card bento-item p-10 flex flex-col justify-between group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 group-hover:opacity-40 transition-opacity" data-type="energy"></canvas>
                 <div class="relative z-10">
                     <div class="w-10 h-10 rounded-full bg-[#f8d44e]/10 flex items-center justify-center text-[#f8d44e]">
@@ -304,15 +384,14 @@ import '../styles/global.css';
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                         </svg>
                     </div>
-                    <div class="mt-6">
-                        <h4 class="font-bold text-sm mb-1">Global Tensions</h4>
-                        <p class="text-xs text-white/40">Real-time narrative pressure.</p>
+                    <div class="mt-8">
+                        <h4 class="font-bold text-xs mb-1 uppercase tracking-widest text-white">Global Tensions</h4>
+                        <p class="text-[0.65rem] text-white/30 font-mono">Real-time narrative pressure.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. World Ingest -->
-            <div class="glass-card bento-item p-8 flex flex-col justify-between group">
+            <div class="glass-card bento-item p-10 flex flex-col justify-between group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 group-hover:opacity-40 transition-opacity" data-type="matrix"></canvas>
                 <div class="relative z-10">
                     <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
@@ -320,95 +399,90 @@ import '../styles/global.css';
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
                     </div>
-                    <div>
-                        <h4 class="font-bold text-sm mb-1">World Ingest</h4>
-                        <p class="text-xs text-white/40">Import structured world source JSON and compile playable lore.</p>
+                    <div class="mt-8">
+                        <h4 class="font-bold text-xs mb-1 uppercase tracking-widest text-white">World Ingest</h4>
+                        <p class="text-[0.65rem] text-white/30 font-mono">Import structured world source JSON and compile playable lore.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. 3D View -->
-            <div class="glass-card bento-item col-span-2 p-10 flex items-center gap-8 overflow-hidden group">
+            <div class="glass-card bento-item col-span-2 p-12 flex items-center gap-10 overflow-hidden group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-30 group-hover:opacity-50 transition-opacity" data-type="sculpture"></canvas>
                 <div class="relative z-10 flex-1">
-                    <h3 class="text-2xl font-bold mb-4">3D Playability</h3>
-                    <p class="text-white/40 text-sm leading-relaxed">
-                        Navigate a high-fidelity 3D representation of the world, with real-time lighting and atmosphere.
+                    <h3 class="text-3xl font-bold mb-4 text-white">3D Playability</h3>
+                    <p class="text-white/40 text-sm leading-relaxed font-light">
+                        Use W A S D to explore the 3D world, with real-time lighting and atmosphere.
                     </p>
                 </div>
-                <div class="relative z-10 w-40 h-40 bg-white/5 rounded-2xl border border-white/5 rotate-12 translate-x-10 group-hover:scale-110 transition-transform"></div>
+                <div class="relative z-10 w-48 h-48 bg-white/5 rounded-2xl border border-white/5 rotate-12 translate-x-12 group-hover:scale-110 transition-transform"></div>
             </div>
         </div>
     </section>
 
     <!-- THE PORTAL SECTION -->
-    <section id="portal-section" class="relative w-full h-[600vh] bg-[#020203] z-30">
+    <section id="portal-section" class="relative w-full h-[600vh] bg-[#010102] z-30">
         <div class="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center px-6">
-            
+
             <ThreePortal />
 
-            <!-- PORTAL VIDEO -->
             <div id="portal-frame" class="absolute inset-0 w-full h-full transform-gpu flex items-center justify-center overflow-hidden">
-                <video autoplay loop muted playsinline class="w-full h-full object-cover filter brightness-[0.35] contrast-125" id="portal-video">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover filter brightness-[0.35] contrast-150" id="portal-video">
                     <source src="/assets/garden_morning.mp4" type="video/mp4" />
                 </video>
-                <div class="absolute inset-0 bg-gradient-to-t from-[#020203] via-transparent to-[#020203]"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#010102] via-transparent to-[#010102]"></div>
             </div>
 
-            <!-- TRANSITION TEXT -->
-            <div id="portal-content" class="relative z-20 text-center space-y-6">
-                <span class="tag">Interface Detected</span>
-                <h2 class="font-display text-5xl md:text-8xl font-black uppercase tracking-tight">
+            <div id="portal-content" class="relative z-20 text-center space-y-8">
+                <span class="tag">Quantum Interface Ready</span>
+                <h2 class="font-display text-6xl md:text-[10rem] font-black uppercase tracking-tighter text-white">
                     ACCESS ASHMENT
                 </h2>
-                <p class="text-white/40 text-lg max-w-xl mx-auto font-light">
-                    The world layer is ready. Continue scrolling to bridge the connection.
+                <p class="text-white/30 text-xl max-w-2xl mx-auto font-light leading-relaxed">
+                    The bridge is active. Deep-scroll to stabilize the connection and inhabit the world.
                 </p>
             </div>
 
             <!-- CONTROL CENTER INTERFACE -->
-            <div id="game-overlay" class="absolute inset-0 z-50 opacity-0 pointer-events-none transition-opacity duration-1000 flex flex-col p-10">
-                <div class="control-center w-full h-full">
-
-                    <!-- HEADER -->
+            <div id="game-overlay" class="absolute inset-0 z-50 opacity-0 pointer-events-none transition-opacity duration-1000 flex flex-col p-12">
+                <div class="control-center">
                     <div class="control-header">
-                        <div class="flex items-center gap-6">
-                            <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-8">
+                            <div class="flex items-center gap-4">
                                 <div class="status-dot"></div>
-                                <span class="font-mono text-[0.6rem] text-white/80 uppercase tracking-widest">World Online</span>
+                                <span class="font-mono text-[0.65rem] text-white/90 uppercase tracking-[0.3em]">World_Online</span>
                             </div>
-                            <div class="w-px h-4 bg-white/10"></div>
-                            <span class="font-display text-xs text-white tracking-widest">ASHMENT_CORE_v1.0</span>
+                            <div class="w-px h-5 bg-white/10"></div>
+                            <span class="font-display text-sm text-white tracking-[0.3em] font-black">ASHMENT_CORE_v1.0</span>
                         </div>
-                        <div class="flex gap-4">
-                            <button id="audio-toggle" class="text-[0.6rem] font-mono text-white/40 hover:text-white uppercase tracking-widest transition-colors">Audio: Off</button>
-                            <div class="w-px h-4 bg-white/10"></div>
-                            <span class="text-[0.6rem] font-mono text-white/40 uppercase tracking-widest">Region: Village_01</span>
+                        <div class="flex gap-6 items-center">
+                            <button id="audio-toggle" class="text-[0.65rem] font-mono text-white/40 hover:text-white uppercase tracking-[0.2em] transition-colors border border-white/5 px-4 py-1.5 rounded-full">Audio: Off</button>
+                            <div class="w-px h-5 bg-white/10"></div>
+                            <span class="text-[0.65rem] font-mono text-white/40 uppercase tracking-[0.2em]">Region: Village_01</span>
                         </div>
                     </div>
 
                     <div class="flex-1 relative flex">
                         <!-- LEFT HUD -->
-                        <div class="w-80 border-r border-white/5 bg-[#0a0a0c]/40 backdrop-blur-3xl p-8 flex flex-col gap-10">
-                            <div class="space-y-4">
-                                <h4 class="font-mono text-[0.6rem] text-white/30 uppercase tracking-[0.2em]">Social Graph</h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-7 h-7 rounded-sm bg-[#ff8a65] flex items-center justify-center font-display text-[0.6rem] text-black">M</div>
+                        <div class="w-80 border-r border-white/5 bg-[#0a0a0c]/60 backdrop-blur-3xl p-10 flex flex-col gap-12">
+                            <div class="space-y-6">
+                                <h4 class="font-mono text-[0.6rem] text-white/20 uppercase tracking-[0.4em]">Social_Graph</h4>
+                                <div class="space-y-6">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-8 h-8 rounded-sm bg-[#ff8a65] flex items-center justify-center font-display text-xs text-black font-black">M</div>
                                         <div class="flex-1">
-                                            <div class="flex justify-between text-[0.5rem] font-mono uppercase text-white/60 mb-1">
+                                            <div class="flex justify-between text-[0.55rem] font-mono uppercase text-white/60 mb-2">
                                                 <span>Mira</span>
                                                 <span class="text-[#f8d44e]">Trusted</span>
                                             </div>
                                             <div class="h-[1px] w-full bg-white/5 overflow-hidden">
-                                                <div class="h-full bg-[#f8d44e] w-3/4"></div>
+                                                <div class="h-full bg-[#f8d44e] w-3/4 shadow-[0_0_10px_#f8d44e]"></div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-3 opacity-40">
-                                        <div class="w-7 h-7 rounded-sm bg-blue-500 flex items-center justify-center font-display text-[0.6rem] text-black">A</div>
+                                    <div class="flex items-center gap-4 opacity-40">
+                                        <div class="w-8 h-8 rounded-sm bg-blue-500 flex items-center justify-center font-display text-xs text-black font-black">A</div>
                                         <div class="flex-1">
-                                            <div class="flex justify-between text-[0.5rem] font-mono uppercase text-white/60 mb-1">
+                                            <div class="flex justify-between text-[0.55rem] font-mono uppercase text-white/60 mb-2">
                                                 <span>Arin</span>
                                                 <span>Neutral</span>
                                             </div>
@@ -420,11 +494,11 @@ import '../styles/global.css';
                                 </div>
                             </div>
 
-                            <div class="mt-auto space-y-4">
-                                <h4 class="font-mono text-[0.6rem] text-white/30 uppercase tracking-[0.2em]">Activity Log</h4>
-                                <div class="space-y-3">
-                                    <p class="ticker-line">» Tending Garden [84%]</p>
-                                    <p class="ticker-line">» Forging Guard Blade</p>
+                            <div class="mt-auto space-y-6">
+                                <h4 class="font-mono text-[0.6rem] text-white/20 uppercase tracking-[0.4em]">Activity_Log</h4>
+                                <div class="space-y-4">
+                                    <p class="ticker-line font-light">» Tending Garden [84%]</p>
+                                    <p class="ticker-line font-light">» Forging Guard Blade</p>
                                     <p class="ticker-line text-[#f8d44e]">» Gossip Node Detected</p>
                                 </div>
                             </div>
@@ -434,71 +508,69 @@ import '../styles/global.css';
                         <div class="flex-1 relative cursor-none bg-black overflow-hidden group">
                             <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 pointer-events-none" data-type="cycles"></canvas>
                             <canvas id="game-surface" class="relative z-10 w-full h-full"></canvas>
-
-                            <!-- SCANLINE -->
                             <div class="absolute inset-0 pointer-events-none opacity-20 z-20" style="background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);"></div>
                         </div>
+
                         <!-- CINEMATIC DIALOGUE OVERLAY -->
-                        <div id="cinematic-dialogue" class="absolute inset-0 z-40 opacity-0 pointer-events-none transition-all duration-1000 flex flex-col justify-end p-20">
-                            <div class="absolute inset-0 bg-black/80 backdrop-blur-xl"></div>
-                            <div class="relative z-10 max-w-3xl mx-auto w-full flex flex-col items-center">
-                                <div id="dialogue-portrait" class="w-20 h-20 rounded-full border border-white/10 mb-10 overflow-hidden bg-[#050507] shadow-2xl transition-transform duration-1000 scale-75">
+                        <div id="cinematic-dialogue" class="absolute inset-0 z-40 opacity-0 pointer-events-none transition-all duration-1000 flex flex-col justify-end p-24">
+                            <div class="absolute inset-0 bg-black/85 backdrop-blur-2xl"></div>
+                            <div class="relative z-10 max-w-4xl mx-auto w-full flex flex-col items-center">
+                                <div id="dialogue-portrait" class="w-24 h-24 rounded-full border-2 border-[#f8d44e] mb-12 overflow-hidden bg-[#050507] shadow-[0_0_60px_rgba(248,212,78,0.2)] transition-transform duration-1000 scale-75">
                                     <img src="" id="dialogue-img" class="w-full h-full object-cover" />
                                 </div>
-                                <h5 id="dialogue-name" class="font-display text-[#f8d44e] text-xl uppercase tracking-[0.4em] mb-6">MIRA</h5>
-                                <p id="dialogue-text" class="font-garamond italic text-4xl text-white/90 text-center leading-tight mb-12"></p>
-                                <button id="close-dialogue" class="text-[0.6rem] font-mono uppercase tracking-[0.3em] text-white/30 hover:text-white transition-colors py-4 px-10 border border-white/5 rounded-full">
-                                    Re-sync Terminal
+                                <h5 id="dialogue-name" class="font-display text-[#f8d44e] text-2xl uppercase tracking-[0.5em] mb-8 font-black">MIRA</h5>
+                                <p id="dialogue-text" class="font-garamond italic text-4xl md:text-6xl text-white/90 text-center leading-tight mb-16"></p>
+                                <button id="close-dialogue" class="text-[0.7rem] font-mono uppercase tracking-[0.4em] text-white/40 hover:text-white transition-all py-5 px-12 border border-white/10 rounded-full hover:border-white/30 hover:bg-white/5">
+                                    RESYNC_TERMINAL
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- FOOTER CONTROLS -->
-                    <div class="px-8 py-4 bg-[#0a0a0c] border-t border-white/5 flex justify-between items-center">
-                        <p class="font-mono text-[0.6rem] text-white/20 uppercase tracking-widest">
-                            Use W A S D to explore the 3D world · Action: <span class="text-white/60">CLICK_NODE</span>
+                    <div class="px-10 py-5 bg-[#0a0a0c] border-t border-white/5 flex justify-between items-center">
+                        <p class="font-mono text-[0.6rem] text-white/30 uppercase tracking-[0.4em]">
+                            Nav: <span class="text-white/60">W_A_S_D</span> · Action: <span class="text-white/60">CLICK_NODE</span>
                         </p>
-                        <div class="flex items-center gap-6">
-                            <span class="font-mono text-[0.6rem] text-white/20 uppercase tracking-widest">Sync-rate: 12ms</span>
-                            <div class="w-24 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div class="flex items-center gap-10">
+                            <span class="font-mono text-[0.6rem] text-white/30 uppercase tracking-[0.4em]">Sync-rate: 12ms</span>
+                            <div class="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
                                 <div class="h-full bg-white/20 w-3/4"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 
     <!-- FOOTER -->
-    <footer class="relative py-40 border-t border-white/5 bg-[#020203] transition-opacity duration-500">
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-20">
-            <div class="col-span-2 space-y-8">
+    <footer class="relative py-40 border-t border-white/5 bg-[#010102] transition-opacity duration-500">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-24">
+            <div class="col-span-2 space-y-10">
                 <div class="logo">ASHMENT</div>
-                <p class="text-white/30 text-sm max-w-sm leading-relaxed">
+                <p class="text-white/20 text-sm max-w-sm leading-relaxed font-light">
                     A world built on persistence. A living ecosystem exploring the boundaries of autonomous agent behavior and narrative emergence.
                 </p>
             </div>
-            <div class="space-y-6">
-                <h4 class="text-[0.7rem] uppercase tracking-widest text-white/80 font-bold">Protocols</h4>
-                <ul class="space-y-4 text-sm text-white/30">
+            <div class="space-y-8">
+                <h4 class="text-[0.7rem] uppercase tracking-[0.4em] text-white/60 font-black">Protocols</h4>
+                <ul class="space-y-4 text-sm text-white/20 font-mono">
                     <li><a href="#" class="hover:text-white transition-colors">GraphRAG v1</a></li>
                     <li><a href="#" class="hover:text-white transition-colors">Temporal Ticks</a></li>
                     <li><a href="#" class="hover:text-white transition-colors">Memory Persistence</a></li>
                 </ul>
             </div>
-            <div class="space-y-6">
-                <h4 class="text-[0.7rem] uppercase tracking-widest text-white/80 font-bold">Resources</h4>
-                <ul class="space-y-4 text-sm text-white/30">
+            <div class="space-y-8">
+                <h4 class="text-[0.7rem] uppercase tracking-[0.4em] text-white/60 font-black">Resources</h4>
+                <ul class="space-y-4 text-sm text-white/20 font-mono">
                     <li><a href="#" class="hover:text-white transition-colors">Documentation</a></li>
                     <li><a href="#" class="hover:text-white transition-colors">Github</a></li>
                     <li><a href="#" class="hover:text-white transition-colors">Discord</a></li>
                 </ul>
             </div>
         </div>
-        <div class="max-w-7xl mx-auto px-6 mt-40 pt-10 border-t border-white/5 flex justify-between items-center text-[0.6rem] text-white/10 uppercase tracking-widest font-mono">
+        <div class="max-w-7xl mx-auto px-6 mt-40 pt-12 border-t border-white/5 flex justify-between items-center text-[0.6rem] text-white/10 uppercase tracking-[0.6em] font-mono">
             <span>© 2026 ASHMENT</span>
             <span>Core Sync Established</span>
         </div>
@@ -507,6 +579,68 @@ import '../styles/global.css';
     <script>
         import * as THREE from 'three';
         document.addEventListener('DOMContentLoaded', () => {
+            // --- 99.9999% MAGNETIC CURSOR & INTERACTION ---
+            const cursor = document.getElementById('custom-cursor');
+            const follower = document.getElementById('cursor-follower');
+            let cx = 0, cy = 0; // current
+            let tx = 0, ty = 0; // target
+
+            document.addEventListener('mousemove', (e) => {
+                tx = e.clientX; ty = e.clientY;
+                if (cursor) {
+                    cursor.style.left = tx + 'px';
+                    cursor.style.top = ty + 'px';
+                    cursor.style.transform = 'translate(-50%, -50%)';
+                }
+            });
+
+            function updateFollower() {
+                cx += (tx - cx) * 0.15;
+                cy += (ty - cy) * 0.15;
+                if (follower) {
+                    follower.style.left = cx + 'px';
+                    follower.style.top = cy + 'px';
+                    follower.style.transform = 'translate(-50%, -50%)';
+                }
+                requestAnimationFrame(updateFollower);
+            }
+            updateFollower();
+
+            const interactives = document.querySelectorAll('button, a, .glass-card, .nav-links a');
+            interactives.forEach(el => {
+                el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+                el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+
+                if (el.classList.contains('magnetic-target')) {
+                    el.addEventListener('mousemove', (e: any) => {
+                        const rect = el.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+                        (el as HTMLElement).style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+                        follower!.style.transform = `translate(calc(-50% + ${x * 0.5}px), calc(-50% + ${y * 0.5}px))`;
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        (el as HTMLElement).style.transform = '';
+                    });
+                }
+            });
+
+            // --- TEXT SCRAMBLE ---
+            const scrambleElements = document.querySelectorAll('.scramble-text');
+            scrambleElements.forEach((el: any) => {
+                const finalValue = el.dataset.value;
+                const chars = '!<>-_\\/[]{}—=+*^?#________';
+                let iteration = 0;
+                const interval = setInterval(() => {
+                    el.innerText = finalValue.split('').map((char: string, index: number) => {
+                        if (index < iteration) return finalValue[index];
+                        return chars[Math.floor(Math.random() * chars.length)];
+                    }).join('');
+                    if (iteration >= finalValue.length) clearInterval(interval);
+                    iteration += 1 / 3;
+                }, 40);
+            });
+
             // --- BENTO THREE.JS LOGIC ---
             const bentoCanvases = document.querySelectorAll('.bento-canvas');
             bentoCanvases.forEach((canvas: any) => {
@@ -515,44 +649,26 @@ import '../styles/global.css';
                 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
                 renderer.setSize(canvas.clientWidth, canvas.clientHeight);
                 camera.position.z = 5;
-
                 const type = canvas.dataset.type;
                 let mesh: any;
-
                 if (type === 'network') {
-                    const geo = new THREE.IcosahedronGeometry(3, 1);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.3 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(3, 1), new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.3 }));
                 } else if (type === 'cycles') {
-                    const geo = new THREE.TorusGeometry(3, 0.5, 16, 100);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(new THREE.TorusGeometry(3, 0.5, 16, 100), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.15 }));
                 } else if (type === 'energy') {
-                    const geo = new THREE.SphereGeometry(2, 16, 16);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.4 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(new THREE.SphereGeometry(2, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.3 }));
                 } else if (type === 'matrix') {
-                    const geo = new THREE.PlaneGeometry(10, 10, 10, 10);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.3 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 10, 10, 10), new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.2 }));
                 } else if (type === 'sculpture') {
-                    const geo = new THREE.TorusKnotGeometry(2, 0.6, 100, 16);
-                    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 });
-                    mesh = new THREE.Mesh(geo, mat);
+                    mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(2, 0.6, 100, 16), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 }));
                 }
-
                 if (mesh) scene.add(mesh);
-
                 function animate() {
                     requestAnimationFrame(animate);
-                    if (mesh) {
-                        mesh.rotation.x += 0.005;
-                        mesh.rotation.y += 0.005;
-                    }
+                    if (mesh) { mesh.rotation.x += 0.003; mesh.rotation.y += 0.003; }
                     renderer.render(scene, camera);
                 }
                 animate();
-
                 window.addEventListener('resize', () => {
                     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
                     camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -562,13 +678,8 @@ import '../styles/global.css';
 
             // --- REVEAL ANIMATIONS ---
             const revealObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                    }
-                });
+                entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
             }, { threshold: 0.1 });
-
             document.querySelectorAll('.reveal-up').forEach(el => revealObserver.observe(el));
 
             // --- PORTAL ZOOM LOGIC ---
@@ -580,40 +691,24 @@ import '../styles/global.css';
 
             window.addEventListener('scroll', () => {
                 if (!portalSection || !portalFrame || !portalContent || !gameOverlay) return;
-
                 const rect = portalSection.getBoundingClientRect();
-                const viewHeight = window.innerHeight;
-
-                // Calculate progress specifically within the 600vh section
-                const scrollProgress = Math.max(0, Math.min(1, -rect.top / (rect.height - viewHeight)));
+                const scrollProgress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
                 const footer = document.querySelector('footer');
                 const nav = document.querySelector('nav');
 
-                // --- 1. THE ZOOM & BLUR (Marketing Layer) ---
                 const scale = 1 + Math.pow(scrollProgress, 4) * 50;
-                const blur = scrollProgress * 20;
-                const brightness = 0.35 + scrollProgress * 0.45;
-
                 portalFrame.style.transform = `scale(${scale})`;
-                portalFrame.style.filter = `blur(${blur}px) brightness(${brightness})`;
-
-                // Content fades out early to clear the stage
+                portalFrame.style.filter = `blur(${scrollProgress * 20}px) brightness(${0.35 + scrollProgress * 0.45})`;
                 portalContent.style.opacity = Math.max(0, 1 - scrollProgress * 12).toString();
                 portalContent.style.transform = `translateY(${-scrollProgress * 400}px)`;
 
-                // --- 2. THE LOCK-IN (Engine Layer) ---
-                // We lock the engine overlay only at the very end of the scroll
                 if (scrollProgress > 0.94) {
                     gameOverlay.style.opacity = '1';
                     gameOverlay.style.pointerEvents = 'auto';
                     gameOverlay.style.visibility = 'visible';
                     if (footer) footer.style.opacity = '0';
                     if (nav) nav.style.opacity = '0';
-
-                    if (!gameStarted) {
-                        startMiniGame();
-                        gameStarted = true;
-                    }
+                    if (!gameStarted) { startMiniGame(); gameStarted = true; }
                 } else {
                     gameOverlay.style.opacity = '0';
                     gameOverlay.style.pointerEvents = 'none';
@@ -622,6 +717,7 @@ import '../styles/global.css';
                     if (nav) nav.style.opacity = '1';
                 }
             });
+
             // --- MINI GAME LOGIC ---
             let audioCtx: AudioContext | null = null;
             let windGain: GainNode | null = null;
@@ -633,27 +729,23 @@ import '../styles/global.css';
                 windGain = audioCtx.createGain();
                 windGain.gain.value = 0;
                 windGain.connect(audioCtx.destination);
-
                 const bufferSize = 2 * audioCtx.sampleRate;
                 const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const output = noiseBuffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
                 const noise = audioCtx.createBufferSource();
                 noise.buffer = noiseBuffer;
                 noise.loop = true;
                 const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = 500;
-                noise.connect(filter);
-                filter.connect(windGain);
+                filter.type = 'lowpass'; filter.frequency.value = 600;
+                noise.connect(filter); filter.connect(windGain);
                 noise.start();
                 setInterval(() => {
                     if (!windGain || !audioCtx) return;
                     const now = audioCtx.currentTime;
-                    windGain.gain.exponentialRampToValueAtTime(0.05 + Math.random() * 0.05, now + 3);
-                    windGain.gain.exponentialRampToValueAtTime(0.01, now + 8);
-                }, 12000);
+                    windGain.gain.exponentialRampToValueAtTime(0.06 + Math.random() * 0.05, now + 3);
+                    windGain.gain.exponentialRampToValueAtTime(0.02, now + 7);
+                }, 10000);
             }
 
             const dialogueOverlay = document.getElementById('cinematic-dialogue');
@@ -677,35 +769,28 @@ import '../styles/global.css';
                     if (i < npc.msg.length && currentDialogueNpc === npc) {
                         dialogueText.textContent += npc.msg.charAt(i);
                         i++;
-                        setTimeout(typeText, 25);
+                        setTimeout(typeText, 30);
                     }
                 };
-                setTimeout(typeText, 600);
+                setTimeout(typeText, 400);
             }
 
             closeDialogueBtn?.addEventListener('click', () => {
                 if (!dialogueOverlay || !dialoguePortrait) return;
                 dialogueOverlay.style.opacity = '0';
                 dialogueOverlay.style.pointerEvents = 'none';
-                dialoguePortrait.style.transform = 'scale(0.75)';
+                dialoguePortrait.style.transform = 'scale(0.9)';
                 currentDialogueNpc = null;
             });
 
             document.getElementById('audio-toggle')?.addEventListener('click', (e) => {
                 const btn = e.target as HTMLButtonElement;
                 if (!audioCtx) {
-                    initAudio();
-                    btn.textContent = 'Audio: On';
-                    btn.style.color = '#fff';
-                    windGain!.gain.value = 0.03;
+                    initAudio(); btn.textContent = 'MUTE SOUNDSCAPE'; windGain!.gain.value = 0.04;
                 } else if (audioCtx.state === 'running') {
-                    audioCtx.suspend();
-                    btn.textContent = 'Audio: Off';
-                    btn.style.color = '';
+                    audioCtx.suspend(); btn.textContent = 'ENABLE SOUNDSCAPE';
                 } else {
-                    audioCtx.resume();
-                    btn.textContent = 'Audio: On';
-                    btn.style.color = '#fff';
+                    audioCtx.resume(); btn.textContent = 'MUTE SOUNDSCAPE';
                 }
             });
 
@@ -714,40 +799,33 @@ import '../styles/global.css';
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
-
                 const resize = () => {
                     canvas.width = canvas.parentElement!.clientWidth;
                     canvas.height = canvas.parentElement!.clientHeight;
                 };
                 window.addEventListener('resize', resize);
                 resize();
-
                 const sprites = { player: new Image(), mira: new Image(), arin: new Image() };
                 sprites.player.src = '/assets/game/saitama.svg';
                 sprites.mira.src = '/assets/game/tatsumaki.svg';
                 sprites.arin.src = '/assets/game/genos.svg';
-
-                const player = { x: canvas.width/2, y: canvas.height/2, w: 60, h: 80, speed: 5 };
+                const player = { x: canvas.width/2, y: canvas.height/2, w: 64, h: 86, speed: 5.5 };
                 const npcs = [
-                    { x: canvas.width/2 - 250, y: canvas.height/2 - 100, w: 55, h: 75, name: 'Mira', img: sprites.mira, msg: 'The herbs of Ashment bloom best under the silver moon. Have you come to harvest?' },
-                    { x: canvas.width/2 + 300, y: canvas.height/2 + 120, w: 60, h: 80, name: 'Arin', img: sprites.arin, msg: 'The steel remembers the heat, just as Ashment remembers its past. Do not lose your way.' }
+                    { x: canvas.width/2 - 400, y: canvas.height/2 - 120, w: 60, h: 80, name: 'Mira', img: sprites.mira, msg: 'The herbs of Ashment bloom best under the silver moon. Have you come to harvest?' },
+                    { x: canvas.width/2 + 450, y: canvas.height/2 + 180, w: 64, h: 86, name: 'Arin', img: sprites.arin, msg: 'The steel remembers the heat, just as Ashment remembers its past. Do not lose your way.' }
                 ];
-
                 const particles: any[] = [];
-                for (let i = 0; i < 40; i++) particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: 1 + Math.random() * 2, v: 0.3 + Math.random() * 0.8, a: 0.1 + Math.random() * 0.2 });
-
+                for (let i = 0; i < 50; i++) particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: 1.5 + Math.random() * 2.5, v: 0.4 + Math.random() * 1.2, a: 0.05 + Math.random() * 0.25, phase: Math.random() * Math.PI * 2 });
                 const keys: any = {};
                 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
                 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
                 canvas.addEventListener('mousedown', (e) => {
                     if (currentDialogueNpc) return;
                     const rect = canvas.getBoundingClientRect();
                     const mx = e.clientX - rect.left;
                     const my = e.clientY - rect.top;
-                    npcs.forEach(npc => { if (Math.hypot(mx - npc.x, my - npc.y) < 70) openDialogue(npc); });
+                    npcs.forEach(npc => { if (Math.hypot(mx - npc.x, my - npc.y) < 80) openDialogue(npc); });
                 });
-
                 function loop() {
                     if (!ctx || !canvas) return;
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -757,38 +835,40 @@ import '../styles/global.css';
                         if (keys['a']) player.x -= player.speed;
                         if (keys['d']) player.x += player.speed;
                     }
-                    const fog = ctx.createRadialGradient(player.x, player.y, 50, player.x, player.y, 600);
+                    const fog = ctx.createRadialGradient(player.x, player.y, 80, player.x, player.y, 850);
                     fog.addColorStop(0, 'rgba(5, 5, 7, 0)');
                     fog.addColorStop(1, 'rgba(5, 5, 7, 0.98)');
                     particles.forEach(p => {
-                        p.y += p.v;
-                        if (p.y > canvas.height) p.y = -10;
+                        p.y += p.v; p.x += Math.sin(p.phase + p.y / 60) * 0.8;
+                        if (p.y > canvas.height) p.y = -20;
                         ctx.fillStyle = `rgba(248, 212, 78, ${p.a})`;
                         ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2); ctx.fill();
                     });
                     ctx.fillStyle = fog;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     npcs.forEach(npc => {
-                        const isHovered = Math.hypot(player.x - npc.x, player.y - npc.y) < 110;
-                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                        ctx.beginPath(); ctx.ellipse(npc.x, npc.y + 35, 22, 10, 0, 0, Math.PI*2); ctx.fill();
+                        const dist = Math.hypot(player.x - npc.x, player.y - npc.y);
+                        const isHovered = dist < 120;
+                        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                        ctx.beginPath(); ctx.ellipse(npc.x, npc.y + 40, 26, 12, 0, 0, Math.PI*2); ctx.fill();
                         if (npc.img.complete) {
                             ctx.save();
-                            const scale = isHovered ? 1.05 : 1;
-                            ctx.shadowColor = isHovered ? 'rgba(248, 212, 78, 0.3)' : 'rgba(0,0,0,0.7)';
-                            ctx.shadowBlur = 30;
+                            const scale = isHovered ? 1.08 : 1;
+                            ctx.shadowColor = isHovered ? 'rgba(248, 212, 78, 0.4)' : 'rgba(0,0,0,0.9)';
+                            ctx.shadowBlur = isHovered ? 40 : 25;
                             ctx.drawImage(npc.img, npc.x - (npc.w * scale)/2, npc.y - (npc.h * scale)/2, npc.w * scale, npc.h * scale);
                             ctx.restore();
                         }
+                        if (isHovered && !currentDialogueNpc) {
+                            ctx.fillStyle = '#f8d44e'; ctx.font = 'bold 9px "Cinzel"'; ctx.textAlign = 'center'; ctx.letterSpacing = '4px'; ctx.fillText('INTERACT', npc.x, npc.y - npc.h/2 - 25);
+                        } else {
+                            ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.font = 'bold 8px "Montserrat"'; ctx.textAlign = 'center'; ctx.letterSpacing = '3px'; ctx.fillText(npc.name.toUpperCase(), npc.x, npc.y - npc.h/2 - 20);
+                        }
                     });
-                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                    ctx.beginPath(); ctx.ellipse(player.x, player.y + 35, 22, 10, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                    ctx.beginPath(); ctx.ellipse(player.x, player.y + 40, 26, 12, 0, 0, Math.PI*2); ctx.fill();
                     if (sprites.player.complete) {
-                        ctx.save();
-                        ctx.shadowColor = 'rgba(248, 212, 78, 0.2)';
-                        ctx.shadowBlur = 40;
-                        ctx.drawImage(sprites.player, player.x - player.w/2, player.y - player.h/2, player.w, player.h);
-                        ctx.restore();
+                        ctx.save(); ctx.shadowColor = 'rgba(248, 212, 78, 0.3)'; ctx.shadowBlur = 50; ctx.drawImage(sprites.player, player.x - player.w/2, player.y - player.h/2, player.w, player.h); ctx.restore();
                     }
                     requestAnimationFrame(loop);
                 }
