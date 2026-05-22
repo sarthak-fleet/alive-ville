@@ -122,6 +122,8 @@ async function runProductionPlaytest(): Promise<void> {
       await expect(mobile.locator(".app-shell")).toHaveClass(/focus-mode/);
       await expect(mobile.getByRole("button", { name: "HUD" })).toHaveAttribute("aria-pressed", "true");
       await expect(mobile.getByLabel("3D travel")).toContainText("At Rain Market");
+      await expect(mobile.getByLabel("3D target")).toContainText("Talk Reva");
+      await expect(mobile.getByRole("button", { name: "Interact with Reva" })).toBeEnabled();
       await expect(mobile.locator(".three-host canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, ".three-host canvas"), {
         message: "production mobile imported 3D canvas should render nonblank pixels",

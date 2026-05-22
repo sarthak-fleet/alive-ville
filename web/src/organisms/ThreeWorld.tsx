@@ -17,6 +17,7 @@ export function ThreeWorld() {
   const currentLocation = world?.locations.find((location) => location.id === world.player.locationId) ?? null;
   const destinations = world ? reachableLocations(world) : [];
   const agentActivity = lastSummary ? latestAutonomousActivity(lastSummary) : null;
+  const sceneTarget = hoverTarget ?? (world ? keyboardTargetFor(world) : null);
   const handleKeyboardTravel = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isInteractiveTarget(event.target)) return;
     const latestWorld = useWorldStore.getState().world;
@@ -81,19 +82,19 @@ export function ThreeWorld() {
         <div className="three-status-card">
           <span>At {currentLocation?.name ?? "Unknown"}</span>
           <strong className="three-target-readout" aria-label="3D target">
-            {hoverTarget ? `${hoverTarget.action} ${hoverTarget.label}` : "Hover a scene target"}
+            {sceneTarget ? `${sceneTarget.action} ${sceneTarget.label}` : "No scene target"}
           </strong>
           <div className="three-status-actions">
             <button
               type="button"
               className="three-interact-button"
-              disabled={!hoverTarget}
-              aria-label={hoverTarget ? `Interact with ${hoverTarget.label}` : "No scene target selected"}
+              disabled={!sceneTarget}
+              aria-label={sceneTarget ? `Interact with ${sceneTarget.label}` : "No scene target selected"}
               onClick={() => {
-                if (hoverTarget) activateSceneTarget(hoverTarget);
+                if (sceneTarget) activateSceneTarget(sceneTarget);
               }}
             >
-              {hoverTarget ? hoverTarget.action : "Interact"}
+              {sceneTarget ? sceneTarget.action : "Interact"}
             </button>
             <p className={`three-context-status ${contextStatus}`} aria-label="3D renderer status">
               {contextStatus === "lost" ? "3D renderer paused" : contextStatus === "restored" ? "3D renderer restored" : "3D renderer ready"}

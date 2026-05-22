@@ -138,7 +138,7 @@ async function hoverThreeTarget(page: Page, label: string): Promise<{ x: number;
       await page.mouse.move(point.x, point.y);
       await page.waitForTimeout(15);
       const readout = await page.getByLabel("3D target").innerText();
-      if (readout !== "Hover a scene target") seen.add(readout);
+      if (readout !== "No scene target") seen.add(readout);
       if (readout.includes(label)) return point;
     }
   }
