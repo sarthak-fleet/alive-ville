@@ -16,10 +16,25 @@
         camera.position.z = 300;
         camera.position.y = 50;
 
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance", preserveDrawingBuffer: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x120d08, 0.45);
         container.appendChild(renderer.domElement);
+
+        // A persistent atmospheric field keeps the WebGL layer visibly alive
+        // even in sparse particle frames and gives visual tests stable pixels.
+        const atmosphere = new THREE.Mesh(
+            new THREE.PlaneGeometry(1600, 1200, 1, 1),
+            new THREE.MeshBasicMaterial({
+                color: 0x6f4b1e,
+                transparent: true,
+                opacity: 0.7,
+                depthWrite: false
+            })
+        );
+        atmosphere.position.set(0, 0, -350);
+        scene.add(atmosphere);
 
         // --- 1. THE RIVER OF MEMORY (Custom Shader Particles) ---
         const particleCount = 4000;

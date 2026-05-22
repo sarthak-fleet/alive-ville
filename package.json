@@ -27,7 +27,8 @@
     "playtest:alive": "tsx tests/playtests/alive-village.ts",
     "playtest:opm": "tsx tests/playtests/opm-world.ts",
     "playtest:world-ingest": "tsx tests/playtests/world-ingest.ts",
-    "playtest:all": "pnpm playtest:first-loop && pnpm playtest:basic-v0 && pnpm playtest:alive && pnpm playtest:opm && pnpm playtest:world-ingest",
+    "playtest:astro-landing": "tsx tests/playtests/astro-landing.ts",
+    "playtest:all": "pnpm playtest:first-loop && pnpm playtest:basic-v0 && pnpm playtest:alive && pnpm playtest:opm && pnpm playtest:world-ingest && pnpm playtest:astro-landing",
     "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm budget:bundle && pnpm bench:completion && pnpm bench:expanded && pnpm playtest:all",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"

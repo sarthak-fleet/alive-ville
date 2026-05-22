@@ -40,7 +40,7 @@ import '../styles/global.css';
                 ALIVEVILLE
             </h1>
             <p class="font-garamond italic text-xl sm:text-2xl md:text-4xl text-white/80 leading-relaxed drop-shadow-lg mx-auto max-w-[min(48rem,calc(100vw-2rem))]">
-                Don't just write a world bible. Compile it into a living, breathing RPG simulation where every character acts, reacts, and remembers.
+                Don't just write a world bible. Compile it into a playable 3D RPG simulation where long-running agents act, react, and remember.
             </p>
         </div>
 
@@ -73,6 +73,10 @@ import '../styles/global.css';
                         <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Physical Logic</h3>
                         <p class="text-white/60 leading-relaxed">Spatial awareness matters. NPCs cannot talk to characters across the map. The engine calculates Euclidean distance before allowing social interaction.</p>
                     </div>
+                    <div class="border-l-2 border-[#c2a36b] pl-6 hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-r-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">3D Playability</h3>
+                        <p class="text-white/60 leading-relaxed">The shipped loop is a browser-tested 3D world view with travel, target selection, recoverable errors, mobile layout checks, and visible agent movement.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -100,6 +104,14 @@ import '../styles/global.css';
                     <div class="border-r-2 border-[#c2a36b] pr-6 text-right hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-l-xl">
                         <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Dynamic Tension</h3>
                         <p class="text-white/60 leading-relaxed">If the world gets boring, a background Director injects rumors based on unresolved tensions. Secrets spread organically through gossip.</p>
+                    </div>
+                    <div class="border-r-2 border-[#c2a36b] pr-6 text-right hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-l-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">World Ingest</h3>
+                        <p class="text-white/60 leading-relaxed">Import structured world source JSON and the compiler turns it into locations, NPCs, quests, props, package review evidence, and playable 3D objectives.</p>
+                    </div>
+                    <div class="border-r-2 border-[#c2a36b] pr-6 text-right hover:border-white transition-colors duration-500 bg-black/20 backdrop-blur-sm py-4 rounded-l-xl">
+                        <h3 class="text-xl font-bold mb-2 uppercase tracking-wider text-white/90">Long-Running Agents</h3>
+                        <p class="text-white/60 leading-relaxed">Autonomous loops continue between player actions, checkpoint world ticks, restore latest state, and make the 3D scene visibly change over time.</p>
                     </div>
                 </div>
             </div>
@@ -130,7 +142,7 @@ import '../styles/global.css';
                 <div class="w-px h-16 bg-gradient-to-b from-[#c2a36b] to-transparent animate-pulse"></div>
             </div>
 
-            <!-- THE INTERACTIVE 2D GAME CANVAS -->
+            <!-- THE INTERACTIVE 3D GAME SURFACE -->
             <div id="game-ui" class="absolute inset-0 z-50 opacity-0 pointer-events-none flex flex-col transition-opacity duration-1000 bg-transparent">
                 <!-- Atmospheric Vignette -->
                 <div class="absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.95)] pointer-events-none z-0"></div>
@@ -138,7 +150,7 @@ import '../styles/global.css';
                 <!-- Game HUD -->
                 <div class="absolute top-8 left-8 z-20 pointer-events-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                     <h3 class="font-cinzel text-3xl text-white tracking-wider">SIMULATION <span class="text-[#c2a36b]">ACTIVE</span></h3>
-                    <p class="font-montserrat text-xs text-white/80 tracking-[0.3em] mt-1 uppercase">Use W A S D to explore</p>
+                    <p class="font-montserrat text-xs text-white/80 tracking-[0.3em] mt-1 uppercase">Use W A S D to explore the 3D world</p>
                 </div>
 
                 <div class="absolute top-8 right-8 z-20 pointer-events-none flex flex-col items-end gap-2">
