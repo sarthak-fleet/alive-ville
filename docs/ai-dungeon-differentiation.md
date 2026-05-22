@@ -2,11 +2,20 @@
 
 This project should not position itself as an AI Dungeon clone or an infinite text-adventure generator. AI Dungeon's public positioning is strongest around AI-native text adventures, prebuilt or custom scenarios, Story Cards and Memory Banks for context, AI image generation, multiplayer sessions, and a large community scenario library.
 
+Last rechecked: 2026-05-22.
+
 Sources reviewed:
 
 - https://aidungeon.com/
 - https://apps.apple.com/us/app/ai-dungeon-rpg-story-maker/id1491268416
 - https://help.aidungeon.com/about-worlds-world-info-scenarios-and-story-cards
+- https://help.aidungeon.com/faq/what-are-adventures
+
+## AI Dungeon Boundary
+
+AI Dungeon's current public surface leads with infinite AI-driven RPG stories, prebuilt or custom scenarios, Story Cards, Memory Banks, an Image Generator, multiplayer, and community scenario discovery. Its guide describes Adventures as standalone story play-throughs whose core unit is story text Actions, with Do, Say, and Story Mode inputs.
+
+That is a strong product, but it is a different lane. This repo should not chase "the same text adventure, but with another model." Differentiation must stay anchored in spatial play, compiled world structure, visible autonomous simulation, and tested completion loops.
 
 ## Product Position
 
@@ -21,7 +30,8 @@ AI World Simulator is a playable 3D world simulator with an ingestible world com
 
 2. Structured world compiler, not prompt-only scenario setup.
    - Reviewed world sources compile into typed locations, exits, NPCs, items, quests, factions, tensions, villain plans, story objectives, portraits, item visuals, location palettes, and 3D landmarks.
-   - Anime is only one fixture. Skyfront, Clockwork Conservatory, and Abyssal Salvage prove non-anime worlds can compile and play through the same path.
+   - Anime is only one fixture. Skyfront, Clockwork Conservatory, Abyssal Salvage, and Neon Nocturne prove non-anime worlds can compile and play through the same path.
+   - Imported worlds are not just renamed story cards: their source text drives different palettes, atmosphere, landmarks, items, objectives, and evidence loops.
    - Invalid source import is rejected before it can replace the playable world.
 
 3. Long-running autonomous agents with operational controls.
@@ -53,11 +63,21 @@ AI World Simulator is a playable 3D world simulator with an ingestible world com
 - "Browser-tested desktop and mobile playability, including imported worlds."
 - "Playable objectives and spatial interaction before open-ended prose."
 
+## Competitive Readiness Gate
+
+To claim readiness against this boundary, the repo must keep all of these evidenced:
+
+- A default 3D play surface with nonblank canvas playtests and camera/interaction checks.
+- Generic world ingest for at least four non-anime worlds, including a noir mystery world with distinct visual treatment.
+- Long-running autonomous agent loops with checkpoint persistence and restore.
+- Objective-driven play loops that complete through travel, pickup, give, inspect, and confrontation instead of pure prose continuation.
+- Production-build browser smoke tests for base and imported worlds.
+
 ## Current Evidence In Repo
 
 - 3D runtime: `web/src/three/world-scene.ts`, `web/src/organisms/ThreeWorld.tsx`.
 - World compiler: `src/world-ingest.ts`, `src/anime-ingest.ts`.
-- Non-anime world fixtures: `fixtures/worlds/skyfront-source.json`, `fixtures/worlds/conservatory-source.json`, `fixtures/worlds/abyssal-source.json`.
+- Non-anime world fixtures: `fixtures/worlds/skyfront-source.json`, `fixtures/worlds/conservatory-source.json`, `fixtures/worlds/abyssal-source.json`, `fixtures/worlds/noir-source.json`.
 - Long-running agents: `src/agent-loop.ts`, `src/agent-checkpoint-store.ts`, `web/src/organisms/AgentLoopPanel.tsx`.
 - Browser playability gates: `tests/playtests/alive-village.ts`, `tests/playtests/world-ingest.ts`.
 - Readiness gates: `src/completion-benchmarks.ts`, `src/expanded-completion-benchmarks.ts`.
