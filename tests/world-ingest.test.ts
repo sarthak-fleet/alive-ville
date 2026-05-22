@@ -221,12 +221,20 @@ describe("generic world ingest", () => {
       "substation_alley",
     ]);
     expect(world.locations.find((location) => location.id === "rain_market")?.visual).toMatchObject({
-      palette: { ground: "#2b3244", structure: "#687386", accent: "#8d5cff" },
-      landmarks: ["notice_board"],
+      palette: { ground: "#151a24", structure: "#31415f", accent: "#ff4fd8" },
+      landmarks: ["neon_sign", "rain_lamp"],
+    });
+    expect(world.locations.find((location) => location.id === "evidence_desk")?.visual).toMatchObject({
+      palette: { ground: "#151a24", structure: "#31415f", accent: "#ff4fd8" },
+      landmarks: expect.arrayContaining(["evidence_board"]),
     });
     expect(world.locations.find((location) => location.id === "floodlit_overpass")?.visual).toMatchObject({
-      palette: { ground: "#2b3244", structure: "#687386", accent: "#8d5cff" },
-      landmarks: expect.arrayContaining(["bridge_span"]),
+      palette: { ground: "#151a24", structure: "#31415f", accent: "#ff4fd8" },
+      landmarks: ["rain_lamp", "bridge_span"],
+    });
+    expect(world.locations.find((location) => location.id === "substation_alley")?.visual).toMatchObject({
+      palette: { ground: "#151a24", structure: "#31415f", accent: "#ff4fd8" },
+      landmarks: expect.arrayContaining(["transformer_stack"]),
     });
     expect(world.npcs.map((npc) => npc.id)).toEqual(["reva", "milo", "aya", "sol", "kade"]);
     expect(world.npcs.every((npc) => npc.appearance?.portrait?.startsWith("data:image/svg+xml,"))).toBe(true);

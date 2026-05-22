@@ -529,6 +529,9 @@ function locationPaletteFor(index: number, draft: AnimeLocationDraft): { ground:
   if (/greenhouse|botanical|conservatory|spore|seed|garden|vine|root|pond|mushroom/.test(text)) {
     return { ground: "#203d2d", structure: "#5e8f68", accent: "#d8c77a" };
   }
+  if (/neon|noir|\brain\b|precinct|evidence|confession|witness|substation|transformer|floodlit/.test(text)) {
+    return { ground: "#151a24", structure: "#31415f", accent: "#ff4fd8" };
+  }
   if (/city|plaza|association|kiosk|overpass|apartment/.test(text)) {
     return { ground: "#2b3244", structure: "#687386", accent: "#8d5cff" };
   }
@@ -549,10 +552,14 @@ function locationLandmarksFor(index: number, draft: AnimeLocationDraft): string[
   const text = `${draft.name} ${draft.role ?? ""} ${draft.description ?? ""}`.toLowerCase();
   const inferred = new Set<string>();
   const hasSonar = /sonar|hydrophone|beacon|radar|array/.test(text);
+  if (/substation|transformer/.test(text)) inferred.add("transformer_stack");
+  if (/neon|flickering signs|pink|market|signal booth|police-band/.test(text)) inferred.add("neon_sign");
+  if (/\brain\b|wet|floodlit|signal lamp|police-band|booth/.test(text)) inferred.add("rain_lamp");
+  if (/evidence|precinct|custody|case file|case files/.test(text)) inferred.add("evidence_board");
   if (/plaza|hub|square/.test(text)) inferred.add("notice_board");
   if (/reef|coral|kelp|subsea|undersea|abyss|dome/.test(text) && !hasSonar) inferred.add("reef_spire");
   if (hasSonar) inferred.add("sonar_dish");
-  if (/training|forge|repair|mast|tower/.test(text) && !hasSonar) inferred.add(index === 1 ? "forge_chimney" : "signal_tower");
+  if (/\btraining\b|\bforge\b|\brepair\b|mast|tower/.test(text) && !hasSonar) inferred.add(index === 1 ? "forge_chimney" : "signal_tower");
   if (/garden|apartment|home|rookery|deck/.test(text)) inferred.add(/apartment/.test(text) ? "apartment_tower" : "garden_planter");
   if (/kiosk|guild|counter|report|inn/.test(text)) inferred.add(/guild|counter/.test(text) ? "kiosk_sign" : "lantern_post");
   if (/bridge|overpass|threat|chain/.test(text)) inferred.add("bridge_span");

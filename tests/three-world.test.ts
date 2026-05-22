@@ -99,6 +99,7 @@ describe("3D world scene model", () => {
     const skyfront = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/skyfront-source.json")));
     const conservatory = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/conservatory-source.json")));
     const abyssal = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/abyssal-source.json")));
+    const noir = buildWorldSceneModel(worldSourceToWorld(source("../fixtures/worlds/noir-source.json")));
 
     expect(skyfront.locations.find((location) => location.id === "harbor_ring")).toMatchObject({
       groundColor: "#1f3f58",
@@ -126,10 +127,25 @@ describe("3D world scene model", () => {
       structureColor: "#3f7fa6",
       landmarks: ["sonar_dish"],
     });
+    expect(noir.locations.find((location) => location.id === "rain_market")).toMatchObject({
+      groundColor: "#151a24",
+      structureColor: "#31415f",
+      accentColor: "#ff4fd8",
+      landmarks: ["neon_sign", "rain_lamp"],
+    });
+    expect(noir.locations.find((location) => location.id === "evidence_desk")).toMatchObject({
+      landmarks: expect.arrayContaining(["evidence_board"]),
+    });
+    expect(noir.locations.find((location) => location.id === "substation_alley")).toMatchObject({
+      landmarks: expect.arrayContaining(["transformer_stack"]),
+    });
     expect(abyssal.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["mist", "signal"]));
+    expect(noir.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["mist"]));
     expect(conservatory.locations.find((location) => location.id === "atrium_gate")?.groundColor)
       .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
     expect(abyssal.locations.find((location) => location.id === "reef_dome")?.groundColor)
+      .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
+    expect(noir.locations.find((location) => location.id === "rain_market")?.groundColor)
       .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
   });
 

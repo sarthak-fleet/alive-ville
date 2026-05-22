@@ -638,6 +638,7 @@ function atmosphereNodesFor(location: SceneLocationNode): SceneAtmosphereNode[] 
 
 function atmosphereKindFor(location: SceneLocationNode): SceneAtmosphereNode["kind"] {
   const text = `${location.name} ${location.visualTags.join(" ")} ${location.landmarks.join(" ")}`.toLowerCase();
+  if (/\brain\b|noir|neon|precinct|evidence|rain_lamp/.test(text)) return "mist";
   if (/bridge|overpass|alley|threat|monster|ruin/.test(text)) return "dust";
   if (/reef|coral|kelp|subsea|undersea|abyss|dome|pressure/.test(text)) return "mist";
   if (/cloud|fog|sky|harbor|rookery/.test(text)) return "mist";
@@ -1026,6 +1027,48 @@ function makeLandmarkMesh(kind: string, location: SceneLocationNode): THREE.Obje
     dish.position.set(x, location.height + 0.64, z);
     dish.rotation.x = Math.PI * 0.34;
     group.add(mast, dish);
+    return group;
+  }
+  if (kind === "neon_sign") {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.68, 0.055), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.62, metalness: 0.18 }));
+    post.position.set(x, location.height + 0.34, z);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.2, 0.045), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.72, roughness: 0.36 }));
+    panel.position.set(x + 0.16, location.height + 0.66, z);
+    const backing = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.26, 0.035), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.7 }));
+    backing.position.set(x + 0.16, location.height + 0.66, z + 0.03);
+    group.add(post, backing, panel);
+    return group;
+  }
+  if (kind === "rain_lamp") {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.034, 0.72, 8), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.58, metalness: 0.2 }));
+    post.position.set(x, location.height + 0.36, z);
+    const shade = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.12, 12), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.52, metalness: 0.12 }));
+    shade.position.set(x, location.height + 0.74, z);
+    shade.rotation.x = Math.PI;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.85, transparent: true, opacity: 0.9 }));
+    bulb.position.set(x, location.height + 0.67, z);
+    group.add(post, shade, bulb);
+    return group;
+  }
+  if (kind === "evidence_board") {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.045), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.76 }));
+    board.position.set(x, location.height + 0.48, z);
+    const slip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.018), new THREE.MeshStandardMaterial({ color: 0xf2e8c8, roughness: 0.7 }));
+    slip.position.set(x - 0.1, location.height + 0.5, z - 0.035);
+    const pin = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.35 }));
+    pin.position.set(x + 0.12, location.height + 0.58, z - 0.045);
+    group.add(board, slip, pin);
+    return group;
+  }
+  if (kind === "transformer_stack") {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 0.22), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.5, metalness: 0.24 }));
+    base.position.set(x, location.height + 0.17, z);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.18), new THREE.MeshStandardMaterial({ color: structure, roughness: 0.46, metalness: 0.28 }));
+    top.position.set(x, location.height + 0.44, z);
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 8, 16), new THREE.MeshStandardMaterial({ color: accent, emissive: accent, emissiveIntensity: 0.42, roughness: 0.32 }));
+    coil.position.set(x, location.height + 0.58, z);
+    coil.rotation.x = Math.PI / 2;
+    group.add(base, top, coil);
     return group;
   }
   if (kind === "bridge_span") {
