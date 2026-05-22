@@ -7,6 +7,7 @@ import { Button } from "../atoms/Button.tsx";
 import type { QuickSaveSlot } from "../save-slots.ts";
 import { describeQuickSlot, loadQuickSlot, saveQuickSlot } from "../save-slots.ts";
 import { useWorldStore } from "../store/world.ts";
+import { WORLD_SAMPLES, type WorldSample } from "../world-samples.ts";
 
 export function AppHeader() {
   const world = useWorldStore((s) => s.world);
@@ -21,6 +22,7 @@ export function AppHeader() {
   const [toast, setToast] = useState<string | null>(null);
   const [quickSlot, setQuickSlot] = useState<QuickSaveSlot | null>(() => initialQuickSlot());
   const [packageReview, setPackageReview] = useState<{ package: StoryPackage; issues: StoryPackageIssue[] } | null>(null);
+  const [worldGalleryOpen, setWorldGalleryOpen] = useState(false);
 
   if (!world) return <header><h1>ASHMENT</h1></header>;
 
@@ -120,6 +122,19 @@ export function AppHeader() {
     worldSourceInputRef.current?.click();
   }
 
+  async function handleSampleWorld(sample: WorldSample): Promise<void> {
+    setBusy("loading");
+    setWorldGalleryOpen(false);
+    try {
+      await importWorldSourceFromJson(JSON.stringify(sample.source));
+      flash(`${sample.label} imported.`);
+    } catch (err) {
+      flash(`World import failed: ${(err as Error).message}`);
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -195,14 +210,33 @@ export function AppHeader() {
         <Button onClick={() => void handleReviewPackage()} disabled={busy !== ""} title="Inspect the current story package before importing or exporting">
           Review
         </Button>
+        <Button onClick={() => setWorldGalleryOpen((value) => !value)} disabled={busy !== ""} aria-expanded={worldGalleryOpen} title="Open reviewed sample worlds">
+          Worlds
+        </Button>
         <Button onClick={handleWorldSourceClick} disabled={busy !== ""} title="Import a reviewed world-source JSON draft">
-          World
+          Import
         </Button>
         <Button onClick={handleLoadClick} disabled={busy !== ""} title="Restore the world from a saved JSON file">
           {busy === "loading" ? "Loading…" : "Load"}
         </Button>
         <Button variant="primary" onClick={() => void send(null)}>Wait</Button>
       </div>
+      {worldGalleryOpen && (
+        <div className="world-gallery" role="dialog" aria-label="Reviewed sample worlds">
+          <div>
+            <strong>Reviewed Worlds</strong>
+            <button type="button" onClick={() => setWorldGalleryOpen(false)} aria-label="Close reviewed worlds">×</button>
+          </div>
+          <div className="world-gallery-grid">
+            {WORLD_SAMPLES.map((sample) => (
+              <button type="button" key={sample.id} onClick={() => void handleSampleWorld(sample)} disabled={busy !== ""}>
+                <span>{sample.label}</span>
+                <small>{sample.summary}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {packageReview && (
         <div className="package-review" role="dialog" aria-label="Story package review">
           <div>

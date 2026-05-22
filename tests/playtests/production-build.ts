@@ -11,7 +11,6 @@ const SERVER = new URL("../../dist/server/server.js", import.meta.url).pathname;
 const WEB_ROOT = new URL("../../dist/web/", import.meta.url).pathname;
 const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 const CHECKPOINT_FILE = join(ARTIFACT_DIR, "agent-loop-checkpoints.json");
-const NOIR = new URL("../../fixtures/worlds/noir-source.json", import.meta.url).pathname;
 const REQUIRED_ASSETS = [
   "/assets/cc0/russpuppy/open_tileset_16.png",
   "/assets/cutscenes/ashment_intro_square.mp4",
@@ -192,8 +191,14 @@ async function openAgentsPanel(page: Page): Promise<void> {
 }
 
 async function importProductionWorldSource(page: Page, villageStartHash: string): Promise<void> {
-  await page.locator("input[aria-label='World source JSON']").setInputFiles(NOIR);
-  await expect(page.locator(".header-toast")).toContainText("World source imported.", { timeout: 8_000 });
+  await page.getByRole("button", { name: "Worlds" }).click();
+  const gallery = page.getByRole("dialog", { name: "Reviewed sample worlds" });
+  await expect(gallery).toBeVisible();
+  await expect(gallery).toContainText("Skyfront");
+  await expect(gallery).toContainText("Abyssal");
+  await page.screenshot({ path: join(ARTIFACT_DIR, "00-production-world-gallery.png") });
+  await gallery.getByRole("button", { name: /Neon Noir/ }).click();
+  await expect(page.locator(".header-toast")).toContainText("Neon Noir imported.", { timeout: 8_000 });
   await expect(page.getByRole("heading", { name: "Neon Nocturne Playable Slice" })).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(".objective-tracker")).toContainText("Recover Witness badge for Reva");
   await expect(page.getByLabel("3D travel")).toContainText("At Rain Market");
