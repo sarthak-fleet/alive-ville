@@ -16,6 +16,7 @@ const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 const SKYFRONT = new URL("../../fixtures/worlds/skyfront-source.json", import.meta.url).pathname;
 const CONSERVATORY = new URL("../../fixtures/worlds/conservatory-source.json", import.meta.url).pathname;
 const ABYSSAL = new URL("../../fixtures/worlds/abyssal-source.json", import.meta.url).pathname;
+const NOIR = new URL("../../fixtures/worlds/noir-source.json", import.meta.url).pathname;
 const INVALID_WORLD = new URL("../../fixtures/worlds/invalid-source.json", import.meta.url).pathname;
 const OPM = new URL("../../fixtures/anime/opm-ingest-source.json", import.meta.url).pathname;
 
@@ -153,6 +154,19 @@ async function runWorldIngestPlaytest(): Promise<void> {
     await quickSaveImportedAbyssal(page);
     await verifyMobileImportedAbyssal(browser);
 
+    await importSource(page, NOIR);
+    await expect(page.getByRole("heading", { name: "Neon Nocturne Playable Slice" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
+    await expect(page.locator(".objective-tracker")).toContainText("Recover Witness badge for Reva");
+    await expect(page.locator(".three-host canvas")).toBeVisible();
+    await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), { message: "Noir 3D canvas should render nonblank pixels", timeout: 10_000 }).toBeGreaterThan(40);
+    await expect(page.getByLabel("3D travel")).toContainText("At Rain Market");
+    const noirStartHash = await canvasPixelHash(page, ".three-host canvas");
+    expect(noirStartHash).not.toEqual(abyssalStartHash);
+    await completeNoirFirstQuest(page);
+    await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "Noir 3D canvas should change after evidence movement", timeout: 10_000 }).not.toEqual(noirStartHash);
+    await page.screenshot({ path: join(ARTIFACT_DIR, "12-noir-source.png") });
+
     await importSource(page, OPM);
     await expect(page.getByRole("heading", { name: "One Punch Man Playable Slice" })).toBeVisible({ timeout: 15_000 });
     await expect(page.locator(".objective-tracker")).toContainText("Recover Grocery coupon for Saitama");
@@ -285,6 +299,30 @@ async function completeAbyssalFirstQuest(page: Page): Promise<void> {
   await expect(page.locator(".dialogue-panel")).not.toContainText("That matters in Clockwork");
   await clickButton(page, "Close");
   await expect(objective(page)).toContainText("Recover Turbine gear for Paxel");
+}
+
+async function completeNoirFirstQuest(page: Page): Promise<void> {
+  await expect(objective(page)).toContainText("Recover Witness badge for Reva");
+  await expect(objective(page)).toContainText("Talk to Reva");
+  await clickObjective(page, "Talk");
+  await expectGeneratedPortrait(page, "Reva");
+  await clickButton(page, "Accept task");
+  await clickButton(page, "Close");
+  await expect(objective(page)).toContainText("Find Witness badge");
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText("At Signal Booth");
+  await expect(page.getByLabel("3D target")).toBeVisible();
+  await clickThreeTarget(page, "Pick up Witness badge");
+  await expect(objective(page)).toContainText("Bring Witness badge to Reva");
+  await clickObjective(page, "Go");
+  await expect(page.getByLabel("3D travel")).toContainText("At Rain Market");
+  await clickObjective(page, "Talk");
+  await clickButton(page, "Complete: Give Witness badge");
+  await expect(page.locator(".outcome-toast")).toContainText("Recover Witness badge for Reva is complete");
+  await expect(page.locator(".dialogue-panel")).toContainText("That matters in Neon Nocturne Playable Slice");
+  await expect(page.locator(".dialogue-panel")).not.toContainText("That matters in Abyssal");
+  await clickButton(page, "Close");
+  await expect(objective(page)).toContainText("Recover Signal lens for Milo");
 }
 
 async function verifyAbyssalLiveLoop(page: Page): Promise<void> {
