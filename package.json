@@ -23,6 +23,7 @@
     "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
     "bench:completion": "tsx src/completion-benchmarks.ts",
     "bench:expanded": "tsx src/expanded-completion-benchmarks.ts",
+    "bench:differentiation": "tsx src/competitive-differentiation.ts",
     "playtest:first-loop": "tsx tests/playtests/first-loop.ts",
     "playtest:basic-v0": "tsx tests/playtests/basic-v0.ts",
     "playtest:alive": "tsx tests/playtests/alive-village.ts",
@@ -31,7 +32,7 @@
     "playtest:production": "tsx tests/playtests/production-build.ts",
     "playtest:astro-landing": "tsx tests/playtests/astro-landing.ts",
     "playtest:all": "pnpm playtest:first-loop && pnpm playtest:basic-v0 && pnpm playtest:alive && pnpm playtest:opm && pnpm playtest:world-ingest && pnpm playtest:production && pnpm playtest:astro-landing",
-    "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm budget:bundle && pnpm bench:completion && pnpm bench:expanded && pnpm playtest:all",
+    "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm budget:bundle && pnpm bench:completion && pnpm bench:expanded && pnpm bench:differentiation && pnpm playtest:all",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },

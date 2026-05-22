@@ -9,11 +9,13 @@ Sources reviewed:
 - https://aidungeon.com/
 - https://apps.apple.com/us/app/ai-dungeon-rpg-story-maker/id1491268416
 - https://help.aidungeon.com/about-worlds-world-info-scenarios-and-story-cards
+- https://help.aidungeon.com/faq/the-memory-system
+- https://help.aidungeon.com/faq/how-to-play
 - https://help.aidungeon.com/faq/what-are-adventures
 
 ## AI Dungeon Boundary
 
-AI Dungeon's current public surface leads with infinite AI-driven RPG stories, prebuilt or custom scenarios, Story Cards, Memory Banks, an Image Generator, multiplayer, and community scenario discovery. Its guide describes Adventures as standalone story play-throughs whose core unit is story text Actions, with Do, Say, and Story Mode inputs.
+AI Dungeon's current public surface leads with AI-native RPG and text-adventure generator behavior: prebuilt or custom scenarios, Story Cards, Memory Banks, an Image Generator, multiplayer session play, and community scenario discovery. Its guide describes Adventures as standalone story play-throughs whose core interaction unit is an Action using Do, Say, Story, or See.
 
 That is a strong product, but it is a different lane. This repo should not chase "the same text adventure, but with another model." Differentiation must stay anchored in spatial play, compiled world structure, visible autonomous simulation, and tested completion loops.
 
