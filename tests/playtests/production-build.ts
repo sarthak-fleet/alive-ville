@@ -10,6 +10,8 @@ const ARTIFACT_DIR = process.env["PLAYTEST_ARTIFACT_DIR"] ?? "tmp/playtest-artif
 const SERVER = new URL("../../dist/server/server.js", import.meta.url).pathname;
 const WEB_ROOT = new URL("../../dist/web/", import.meta.url).pathname;
 const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
+const CHECKPOINT_FILE = join(ARTIFACT_DIR, "agent-loop-checkpoints.json");
+const NOIR = new URL("../../fixtures/worlds/noir-source.json", import.meta.url).pathname;
 const REQUIRED_ASSETS = [
   "/assets/cc0/russpuppy/open_tileset_16.png",
   "/assets/cutscenes/ashbend_intro_square.mp4",
@@ -30,6 +32,7 @@ async function main(): Promise<void> {
       LLM_API_KEY: "",
       LLM_BASE_URL: "",
       AGENT_LOOP_INTERVAL_MS: "500",
+      AGENT_LOOP_CHECKPOINT_FILE: CHECKPOINT_FILE,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -85,7 +88,7 @@ async function runProductionPlaytest(): Promise<void> {
     await page.goto(BASE_URL);
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveTitle("Ashbend Village");
-    await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ashbend Village" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("button", { name: "3D" })).toHaveClass(/active/);
     await expect(page.locator(".three-host canvas")).toBeVisible();
     await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), {
@@ -105,15 +108,17 @@ async function runProductionPlaytest(): Promise<void> {
       timeout: 10_000,
     }).not.toEqual(before);
     await page.screenshot({ path: join(ARTIFACT_DIR, "01-production-3d.png") });
+    await importProductionWorldSource(page);
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
     try {
       await mobile.goto(BASE_URL);
       await mobile.waitForLoadState("domcontentloaded");
-      await expect(mobile.getByRole("heading", { name: "Ashbend Village" })).toBeVisible();
+      await expect(mobile.getByRole("heading", { name: "Neon Nocturne Playable Slice" })).toBeVisible({ timeout: 15_000 });
+      await expect(mobile.getByLabel("3D travel")).toContainText("At Rain Market");
       await expect(mobile.locator(".three-host canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, ".three-host canvas"), {
-        message: "production mobile 3D canvas should render nonblank pixels",
+        message: "production mobile imported 3D canvas should render nonblank pixels",
         timeout: 10_000,
       }).toBeGreaterThan(40);
       const layout = await mobile.evaluate(() => ({ bodyWidth: document.body.scrollWidth, viewportWidth: window.innerWidth }));
@@ -177,6 +182,27 @@ async function canvasPixelHash(page: Page, selector: string): Promise<string> {
 async function openAgentsPanel(page: Page): Promise<void> {
   const agents = page.locator("details").filter({ has: page.locator("summary", { hasText: "Agents" }) });
   if (await agents.getAttribute("open") === null) await agents.locator("summary").click();
+}
+
+async function importProductionWorldSource(page: Page): Promise<void> {
+  await page.locator("input[aria-label='World source JSON']").setInputFiles(NOIR);
+  await expect(page.locator(".header-toast")).toContainText("World source imported.", { timeout: 8_000 });
+  await expect(page.getByRole("heading", { name: "Neon Nocturne Playable Slice" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".objective-tracker")).toContainText("Recover Witness badge for Reva");
+  await expect(page.getByLabel("3D travel")).toContainText("At Rain Market");
+  await expect(page.locator(".three-host canvas")).toBeVisible();
+  await expect.poll(() => nonBlankCanvasPixels(page, ".three-host canvas"), {
+    message: "production imported noir 3D canvas should render nonblank pixels",
+    timeout: 10_000,
+  }).toBeGreaterThan(40);
+  await page.getByRole("button", { name: "Review" }).click();
+  await expect(page.locator(".header-toast")).toContainText("Package healthy.", { timeout: 5_000 });
+  const review = page.getByRole("dialog", { name: "Story package review" });
+  await expect(review).toBeVisible();
+  await expect(review).toContainText("Neon Nocturne: World Ingest Slice");
+  await expect(review).toContainText("No structural issues found.");
+  await page.screenshot({ path: join(ARTIFACT_DIR, "03-production-noir-import.png") });
+  await page.getByRole("button", { name: "Close package review" }).click();
 }
 
 async function waitForHttp(url: string, timeoutMs = 12_000): Promise<void> {
