@@ -14,6 +14,7 @@ describe("bundle budget", () => {
       "ThreeWorld-lazy.js": "x".repeat(540 * 1024),
       "PhaserGame-lazy.js": "x".repeat(1_200 * 1024),
     });
+    mkdirSync(join(root, "dist", "web", "assets", "cutscenes"), { recursive: true });
 
     const report = bundleBudgetReport(root);
 

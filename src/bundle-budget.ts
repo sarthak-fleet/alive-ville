@@ -75,7 +75,10 @@ function assetSize(distDir: string, path: string): AssetSize {
 function allBuiltAssets(distDir: string): AssetSize[] {
   const assetDir = join(distDir, "assets");
   if (!existsSync(assetDir)) return [];
-  return readdirSync(assetDir).map((name) => assetSize(distDir, join("assets", name)));
+  return readdirSync(assetDir)
+    .map((name) => join("assets", name))
+    .filter((path) => statSync(join(distDir, path)).isFile())
+    .map((path) => assetSize(distDir, path));
 }
 
 function budgetFailures(firstLoadAssets: AssetSize[], lazyAssets: AssetSize[]): string[] {
