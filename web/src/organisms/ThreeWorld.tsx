@@ -1,7 +1,8 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
-import type { TickSummary, World } from "../../../src/types.ts";
+import type { TickSummary } from "../../../src/types.ts";
 import { useWorldStore } from "../store/world.ts";
+import { reachableLocations, sceneTargetForWorld } from "../three/scene-targets.ts";
 import { type SceneTarget, ThreeWorldRenderer, type WebglContextStatus } from "../three/world-scene.ts";
 import { keyboardDestinationFor, movePlayerToward } from "../world-travel.ts";
 
@@ -17,13 +18,13 @@ export function ThreeWorld() {
   const currentLocation = world?.locations.find((location) => location.id === world.player.locationId) ?? null;
   const destinations = world ? reachableLocations(world) : [];
   const agentActivity = lastSummary ? latestAutonomousActivity(lastSummary) : null;
-  const sceneTarget = world ? validSceneTarget(world, hoverTarget) ?? keyboardTargetFor(world) : null;
+  const sceneTarget = world ? sceneTargetForWorld(world, hoverTarget) : null;
   const handleKeyboardTravel = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isInteractiveTarget(event.target)) return;
     const latestWorld = useWorldStore.getState().world;
     if (!latestWorld) return;
     if (event.key.toLowerCase() === "e") {
-      const target = validSceneTarget(latestWorld, hoverTarget) ?? keyboardTargetFor(latestWorld);
+      const target = sceneTargetForWorld(latestWorld, hoverTarget);
       if (!target) return;
       event.preventDefault();
       setHoverTarget(target);
@@ -150,46 +151,8 @@ export function ThreeWorld() {
   );
 }
 
-function reachableLocations(world: World): World["locations"] {
-  const reachable = new Set<string>();
-  for (const exit of world.exits) {
-    if (exit.from === world.player.locationId) reachable.add(exit.to);
-    if (exit.bidirectional && exit.to === world.player.locationId) reachable.add(exit.from);
-  }
-  return world.locations.filter((location) => reachable.has(location.id));
-}
-
 function isInteractiveTarget(target: EventTarget): boolean {
   return target instanceof HTMLElement && Boolean(target.closest("button, input, select, textarea, summary, a"));
-}
-
-function keyboardTargetFor(world: World): SceneTarget | null {
-  const locationId = world.player.locationId;
-  const item = world.items.find((candidate) => candidate.locationId === locationId && !candidate.holderId);
-  if (item) return { kind: "item", id: item.id, label: item.name, action: "Pick up" };
-  const npc = world.npcs.find((candidate) => candidate.locationId === locationId && candidate.id !== world.player.characterId);
-  if (npc) return { kind: "npc", id: npc.id, label: npc.name, action: "Talk" };
-  const prop = world.interactables?.find((candidate) => candidate.locationId === locationId && !candidate.inspected)
-    ?? world.interactables?.find((candidate) => candidate.locationId === locationId);
-  if (prop) return { kind: "prop", id: prop.id, label: prop.name, action: "Inspect" };
-  return null;
-}
-
-function validSceneTarget(world: World, target: SceneTarget | null): SceneTarget | null {
-  if (!target) return null;
-  if (target.kind === "location") {
-    return reachableLocations(world).some((location) => location.id === target.id) ? target : null;
-  }
-  if (target.kind === "npc") {
-    const npc = world.npcs.find((candidate) => candidate.id === target.id);
-    return npc?.locationId === world.player.locationId ? target : null;
-  }
-  if (target.kind === "item") {
-    const item = world.items.find((candidate) => candidate.id === target.id);
-    return item?.locationId === world.player.locationId && !item.holderId ? target : null;
-  }
-  const prop = world.interactables?.find((candidate) => candidate.id === target.id);
-  return prop?.locationId === world.player.locationId ? target : null;
 }
 
 function activateSceneTarget(target: SceneTarget): void {
