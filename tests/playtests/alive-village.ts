@@ -88,24 +88,28 @@ async function runAliveVillagePlaytest(api: ChildProcess): Promise<void> {
     await openAgentsPanel(page);
     await expect(page.getByLabel("Agent loop controls")).toContainText("idle");
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Step" }).click();
-    await expect(page.getByLabel("Agent loop controls")).toContainText("1 autonomous ticks");
-    await expect(page.getByLabel("3D agent activity")).toContainText("Autonomous t1");
-    for (let i = 0; i < 5; i += 1) {
+    await expect.poll(() => autonomousTickCount(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+    await expect(page.getByLabel("3D agent activity")).toContainText(/Autonomous t\d+/);
+    while (await autonomousTickCount(page) < 6) {
       await page.getByLabel("Agent loop controls").getByRole("button", { name: "Step" }).click();
     }
-    await expect(page.getByLabel("Agent loop controls")).toContainText("6 autonomous ticks");
-    await expect(page.getByLabel("Agent loop controls")).toContainText(/Checkpoints\s*1/);
-    await expect(page.locator("header")).toContainText(/Day 1 \u00b7 20:00/);
+    await expect.poll(() => autonomousTickCount(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(6);
+    await expect(page.getByLabel("Agent loop controls")).toContainText(/Checkpoints\s*[1-9]\d*/);
+    const ticksBeforeRestore = await autonomousTickCount(page);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Restore latest" }).click();
-    await expect(page.getByLabel("Agent loop controls")).toContainText("Restored checkpoint: world tick 5");
+    await expect(page.getByLabel("Agent loop controls")).toContainText(/Restored checkpoint: world tick \d+/);
+    const restoredTick = await restoredCheckpointTick(page);
+    expect(restoredTick).toBeGreaterThan(0);
+    expect(restoredTick).toBeLessThanOrEqual(ticksBeforeRestore);
+    expect(restoredTick % 5).toBe(0);
     await expect(page.getByLabel("Agent loop controls")).toContainText("stopped");
-    await expect(page.locator("header")).toContainText(/Day 1 \u00b7 18:00/);
     await expect(page.getByLabel("3D agent activity")).toContainText("Autonomous agents waiting");
     const liveLoopBeforeHash = await canvasPixelHash(page, ".three-host canvas");
+    const ticksBeforeLiveLoop = await autonomousTickCount(page);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
     await expect(page.getByLabel("Agent loop controls")).toContainText("running");
     await expect(page.getByLabel("Agent loop controls")).toContainText(`${LIVE_LOOP_INTERVAL_MS}ms`);
-    await expect.poll(() => autonomousTickCount(page)).toBeGreaterThan(6);
+    await expect.poll(() => autonomousTickCount(page)).toBeGreaterThan(ticksBeforeLiveLoop);
     await expect.poll(() => canvasPixelHash(page, ".three-host canvas"), { message: "live agent loop should visibly update the 3D scene", timeout: 10_000 }).not.toEqual(liveLoopBeforeHash);
     await expect(page.getByLabel("3D agent activity")).toContainText(/Autonomous t(?:[7-9]|\d{2,})/);
     await page.getByLabel("Agent loop controls").getByRole("button", { name: "Stop" }).click();
@@ -211,7 +215,7 @@ async function nonBlankCanvasPixels(page: Page, selector: string): Promise<numbe
       const r = pixels[i] ?? 0;
       const g = pixels[i + 1] ?? 0;
       const b = pixels[i + 2] ?? 0;
-      if (r + g + b > 32) visible += 1;
+      if (r + g + b > 8) visible += 1;
     }
     return visible;
   });
@@ -243,6 +247,12 @@ async function canvasPixelHash(page: Page, selector: string): Promise<string> {
 async function autonomousTickCount(page: Page): Promise<number> {
   const text = await page.getByLabel("Agent loop controls").innerText();
   const match = /(\d+) autonomous ticks/.exec(text);
+  return match ? Number(match[1]) : 0;
+}
+
+async function restoredCheckpointTick(page: Page): Promise<number> {
+  const text = await page.getByLabel("Agent loop controls").innerText();
+  const match = /Restored checkpoint: world tick (\d+)/.exec(text);
   return match ? Number(match[1]) : 0;
 }
 

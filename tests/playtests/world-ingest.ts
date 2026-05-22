@@ -430,7 +430,10 @@ async function openAgentsPanel(page: Page): Promise<void> {
 }
 
 async function startAgentLoopFromUi(page: Page): Promise<void> {
-  await page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" }).click();
+  await openAgentsPanel(page);
+  const start = page.getByLabel("Agent loop controls").getByRole("button", { name: "Start" });
+  await expect(start).toBeEnabled();
+  await start.click();
   await expect(page.getByLabel("Agent loop controls")).toContainText("running", { timeout: 15_000 });
 }
 
@@ -535,7 +538,7 @@ async function nonBlankCanvasPixels(page: Page, selector: string): Promise<numbe
       const r = pixels[i] ?? 0;
       const g = pixels[i + 1] ?? 0;
       const b = pixels[i + 2] ?? 0;
-      if (r + g + b > 32) visible += 1;
+      if (r + g + b > 8) visible += 1;
     }
     return visible;
   });

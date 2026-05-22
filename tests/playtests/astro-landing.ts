@@ -46,12 +46,12 @@ async function runLandingSmoke(): Promise<void> {
 
   try {
     await page.goto(BASE_URL, { waitUntil: "commit" });
-    await expect(page).toHaveTitle("Aliveville | AI World Simulator");
-    await expect(page.getByRole("heading", { name: "ALIVEVILLE" }).first()).toBeVisible();
+    await expect(page).toHaveTitle("Ashbend | Interactive AI World");
+    await expect(page.getByRole("heading", { name: "ASHBEND" }).first()).toBeVisible();
     await expect(page.locator("body")).toContainText("playable 3D RPG simulation");
     await expect(page.locator("body")).toContainText("World Ingest");
-    await expect(page.locator("body")).toContainText("long-running agents");
-    await expect(page.locator("body")).toContainText("browser-tested 3D world view");
+    await expect(page.locator("body")).toContainText("Long-Running Agents");
+    await expect(page.locator("body")).toContainText("Use W A S D to explore the 3D world");
     await expect(page.locator("body")).toContainText("Import structured world source JSON");
     await expect(page.locator("#three-ambient canvas")).toBeVisible();
     await expect.poll(() => nonBlankCanvasPixels(page, "#three-ambient canvas"), {
@@ -63,7 +63,7 @@ async function runLandingSmoke(): Promise<void> {
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
     try {
       await mobile.goto(BASE_URL, { waitUntil: "commit" });
-      await expect(mobile.getByRole("heading", { name: "ALIVEVILLE" }).first()).toBeVisible();
+      await expect(mobile.getByRole("heading", { name: "ASHBEND" }).first()).toBeVisible();
       await expect(mobile.locator("#three-ambient canvas")).toBeVisible();
       await expect.poll(() => nonBlankCanvasPixels(mobile, "#three-ambient canvas"), {
         message: "mobile landing Three.js background should render nonblank pixels",
