@@ -101,6 +101,13 @@ export interface SceneAtmosphereNode {
   scale: number;
 }
 
+export interface SceneWeatherNode {
+  kind: "rain" | "bubbles" | "clouds" | "pollen" | "embers" | "fireflies";
+  color: string;
+  density: number;
+  wind: { x: number; z: number };
+}
+
 export interface SceneMoodNode {
   phase: "dawn" | "day" | "dusk" | "night";
   skyColor: string;
@@ -118,6 +125,7 @@ export interface WorldSceneModel {
   locations: SceneLocationNode[];
   paths: ScenePathNode[];
   atmosphere: SceneAtmosphereNode[];
+  weather: SceneWeatherNode;
   actors: SceneActorNode[];
   items: SceneItemNode[];
   props: ScenePropNode[];
@@ -155,6 +163,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
     locations,
     paths,
     atmosphere,
+    weather: weatherNode(locations, world),
     actors,
     items,
     props,
@@ -271,6 +280,7 @@ export class ThreeWorldRenderer {
     this.pickableProps.length = 0;
     this.root.add(makeGround(model));
     this.root.add(makeSkyline(model));
+    this.root.add(makeWeatherMesh(model.weather, model.bounds));
     for (const path of model.paths) this.root.add(makePathMesh(path));
     this.root.add(makeAtmosphereMesh(model.atmosphere));
     for (const location of model.locations) {
@@ -638,6 +648,36 @@ function terrainNode(locations: SceneLocationNode[]): SceneTerrainNode {
     gridColor: active?.accentColor ?? "#7d8796",
     edgeColor: active?.structureColor ?? "#111827",
   };
+}
+
+function weatherNode(locations: SceneLocationNode[], world: World): SceneWeatherNode {
+  const active = locations.find((location) => location.active) ?? locations[0];
+  const text = [
+    world.id,
+    world.name,
+    world.story?.premise ?? "",
+    active?.name ?? "",
+    active?.visualTags.join(" ") ?? "",
+    active?.landmarks.join(" ") ?? "",
+    locations.flatMap((location) => location.visualTags).join(" "),
+  ].join(" ").toLowerCase();
+
+  if (/rain|noir|neon|case|evidence|precinct/.test(text)) {
+    return { kind: "rain", color: "#7fd0ff", density: 46, wind: { x: -0.18, z: 0.06 } };
+  }
+  if (/abyss|reef|coral|subsea|undersea|sonar|pressure|dome/.test(text)) {
+    return { kind: "bubbles", color: "#72f1d0", density: 34, wind: { x: 0.08, z: -0.04 } };
+  }
+  if (/conservatory|garden|herb|moonmint|botanical|wood/.test(text)) {
+    return { kind: "pollen", color: active?.accentColor ?? "#b5e48c", density: 30, wind: { x: 0.1, z: 0.05 } };
+  }
+  if (/cloud|sky|harbor|rookery|courier/.test(text)) {
+    return { kind: "clouds", color: "#dbeafe", density: 18, wind: { x: 0.16, z: -0.06 } };
+  }
+  if (/forge|ember|soot|metal|engine/.test(text)) {
+    return { kind: "embers", color: active?.accentColor ?? "#f08a38", density: 26, wind: { x: -0.06, z: 0.08 } };
+  }
+  return { kind: "fireflies", color: active?.accentColor ?? "#f8d44e", density: 24, wind: { x: 0.06, z: 0.03 } };
 }
 
 function atmosphereNodesFor(location: SceneLocationNode): SceneAtmosphereNode[] {
@@ -1016,6 +1056,66 @@ function makeAtmosphereMesh(nodes: SceneAtmosphereNode[]): THREE.Object3D {
     group.add(mesh);
   }
   return group;
+}
+
+function makeWeatherMesh(weather: SceneWeatherNode, bounds: { width: number; depth: number }): THREE.Object3D {
+  const group = new THREE.Group();
+  group.name = `weather:${weather.kind}`;
+  const width = Math.max(4.2, bounds.width + 2.8);
+  const depth = Math.max(4.2, bounds.depth + 2.8);
+  const centerX = bounds.width / 2;
+  const centerZ = bounds.depth / 2;
+  const color = new THREE.Color(weather.color);
+
+  for (let index = 0; index < weather.density; index += 1) {
+    const offset = stableOffset(`weather:${weather.kind}:${index}`, 1);
+    const x = centerX + offset.x * width + weather.wind.x * (index % 7) * 0.12;
+    const z = centerZ + offset.z * depth + weather.wind.z * (index % 5) * 0.12;
+    const y = 0.82 + (index % 9) * 0.22;
+    const mesh = makeWeatherParticle(weather, color, index);
+    mesh.name = `weather:${weather.kind}:${index}`;
+    mesh.position.set(x, y, z);
+    mesh.userData["sceneAnimation"] =
+      weather.kind === "rain"
+        ? bobAnimation(mesh.name, y, 0.16)
+        : weather.kind === "clouds"
+          ? bobAnimation(mesh.name, y, 0.035)
+          : pulseAnimation(mesh.name, 1, weather.kind === "bubbles" ? 0.16 : 0.1);
+    group.add(mesh);
+  }
+
+  return group;
+}
+
+function makeWeatherParticle(weather: SceneWeatherNode, color: THREE.Color, index: number): THREE.Object3D {
+  if (weather.kind === "rain") {
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.008, 0.008, 0.42, 5),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.38, depthWrite: false })
+    );
+    mesh.rotation.z = -0.28;
+    return mesh;
+  }
+  if (weather.kind === "bubbles") {
+    return new THREE.Mesh(
+      new THREE.SphereGeometry(0.045 + (index % 3) * 0.014, 8, 6),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.26, wireframe: true, depthWrite: false })
+    );
+  }
+  if (weather.kind === "clouds") {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12 + (index % 4) * 0.035, 10, 6),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, depthWrite: false })
+    );
+    mesh.scale.set(1.8, 0.32, 0.92);
+    return mesh;
+  }
+  const radius = weather.kind === "embers" ? 0.028 : 0.035;
+  const opacity = weather.kind === "pollen" ? 0.34 : 0.54;
+  return new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 8, 6),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false })
+  );
 }
 
 function makeLocationMesh(location: SceneLocationNode): THREE.Object3D {

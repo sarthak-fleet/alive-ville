@@ -32,6 +32,10 @@ describe("3D world scene model", () => {
       baseColor: "#2f3a45",
       gridColor: "#f8d44e",
     });
+    expect(model.weather).toMatchObject({
+      kind: "pollen",
+      color: "#f8d44e",
+    });
     expect(model.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["signal", "spark", "firefly", "dust"]));
     expect(model.actors.find((actor) => actor.id === "player")?.player).toBe(true);
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
@@ -157,6 +161,11 @@ describe("3D world scene model", () => {
     expect(skyfront.terrain.baseColor).toBe("#1f3f58");
     expect(abyssal.terrain.gridColor).toBe("#72f1d0");
     expect(noir.terrain.gridColor).toBe("#ff4fd8");
+    expect(skyfront.weather).toMatchObject({ kind: "clouds", color: "#dbeafe" });
+    expect(conservatory.weather).toMatchObject({ kind: "pollen", color: "#d8c77a" });
+    expect(abyssal.weather).toMatchObject({ kind: "bubbles", color: "#72f1d0" });
+    expect(noir.weather).toMatchObject({ kind: "rain", color: "#7fd0ff" });
+    expect(new Set([skyfront.weather.kind, conservatory.weather.kind, abyssal.weather.kind, noir.weather.kind]).size).toBe(4);
   });
 
   test("moves the camera target with the active player location", () => {
