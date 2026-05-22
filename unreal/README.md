@@ -8,7 +8,21 @@ This is the real 3D client track for Aliveville / AI World Simulator. The existi
 - Project file: `unreal/AshmentUnreal/AshmentUnreal.uproject`.
 - Backend bridge: `http://127.0.0.1:5174/api/unreal/state`.
 
-If Unreal prompts to convert or rebuild C++ modules on first open, accept it. The project is intentionally a small C++ scaffold so we can iterate toward a proper vertical slice instead of polishing the browser prototype.
+If Unreal prompts to convert or rebuild C++ modules on first open, accept it. The current project is intentionally a small C++ bridge scaffold, not the final game foundation.
+
+## Sample-First Plan
+
+We should not build the final client from scratch. The next Unreal milestone is to evaluate an official sample or permissively licensed open-source game and port the Aliveville bridge into that base.
+
+Preferred order:
+
+1. **Epic Cropout-style top-down sample**: likely best fit for readable agents, schedules, village locations, and simulation visibility.
+2. **Epic Lyra Starter Game**: useful for modern Unreal architecture, input, and gameplay systems if the project moves toward character action.
+3. **Permissive Unreal open-source samples**: use only when the license is MIT/BSD/Apache or similarly compatible and attribution is documented.
+
+Avoid GPL and unlicensed repos for the commercial client unless we explicitly decide to take on the license obligations.
+
+The goal is to steal proven game feel, camera, interaction, UI, and asset-pipeline patterns legally. Aliveville's differentiator is the world brain: ingest, agents, director pressure, quests, and persistent state.
 
 ## Required Local Tools
 
@@ -47,7 +61,7 @@ The bridge intentionally sends Unreal-friendly centimeters, colors, active objec
 - `AshmentPlayerPawn`: simple free-fly camera pawn for early inspection.
 - `AshmentUnrealGameMode`: spawns the world client if the level does not already contain one.
 
-This is not the final art/gameplay layer. The next milestone is a small handcrafted level plus marketplace-quality assets wired to the same bridge, with the generated primitives demoted to debug visualization.
+This is not the final art/gameplay layer. Once the sample base is chosen, the generated primitives should become a debug visualization while the real scene uses sample/marketplace-quality assets wired to the same bridge.
 
 ## Product Direction
 
