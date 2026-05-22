@@ -7,8 +7,7 @@ import { chromium, expect, type Page } from "@playwright/test";
 const API_PORT = Number(process.env["PLAYTEST_API_PORT"] ?? 5874);
 const BASE_URL = `http://127.0.0.1:${API_PORT}`;
 const ARTIFACT_DIR = process.env["PLAYTEST_ARTIFACT_DIR"] ?? "tmp/playtest-artifacts/production-build";
-const TSX = new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url).pathname;
-const SERVER = new URL("../../src/server.ts", import.meta.url).pathname;
+const SERVER = new URL("../../dist/server/server.js", import.meta.url).pathname;
 const WEB_ROOT = new URL("../../dist/web/", import.meta.url).pathname;
 const WORLD = new URL("../../worlds/village.json", import.meta.url).pathname;
 const REQUIRED_ASSETS = [
@@ -22,7 +21,7 @@ async function main(): Promise<void> {
   mkdirSync(ARTIFACT_DIR, { recursive: true });
   assertBuiltWebApp();
 
-  const api = spawn(process.execPath, [TSX, SERVER], {
+  const api = spawn(process.execPath, [SERVER], {
     env: {
       ...process.env,
       PORT: String(API_PORT),
@@ -51,6 +50,7 @@ function assertBuiltWebApp(): void {
     join(WEB_ROOT, "assets", "cc0", "russpuppy", "open_tileset_16.png"),
     join(WEB_ROOT, "assets", "cutscenes", "ashbend_intro_square.mp4"),
     join(WEB_ROOT, "assets", "cutscenes", "bridge_whisper.jpg"),
+    SERVER,
   ];
   const missing = required.filter((path) => !existsSync(path));
   if (missing.length > 0) {

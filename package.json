@@ -18,6 +18,7 @@
     "research:url": "tsx --env-file-if-exists=.env src/research-url.ts",
     "start": "tsx --env-file-if-exists=.env src/index.ts",
     "serve": "tsx --env-file-if-exists=.env src/server.ts",
+    "serve:production": "WEB_ROOT=./dist/web node dist/server/server.js",
     "test": "vitest run",
     "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
     "bench:completion": "tsx src/completion-benchmarks.ts",
