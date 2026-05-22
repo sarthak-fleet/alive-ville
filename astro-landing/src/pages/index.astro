@@ -106,6 +106,7 @@ import '../styles/global.css';
             justify-content: space-between;
             align-items: center;
             background: linear-gradient(to bottom, var(--bg), transparent);
+            transition: opacity 0.5s ease;
         }
 
         .logo {
@@ -271,7 +272,10 @@ import '../styles/global.css';
             <div class="glass-card bento-item col-span-2 row-span-2 p-10 flex flex-col justify-end group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 group-hover:opacity-40 transition-opacity" data-type="network"></canvas>
                 <div class="relative z-10">
-                    <span class="tag mb-6 w-fit">Engine / Intelligence</span>
+                    <div class="flex gap-2 mb-6">
+                        <span class="tag">Engine / Intelligence</span>
+                        <span class="tag border-[#f8d44e]/20 text-[#f8d44e]">v2.0 Upgrade</span>
+                    </div>
                     <h3 class="text-3xl font-bold mb-4">Local GraphRAG</h3>
                     <p class="text-white/50 text-sm leading-relaxed max-w-sm">
                         NPCs navigate their world using location-aware memory retrieval. They only recall what is relevant to their current context, state, and social bonds.
@@ -283,6 +287,9 @@ import '../styles/global.css';
             <div class="glass-card bento-item col-span-2 p-10 flex flex-col justify-center group">
                 <canvas class="bento-canvas absolute inset-0 z-0 opacity-10 group-hover:opacity-30 transition-opacity" data-type="cycles"></canvas>
                 <div class="relative z-10">
+                    <div class="flex gap-2 mb-4">
+                        <span class="tag border-[#f8d44e]/20 text-[#f8d44e]">New: Persistent Loops</span>
+                    </div>
                     <h3 class="text-xl font-bold mb-2">Long-Running Agents</h3>
                     <p class="text-white/40 text-sm">Autonomous loops continue even when you are away. The world ticks forward, aging and evolving.</p>
                 </div>
@@ -466,7 +473,7 @@ import '../styles/global.css';
     </section>
 
     <!-- FOOTER -->
-    <footer class="relative py-40 border-t border-white/5 bg-[#020203]">
+    <footer class="relative py-40 border-t border-white/5 bg-[#020203] transition-opacity duration-500">
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-20">
             <div class="col-span-2 space-y-8">
                 <div class="logo">ASHMENT</div>
@@ -575,23 +582,34 @@ import '../styles/global.css';
                 if (!portalSection || !portalFrame || !portalContent || !gameOverlay) return;
 
                 const rect = portalSection.getBoundingClientRect();
-                const scrollProgress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
+                const viewHeight = window.innerHeight;
+
+                // Calculate progress specifically within the 600vh section
+                const scrollProgress = Math.max(0, Math.min(1, -rect.top / (rect.height - viewHeight)));
                 const footer = document.querySelector('footer');
+                const nav = document.querySelector('nav');
 
-                // Scale up the video as we scroll
-                const scale = 1 + Math.pow(scrollProgress, 5) * 80;
+                // --- 1. THE ZOOM & BLUR (Marketing Layer) ---
+                const scale = 1 + Math.pow(scrollProgress, 4) * 50;
+                const blur = scrollProgress * 20;
+                const brightness = 0.35 + scrollProgress * 0.45;
+
                 portalFrame.style.transform = `scale(${scale})`;
-                portalFrame.style.filter = `blur(${scrollProgress * 25}px) brightness(${0.35 + scrollProgress * 0.65})`;
+                portalFrame.style.filter = `blur(${blur}px) brightness(${brightness})`;
 
-                // Fade out content
-                portalContent.style.opacity = Math.max(0, 1 - scrollProgress * 10).toString();
-                portalContent.style.transform = `translateY(${-scrollProgress * 400}px) scale(${1 - scrollProgress * 0.3})`;
+                // Content fades out early to clear the stage
+                portalContent.style.opacity = Math.max(0, 1 - scrollProgress * 12).toString();
+                portalContent.style.transform = `translateY(${-scrollProgress * 400}px)`;
 
-                // Transition to game
-                if (scrollProgress > 0.98) {
+                // --- 2. THE LOCK-IN (Engine Layer) ---
+                // We lock the engine overlay only at the very end of the scroll
+                if (scrollProgress > 0.94) {
                     gameOverlay.style.opacity = '1';
                     gameOverlay.style.pointerEvents = 'auto';
-                    if (footer) footer.style.display = 'none';
+                    gameOverlay.style.visibility = 'visible';
+                    if (footer) footer.style.opacity = '0';
+                    if (nav) nav.style.opacity = '0';
+
                     if (!gameStarted) {
                         startMiniGame();
                         gameStarted = true;
@@ -599,10 +617,11 @@ import '../styles/global.css';
                 } else {
                     gameOverlay.style.opacity = '0';
                     gameOverlay.style.pointerEvents = 'none';
-                    if (footer) footer.style.display = 'grid';
+                    gameOverlay.style.visibility = 'hidden';
+                    if (footer) footer.style.opacity = '1';
+                    if (nav) nav.style.opacity = '1';
                 }
             });
-
             // --- MINI GAME LOGIC ---
             let audioCtx: AudioContext | null = null;
             let windGain: GainNode | null = null;
