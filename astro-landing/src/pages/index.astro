@@ -280,21 +280,27 @@ import '../styles/global.css';
             </div>
 
             <!-- 2. Agents -->
-            <div class="glass-card bento-item col-span-2 p-10 flex flex-col justify-center">
-                <h3 class="text-xl font-bold mb-2">Long-Running Agents</h3>
-                <p class="text-white/40 text-sm">Autonomous loops continue even when you are away. The world ticks forward, aging and evolving.</p>
+            <div class="glass-card bento-item col-span-2 p-10 flex flex-col justify-center group">
+                <canvas class="bento-canvas absolute inset-0 z-0 opacity-10 group-hover:opacity-30 transition-opacity" data-type="cycles"></canvas>
+                <div class="relative z-10">
+                    <h3 class="text-xl font-bold mb-2">Long-Running Agents</h3>
+                    <p class="text-white/40 text-sm">Autonomous loops continue even when you are away. The world ticks forward, aging and evolving.</p>
+                </div>
             </div>
 
             <!-- 3. Tensions -->
-            <div class="glass-card bento-item p-8 flex flex-col justify-between">
-                <div class="w-10 h-10 rounded-full bg-[#f8d44e]/10 flex items-center justify-center text-[#f8d44e]">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                    </svg>
-                </div>
-                <div>
-                    <h4 class="font-bold text-sm mb-1">Global Tensions</h4>
-                    <p class="text-xs text-white/40">Real-time narrative pressure.</p>
+            <div class="glass-card bento-item p-8 flex flex-col justify-between group">
+                <canvas class="bento-canvas absolute inset-0 z-0 opacity-20 group-hover:opacity-40 transition-opacity" data-type="energy"></canvas>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 rounded-full bg-[#f8d44e]/10 flex items-center justify-center text-[#f8d44e]">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="font-bold text-sm mb-1">Global Tensions</h4>
+                        <p class="text-xs text-white/40">Real-time narrative pressure.</p>
+                    </div>
                 </div>
             </div>
 
@@ -488,7 +494,61 @@ import '../styles/global.css';
     </footer>
 
     <script>
+        import * as THREE from 'three';
         document.addEventListener('DOMContentLoaded', () => {
+            // --- BENTO THREE.JS LOGIC ---
+            const bentoCanvases = document.querySelectorAll('.bento-canvas');
+            bentoCanvases.forEach((canvas: any) => {
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                camera.position.z = 5;
+
+                const type = canvas.dataset.type;
+                let mesh: any;
+
+                if (type === 'network') {
+                    const geo = new THREE.IcosahedronGeometry(3, 1);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.3 });
+                    mesh = new THREE.Mesh(geo, mat);
+                } else if (type === 'cycles') {
+                    const geo = new THREE.TorusGeometry(3, 0.5, 16, 100);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 });
+                    mesh = new THREE.Mesh(geo, mat);
+                } else if (type === 'energy') {
+                    const geo = new THREE.SphereGeometry(2, 16, 16);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xf8d44e, wireframe: true, transparent: true, opacity: 0.4 });
+                    mesh = new THREE.Mesh(geo, mat);
+                } else if (type === 'matrix') {
+                    const geo = new THREE.PlaneGeometry(10, 10, 10, 10);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, wireframe: true, transparent: true, opacity: 0.3 });
+                    mesh = new THREE.Mesh(geo, mat);
+                } else if (type === 'sculpture') {
+                    const geo = new THREE.TorusKnotGeometry(2, 0.6, 100, 16);
+                    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.2 });
+                    mesh = new THREE.Mesh(geo, mat);
+                }
+
+                if (mesh) scene.add(mesh);
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    if (mesh) {
+                        mesh.rotation.x += 0.005;
+                        mesh.rotation.y += 0.005;
+                    }
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                    camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                    camera.updateProjectionMatrix();
+                });
+            });
+
             // --- REVEAL ANIMATIONS ---
             const revealObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
