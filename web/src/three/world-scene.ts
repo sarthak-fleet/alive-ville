@@ -81,6 +81,14 @@ export interface ScenePathNode {
   toId: string;
   from: { x: number; z: number };
   to: { x: number; z: number };
+  color: string;
+  accentColor: string;
+}
+
+export interface SceneTerrainNode {
+  baseColor: string;
+  gridColor: string;
+  edgeColor: string;
 }
 
 export interface SceneAtmosphereNode {
@@ -114,6 +122,7 @@ export interface WorldSceneModel {
   items: SceneItemNode[];
   props: ScenePropNode[];
   objectives: SceneObjectiveNode[];
+  terrain: SceneTerrainNode;
   mood: SceneMoodNode;
   bounds: { width: number; depth: number };
   cameraTarget: { x: number; z: number };
@@ -123,7 +132,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
   const bounds = worldBounds(world.locations);
   const activeLocation = world.locations.find((location) => location.id === world.player.locationId) ?? world.locations[0];
   const locations = world.locations.map((location) => locationNode(location, world.player.locationId));
-  const paths = world.exits.map((exit) => pathNode(exit, world.locations)).filter((node): node is ScenePathNode => Boolean(node));
+  const paths = world.exits.map((exit) => pathNode(exit, locations)).filter((node): node is ScenePathNode => Boolean(node));
   const atmosphere = locations.flatMap((location) => atmosphereNodesFor(location));
   const actors = [
     playerNode(world, activeLocation),
@@ -150,6 +159,7 @@ export function buildWorldSceneModel(world: World): WorldSceneModel {
     items,
     props,
     objectives,
+    terrain: terrainNode(locations),
     mood: sceneMoodForClock(world),
     bounds,
     cameraTarget: target,
@@ -607,15 +617,26 @@ function fallbackLandmarks(location: Location): string[] {
   return ["notice_board"];
 }
 
-function pathNode(exit: Exit, locations: Location[]): ScenePathNode | null {
+function pathNode(exit: Exit, locations: SceneLocationNode[]): ScenePathNode | null {
   const from = locations.find((location) => location.id === exit.from);
   const to = locations.find((location) => location.id === exit.to);
   if (!from || !to) return null;
   return {
     fromId: from.id,
     toId: to.id,
-    from: centerForLocation(from),
-    to: centerForLocation(to),
+    from: { x: from.x, z: from.z },
+    to: { x: to.x, z: to.z },
+    color: from.groundColor,
+    accentColor: to.accentColor,
+  };
+}
+
+function terrainNode(locations: SceneLocationNode[]): SceneTerrainNode {
+  const active = locations.find((location) => location.active) ?? locations[0];
+  return {
+    baseColor: active?.groundColor ?? "#172018",
+    gridColor: active?.accentColor ?? "#7d8796",
+    edgeColor: active?.structureColor ?? "#111827",
   };
 }
 
@@ -892,12 +913,44 @@ function stableOffset(id: string, radius: number): { x: number; z: number } {
 }
 
 function makeGround(model: WorldSceneModel): THREE.Object3D {
-  const geometry = new THREE.BoxGeometry(model.bounds.width + 2.4, 0.08, model.bounds.depth + 2.4);
-  const material = new THREE.MeshStandardMaterial({ color: 0x172018, roughness: 0.9, metalness: 0.02 });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(model.bounds.width / 2, -0.06, model.bounds.depth / 2);
-  applyShadows(mesh, { receive: true });
-  return mesh;
+  const group = new THREE.Group();
+  group.name = "terrain";
+  const width = model.bounds.width + 2.4;
+  const depth = model.bounds.depth + 2.4;
+  const material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(model.terrain.baseColor).lerp(new THREE.Color(0x050507), 0.42),
+    roughness: 0.92,
+    metalness: 0.03,
+  });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(width, 0.08, depth), material);
+  base.position.set(model.bounds.width / 2, -0.06, model.bounds.depth / 2);
+  group.add(base);
+
+  const grid = makeTerrainGrid(model, width, depth);
+  group.add(grid);
+  applyShadows(group, { receive: true });
+  return group;
+}
+
+function makeTerrainGrid(model: WorldSceneModel, width: number, depth: number): THREE.Object3D {
+  const group = new THREE.Group();
+  group.name = "terrain-grid";
+  const gridMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(model.terrain.gridColor), transparent: true, opacity: 0.16, depthWrite: false });
+  const edgeMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(model.terrain.edgeColor), transparent: true, opacity: 0.34, depthWrite: false });
+  const centerX = model.bounds.width / 2;
+  const centerZ = model.bounds.depth / 2;
+  const y = 0.012;
+  for (let index = 0; index <= 6; index += 1) {
+    const x = centerX - width / 2 + (width / 6) * index;
+    const vertical = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.012, depth), index === 0 || index === 6 ? edgeMaterial : gridMaterial);
+    vertical.position.set(x, y, centerZ);
+    group.add(vertical);
+    const z = centerZ - depth / 2 + (depth / 6) * index;
+    const horizontal = new THREE.Mesh(new THREE.BoxGeometry(width, 0.012, 0.014), index === 0 || index === 6 ? edgeMaterial : gridMaterial);
+    horizontal.position.set(centerX, y, z);
+    group.add(horizontal);
+  }
+  return group;
 }
 
 function makeSkyline(model: WorldSceneModel): THREE.Object3D {
@@ -913,15 +966,34 @@ function makeSkyline(model: WorldSceneModel): THREE.Object3D {
 }
 
 function makePathMesh(path: ScenePathNode): THREE.Object3D {
+  const group = new THREE.Group();
+  group.name = `path:${path.fromId}->${path.toId}`;
   const dx = path.to.x - path.from.x;
   const dz = path.to.z - path.from.z;
   const length = Math.hypot(dx, dz);
   const geometry = new THREE.BoxGeometry(0.13, 0.045, Math.max(0.1, length));
-  const material = new THREE.MeshStandardMaterial({ color: 0x7d8796, roughness: 0.86, metalness: 0.03 });
+  const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(path.color).lerp(new THREE.Color(0x7d8796), 0.58), roughness: 0.86, metalness: 0.03 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set((path.from.x + path.to.x) / 2, 0.025, (path.from.z + path.to.z) / 2);
   mesh.rotation.y = Math.atan2(dx, dz);
+  const glow = new THREE.Mesh(
+    new THREE.BoxGeometry(0.035, 0.012, Math.max(0.1, length * 0.92)),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(path.accentColor), transparent: true, opacity: 0.32, depthWrite: false })
+  );
+  glow.position.copy(mesh.position);
+  glow.position.y = 0.06;
+  glow.rotation.copy(mesh.rotation);
+  group.add(mesh, glow, makeRouteNode(path.from, path.accentColor), makeRouteNode(path.to, path.accentColor));
   applyShadows(mesh, { receive: true });
+  return group;
+}
+
+function makeRouteNode(position: { x: number; z: number }, color: string): THREE.Object3D {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.07, 0.035, 14),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: 0.42 })
+  );
+  mesh.position.set(position.x, 0.075, position.z);
   return mesh;
 }
 

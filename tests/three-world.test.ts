@@ -25,6 +25,13 @@ describe("3D world scene model", () => {
       landmarks: ["forge_chimney"],
     });
     expect(model.paths.map((path) => `${path.fromId}->${path.toId}`)).toContain("square->garden");
+    expect(model.paths.find((path) => path.fromId === "square" && path.toId === "garden")).toMatchObject({
+      accentColor: "#b5e48c",
+    });
+    expect(model.terrain).toMatchObject({
+      baseColor: "#2f3a45",
+      gridColor: "#f8d44e",
+    });
     expect(model.atmosphere.map((node) => node.kind)).toEqual(expect.arrayContaining(["signal", "spark", "firefly", "dust"]));
     expect(model.actors.find((actor) => actor.id === "player")?.player).toBe(true);
     expect(model.actors.some((actor) => actor.id === "mira")).toBe(true);
@@ -147,6 +154,9 @@ describe("3D world scene model", () => {
       .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
     expect(noir.locations.find((location) => location.id === "rain_market")?.groundColor)
       .not.toBe(skyfront.locations.find((location) => location.id === "harbor_ring")?.groundColor);
+    expect(skyfront.terrain.baseColor).toBe("#1f3f58");
+    expect(abyssal.terrain.gridColor).toBe("#72f1d0");
+    expect(noir.terrain.gridColor).toBe("#ff4fd8");
   });
 
   test("moves the camera target with the active player location", () => {
