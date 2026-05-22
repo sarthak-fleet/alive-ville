@@ -61,6 +61,14 @@ export function PhaserGame() {
 
     const unsub = useWorldStore.subscribe((state, prev) => {
       if (state.world && state.world !== prev.world) scene.setWorld(state.world);
+      if (state.zoom !== prev.zoom) scene.setCameraZoom(state.zoom, 450);
+      if (state.drawerNpcId !== prev.drawerNpcId) {
+        if (state.drawerNpcId) {
+          useWorldStore.getState().setZoom(2.2);
+        } else {
+          useWorldStore.getState().setZoom(1.35);
+        }
+      }
       const newBubbles = state.bubbles.slice(prev.bubbles.length);
       for (const bubble of newBubbles) {
         if (bubble.actionType === "fight" && bubble.actorId) scene.playCombatFx(bubble.actorId, bubble.combatStyle, bubble.combatLabel);
@@ -90,13 +98,21 @@ export function PhaserGame() {
         void movePlayerToward(detail.locationId);
       }
     };
+    const onWheel = (event: WheelEvent) => {
+      if (useWorldStore.getState().drawerNpcId) return;
+      const current = useWorldStore.getState().zoom;
+      const next = Math.max(0.8, Math.min(4, current - event.deltaY * 0.002));
+      useWorldStore.getState().setZoom(next);
+    };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("ashbend:travel-to", onTravelRequest);
+    container.addEventListener("wheel", onWheel, { passive: true });
 
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("ashbend:travel-to", onTravelRequest);
+      container.removeEventListener("wheel", onWheel);
       unsub();
       game.destroy(true);
       sceneRef.current = null;

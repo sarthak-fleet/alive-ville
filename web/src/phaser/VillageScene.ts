@@ -144,6 +144,7 @@ export class VillageScene extends Phaser.Scene {
     this.drawVenueAtmosphere();
     this.drawDecorations();
     this.drawFireflies();
+    this.drawAtmosphereParticles();
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.keys = this.input.keyboard?.addKeys("W,A,S,D,E") as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
@@ -1260,6 +1261,13 @@ export class VillageScene extends Phaser.Scene {
         graphic.on("pointerup", () => {
           this.queueNpcInteraction(npc.id);
         });
+        graphic.on("pointerover", () => {
+          this.tweens.add({ targets: graphic, scale: 1.08, duration: 200, ease: "Back.Out" });
+          this.flashActor(npc.id);
+        });
+        graphic.on("pointerout", () => {
+          this.tweens.add({ targets: graphic, scale: 1, duration: 200, ease: "Power2" });
+        });
         actor = {
           graphic,
           bubble: null,
@@ -1942,23 +1950,78 @@ export class VillageScene extends Phaser.Scene {
       const shouldShowStatus = playerDist < 180 && intent && !actor.bubble;
 
       if (shouldShowStatus) {
+        const labelText = intent.kind.toUpperCase();
         if (!actor.status) {
-          actor.status = this.add.text(actor.graphic.x, actor.graphic.y - 48, intent.kind.toUpperCase(), {
-            fontFamily: "ui-sans-serif, system-ui",
-            fontSize: "9px",
-            fontStyle: "bold",
+          actor.status = this.add.text(actor.graphic.x, actor.graphic.y - 52, labelText, {
+            fontFamily: "'Cinzel', serif",
+            fontSize: "8px",
+            fontStyle: "900",
             color: "#f8d44e",
-            backgroundColor: "rgba(16, 21, 29, 0.7)",
-            padding: { x: 4, y: 2 },
-          }).setOrigin(0.5, 1).setDepth(175);
+            backgroundColor: "rgba(5, 5, 7, 0.85)",
+            padding: { x: 6, y: 3 },
+          }).setOrigin(0.5, 1).setDepth(210).setAlpha(0);
+
+          this.tweens.add({ targets: actor.status, alpha: 1, y: actor.graphic.y - 48, duration: 400, ease: "Cubic.Out" });
         } else {
-          actor.status.setText(intent.kind.toUpperCase()).setPosition(actor.graphic.x, actor.graphic.y - 48).setVisible(true);
+          actor.status.setText(labelText).setPosition(actor.graphic.x, actor.graphic.y - 48).setVisible(true).setAlpha(1);
         }
       } else if (actor.status) {
-        actor.status.setVisible(false);
+        if (actor.status.visible && actor.status.alpha > 0.5) {
+          this.tweens.add({
+            targets: actor.status,
+            alpha: 0,
+            y: actor.graphic.y - 52,
+            duration: 300,
+            ease: "Cubic.In",
+            onComplete: () => { actor.status?.setVisible(false); }
+          });
+        }
       }
     }
     this.player?.setDepth(Math.round(this.player.y) + 5);
+  }
+
+  private drawAtmosphereParticles() {
+    // 1. Falling Petals / Leaves (Slightly pinkish/greenish)
+    const petalCount = 32;
+    for (let i = 0; i < petalCount; i++) {
+      const x = Phaser.Math.Between(0, WORLD_W);
+      const y = Phaser.Math.Between(-200, WORLD_H);
+      const color = Phaser.Math.RND.pick([0xfff0f3, 0xd4e9d7, 0xfaf9f0]);
+      const petal = this.add.rectangle(x, y, 4, 2, color, 0.45).setDepth(2000);
+
+      this.tweens.add({
+        targets: petal,
+        x: x + Phaser.Math.Between(100, 400),
+        y: y + Phaser.Math.Between(400, 1000),
+        rotation: 6.28,
+        duration: Phaser.Math.Between(12000, 24000),
+        repeat: -1,
+        ease: "Linear",
+        onRepeat: () => {
+          petal.setPosition(Phaser.Math.Between(-200, WORLD_W), -20);
+        }
+      });
+    }
+
+    // 2. Dust Motes (Caught in the light beams)
+    const moteCount = 60;
+    for (let i = 0; i < moteCount; i++) {
+      const x = Phaser.Math.Between(0, WORLD_W);
+      const y = Phaser.Math.Between(0, WORLD_H);
+      const mote = this.add.circle(x, y, 1, 0xffffff, 0.12).setDepth(1500);
+
+      this.tweens.add({
+        targets: mote,
+        x: x + Phaser.Math.Between(-50, 50),
+        y: y + Phaser.Math.Between(-50, 50),
+        alpha: { from: 0.04, to: 0.22 },
+        duration: Phaser.Math.Between(4000, 8000),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.InOut"
+      });
+    }
   }
 
   private updateAmbientBarks() {

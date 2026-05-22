@@ -1,32 +1,42 @@
-import { Panel } from "../atoms/Panel.tsx";
-import { RelationCell } from "../molecules/RelationCell.tsx";
 import { useWorldStore } from "../store/world.ts";
 
 export function RelationshipsPanel() {
   const world = useWorldStore((s) => s.world);
-  if (!world) return <Panel title="Relationships"><table /></Panel>;
-  const rows = world.npcs.flatMap((npc) =>
-    Object.entries(npc.relationships ?? {}).map(([to, score]) => ({
-      key: `${npc.id}-${to}`,
-      from: npc.id,
-      to,
-      score,
-    }))
-  );
+  if (!world) return null;
+
   return (
-    <Panel title="Relationships">
-      <table>
-        <thead>
-          <tr><th>From</th><th></th><th>To</th><th>Score</th></tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key}>
-              <td>{row.from}</td><td>→</td><td>{row.to}</td><td><RelationCell score={row.score} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </Panel>
+    <div className="social-bonds">
+      <div className="bonds-grid">
+        {world.npcs.map((npc) => (
+          <div key={npc.id} className="npc-bond-card">
+            <div className="bond-header">
+              <div className="bond-portrait" style={{ background: `var(--npc)` }}>
+                {npc.name[0]}
+              </div>
+              <div className="bond-meta">
+                <span className="bond-name">{npc.name}</span>
+                <span className="bond-emotion">{npc.mood?.emotion ?? "neutral"}</span>
+              </div>
+            </div>
+
+            <div className="bond-stats">
+              {Object.entries(npc.relationships ?? {}).map(([toId, score]) => {
+                const target = world.npcs.find(n => n.id === toId);
+                if (!target) return null;
+                return (
+                  <div key={toId} className="bond-line">
+                    <span className="bond-target">{target.name}</span>
+                    <div className="bond-meter">
+                      <div className="bond-fill" style={{ width: `${Math.max(0, Math.min(100, (score + 10) * 5))}%` }}></div>
+                    </div>
+                    <span className="bond-score">{score > 0 ? `+${score}` : score}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

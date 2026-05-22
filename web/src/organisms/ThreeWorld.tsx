@@ -58,6 +58,7 @@ export function ThreeWorld() {
 
     const unsub = useWorldStore.subscribe((state, previous) => {
       if (state.world && state.world !== previous.world) renderer.renderWorld(state.world);
+      if (state.zoom !== previous.zoom) renderer.zoomCamera((100 - state.zoom * 40) / 100);
     });
     const onTravelRequest = (event: Event) => {
       const detail = (event as CustomEvent<{ locationId?: string }>).detail;

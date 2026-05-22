@@ -12,8 +12,25 @@ export function App() {
 
   useEffect(() => { void init(); }, [init]);
 
-  if (error && !world) return <div className="banner error">Error: {error}</div>;
-  if (loading || !world) return <div className="banner">Loading world…</div>;
+  if (error && !world) {
+    return (
+      <div className="banner error">
+        <div className="error-icon">×</div>
+        <div className="loading-text" style={{ color: '#ff6b6b' }}>Protocol Failure</div>
+        <div style={{ maxWidth: '400px', textAlign: 'center', opacity: 0.8 }}>{error}</div>
+        <button className="primary" onClick={() => window.location.reload()} style={{ marginTop: '12px' }}>Initialize Reboot</button>
+      </div>
+    );
+  }
+
+  if (loading || !world) {
+    return (
+      <div className="banner">
+        <div className="loading-spinner" />
+        <div className="loading-text">Synchronizing World State</div>
+      </div>
+    );
+  }
   return (
     <>
       {error && (

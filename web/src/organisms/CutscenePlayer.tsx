@@ -18,6 +18,11 @@ export function CutscenePlayer() {
 
   useEffect(() => {
     activeRef.current = active;
+    if (active) {
+      useWorldStore.getState().setZoom(0.85);
+    } else {
+      useWorldStore.getState().setZoom(1.35);
+    }
   }, [active]);
 
   const showCutscene = useCallback((cutscene: Cutscene) => {

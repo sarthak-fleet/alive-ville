@@ -99,6 +99,11 @@ function playCombatStinger(style: ReturnType<typeof combatMoveFor>["style"]): vo
   playTone(stinger.notes, stinger.duration, stinger.type, stinger.gain);
 }
 
+export function playClickCue(): void {
+  if (!enabled) return;
+  playTone([880], 0.04, "sine", 0.015);
+}
+
 function playTone(frequencies: number[], duration: number, type: OscillatorType, gainValue: number): void {
   const ctx = ensureAudioContext();
   if (!ctx) return;
