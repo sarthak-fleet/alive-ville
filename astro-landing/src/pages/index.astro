@@ -156,15 +156,40 @@ import '../styles/global.css';
         .animate-ticker {
             animation: ticker 40s linear infinite;
         }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 99;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(248, 212, 78, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            80% { bottom: 100%; }
+            100% { bottom: 0%; }
+        }
     </style>
 </head>
 <body class="antialiased">
-
+    
     <div id="custom-cursor">
         <div class="dot"></div>
     </div>
 
     <div class="noise-overlay"></div>
+    <div class="scanline"></div>
+
+    <!-- AUDIO TOGGLE -->
+    <div class="fixed top-8 right-8 z-[100]">
+        <button id="audio-toggle" class="glass-panel px-6 py-2 rounded-full font-montserrat text-[0.6rem] uppercase tracking-widest text-[#f8d44e]/60 hover:text-[#f8d44e] transition-all">
+            Enable Soundscape
+        </button>
+    </div>
     <ThreeBackground />
 
     <!-- HERO SECTION -->
@@ -401,6 +426,62 @@ import '../styles/global.css';
             });
 
             // --- MINI GAME LOGIC ---
+            let audioCtx: AudioContext | null = null;
+            let windGain: GainNode | null = null;
+            let birdsGain: GainNode | null = null;
+
+            function initAudio() {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+                // Wind
+                windGain = audioCtx.createGain();
+                windGain.gain.value = 0;
+                windGain.connect(audioCtx.destination);
+
+                const bufferSize = 2 * audioCtx.sampleRate;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                noise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+
+                noise.connect(filter);
+                filter.connect(windGain);
+                noise.start();
+
+                // Periodic gusts
+                setInterval(() => {
+                    if (!windGain || !audioCtx) return;
+                    const now = audioCtx.currentTime;
+                    windGain.gain.exponentialRampToValueAtTime(0.08 + Math.random() * 0.1, now + 2);
+                    windGain.gain.exponentialRampToValueAtTime(0.03, now + 5);
+                }, 8000);
+            }
+
+            document.getElementById('audio-toggle')?.addEventListener('click', (e) => {
+                const btn = e.target as HTMLButtonElement;
+                if (!audioCtx) {
+                    initAudio();
+                    btn.textContent = 'Mute Soundscape';
+                    windGain!.gain.value = 0.05;
+                } else if (audioCtx.state === 'running') {
+                    audioCtx.suspend();
+                    btn.textContent = 'Enable Soundscape';
+                } else {
+                    audioCtx.resume();
+                    btn.textContent = 'Mute Soundscape';
+                }
+            });
+
             function startMiniGame() {
                 const canvas = document.getElementById('game-surface') as HTMLCanvasElement;
                 if (!canvas) return;
@@ -423,11 +504,22 @@ import '../styles/global.css';
                 sprites.mira.src = '/assets/game/tatsumaki.svg';
                 sprites.arin.src = '/assets/game/genos.svg';
 
-                const player = { x: canvas.width/2, y: canvas.height/2, w: 60, h: 80, speed: 6, vx: 0, vy: 0 };
+                const player = { x: canvas.width/2, y: canvas.height/2, w: 60, h: 80, speed: 6, targetX: canvas.width/2, targetY: canvas.height/2 };
                 const npcs = [
-                    { x: canvas.width/2 - 200, y: canvas.height/2 - 50, w: 55, h: 75, name: 'Mira', img: sprites.mira, msg: 'The herbs are blooming early this year.', typing: 0 },
-                    { x: canvas.width/2 + 250, y: canvas.height/2 + 100, w: 60, h: 80, name: 'Arin', img: sprites.arin, msg: 'Something is coming. I feel it in the steel.', typing: 0 }
+                    { x: canvas.width/2 - 300, y: canvas.height/2 - 100, w: 55, h: 75, name: 'Mira', img: sprites.mira, msg: 'The herbs are blooming early this year.', typing: 0 },
+                    { x: canvas.width/2 + 350, y: canvas.height/2 + 150, w: 60, h: 80, name: 'Arin', img: sprites.arin, msg: 'Something is coming. I feel it in the steel.', typing: 0 }
                 ];
+
+                const particles: any[] = [];
+                for (let i = 0; i < 40; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        s: 1 + Math.random() * 2,
+                        v: 0.5 + Math.random() * 1.5,
+                        a: 0.1 + Math.random() * 0.3
+                    });
+                }
 
                 const keys: any = {};
                 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -438,9 +530,21 @@ import '../styles/global.css';
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     // --- CINEMATIC FOG & LIGHTING ---
-                    const fog = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, 500);
+                    const fog = ctx.createRadialGradient(player.x, player.y, 100, player.x, player.y, 700);
                     fog.addColorStop(0, 'rgba(5, 5, 7, 0)');
-                    fog.addColorStop(1, 'rgba(5, 5, 7, 0.8)');
+                    fog.addColorStop(1, 'rgba(5, 5, 7, 0.95)');
+
+                    // Draw Particles
+                    particles.forEach(p => {
+                        p.y += p.v;
+                        p.x += Math.sin(p.y / 50) * 0.5;
+                        if (p.y > canvas.height) p.y = -10;
+                        ctx.fillStyle = `rgba(248, 212, 78, ${p.a})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+
                     ctx.fillStyle = fog;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -455,55 +559,56 @@ import '../styles/global.css';
                         const dist = Math.hypot(player.x - npc.x, player.y - npc.y);
 
                         // Shadow
-                        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
                         ctx.beginPath();
-                        ctx.ellipse(npc.x, npc.y + 35, 22, 10, 0, 0, Math.PI*2);
+                        ctx.ellipse(npc.x, npc.y + 35, 24, 12, 0, 0, Math.PI*2);
                         ctx.fill();
 
                         // Sprite
                         if (npc.img.complete) {
                             ctx.save();
-                            ctx.shadowColor = 'rgba(0,0,0,0.6)';
-                            ctx.shadowBlur = 25;
-                            ctx.drawImage(npc.img, npc.x - npc.w/2, npc.y - npc.h/2, npc.w, npc.h);
+                            const hoverScale = dist < 120 ? 1.05 : 1;
+                            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                            ctx.shadowBlur = 30;
+                            ctx.drawImage(npc.img, npc.x - (npc.w * hoverScale)/2, npc.y - (npc.h * hoverScale)/2, npc.w * hoverScale, npc.h * hoverScale);
                             ctx.restore();
                         }
 
                         // Label
-                        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-                        ctx.font = 'bold 9px "Montserrat"';
+                        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                        ctx.font = 'bold 8px "Montserrat"';
                         ctx.textAlign = 'center';
-                        ctx.fillText(npc.name.toUpperCase(), npc.x, npc.y - npc.h/2 - 15);
+                        ctx.letterSpacing = '3px';
+                        ctx.fillText(npc.name.toUpperCase(), npc.x, npc.y - npc.h/2 - 20);
 
                         // Interaction
                         if (dist < 150) {
                             npc.typing = Math.min(npc.msg.length, npc.typing + 0.6);
 
                             ctx.save();
-                            ctx.fillStyle = 'rgba(10,12,16,0.95)';
-                            ctx.strokeStyle = 'rgba(248,212,78,0.4)';
+                            ctx.fillStyle = 'rgba(5, 5, 7, 0.98)';
+                            ctx.strokeStyle = 'rgba(248, 212, 78, 0.5)';
                             ctx.lineWidth = 1;
-                            const tw = 280;
-                            const th = 90;
+                            const tw = 300;
+                            const th = 100;
                             const tx = npc.x - tw/2;
-                            const ty = npc.y - 130;
+                            const ty = npc.y - 140;
 
-                            // Rounded rect for dialogue
                             ctx.beginPath();
-                            ctx.roundRect(tx, ty, tw, th, 4);
+                            ctx.roundRect(tx, ty, tw, th, 2);
                             ctx.fill();
                             ctx.stroke();
 
                             ctx.fillStyle = '#f8d44e';
-                            ctx.font = 'bold 11px "Montserrat"';
+                            ctx.font = 'bold 11px "Cinzel"';
                             ctx.textAlign = 'left';
                             ctx.letterSpacing = '2px';
-                            ctx.fillText(npc.name.toUpperCase(), tx + 20, ty + 30);
+                            ctx.fillText(npc.name.toUpperCase(), tx + 25, ty + 35);
 
-                            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                            ctx.font = 'italic 16px "Cormorant Garamond"';
+                            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                            ctx.font = 'italic 17px "Cormorant Garamond"';
                             ctx.letterSpacing = '0px';
-                            ctx.fillText(npc.msg.substring(0, Math.floor(npc.typing)), tx + 20, ty + 60);
+                            ctx.fillText(npc.msg.substring(0, Math.floor(npc.typing)), tx + 25, ty + 70);
                             ctx.restore();
                         } else {
                             npc.typing = 0;
@@ -511,15 +616,15 @@ import '../styles/global.css';
                     });
 
                     // Draw player
-                    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
                     ctx.beginPath();
-                    ctx.ellipse(player.x, player.y + 35, 22, 10, 0, 0, Math.PI*2);
+                    ctx.ellipse(player.x, player.y + 35, 24, 12, 0, 0, Math.PI*2);
                     ctx.fill();
 
                     if (sprites.player.complete) {
                         ctx.save();
-                        ctx.shadowColor = 'rgba(248,212,78,0.3)';
-                        ctx.shadowBlur = 35;
+                        ctx.shadowColor = 'rgba(248, 212, 78, 0.4)';
+                        ctx.shadowBlur = 40;
                         ctx.drawImage(sprites.player, player.x - player.w/2, player.y - player.h/2, player.w, player.h);
                         ctx.restore();
                     }
