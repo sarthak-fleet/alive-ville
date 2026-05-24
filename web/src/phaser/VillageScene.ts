@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { ambientBarksForLocation } from "../../../src/ambient.ts";
 import type { CombatMove } from "../../../src/combat.ts";
 import { activeObjectives, type Objective } from "../../../src/objectives.ts";
-import type { InteractableProp, Location, Npc, World } from "../../../src/types.ts";
+import type { ActionType, InteractableProp, Location, Npc, World } from "../../../src/types.ts";
 import { isNight, timeOfDay } from "../../../src/types.ts";
 import { makeActor } from "./actor-render.ts";
 import {
@@ -29,6 +29,8 @@ const USE_EXTERNAL_GROUND_TILES = true;
 
 interface ActorState {
   graphic: Phaser.GameObjects.Container;
+  nameplate: Phaser.GameObjects.Container;
+  nameplateKey: string;
   bubble: Phaser.GameObjects.Text | null;
   status: Phaser.GameObjects.Text | null;
   flashUntil: number;
@@ -76,6 +78,20 @@ interface BuildingPalette {
   sign: string;
 }
 
+interface CombatFxPalette {
+  main: number;
+  accent: number;
+  label: string;
+  shake: number;
+}
+
+interface AgentFxPalette {
+  main: number;
+  accent: number;
+  label: string;
+  symbol: string;
+}
+
 const BUILDING_PALETTES: Record<string, BuildingPalette> = {
   square: { wall: 0x5e6878, wallDark: 0x3f4857, roof: 0x8c96a6, roofDark: 0x515b6b, trim: 0xe0c978, sign: "Notice Hall" },
   forge: { wall: 0x8a654c, wallDark: 0x5d4232, roof: 0xb65c4b, roofDark: 0x71372e, trim: 0xe8bf76, sign: "Forge" },
@@ -99,6 +115,8 @@ export class VillageScene extends Phaser.Scene {
   private world: World | null = null;
   private player?: Phaser.GameObjects.Container;
   private playerAppearanceKey = "";
+  private playerNameplate?: Phaser.GameObjects.Container;
+  private playerNameplateKey = "";
   private destination: Phaser.Math.Vector2 | null = null;
   private destinationQueue: Phaser.Math.Vector2[] = [];
   private destinationIgnoresCollision = false;
@@ -193,15 +211,22 @@ export class VillageScene extends Phaser.Scene {
   }
 
   flashActor(actorId: string) {
+    if (actorId === "player" && this.player) {
+      const sprite = this.player.getAt(1) as Phaser.GameObjects.Sprite | undefined;
+      sprite?.setTint(0xf8d44e);
+      this.time.delayedCall(220, () => sprite?.setTint(0xffffff));
+      return;
+    }
     const actor = this.actors.get(actorId);
     if (actor) actor.flashUntil = this.time.now + 1600;
   }
 
-  playCombatFx(actorId: string, style: CombatMove["style"] = "strike", moveLabel?: string) {
-    const actor = this.actors.get(actorId);
-    const x = actor?.graphic.x ?? this.player?.x ?? this.cameras.main.midPoint.x;
-    const y = actor?.graphic.y ?? this.player?.y ?? this.cameras.main.midPoint.y;
-    const colors: Record<CombatMove["style"], { main: number; accent: number; label: string; shake: number }> = {
+  playCombatFx(targetId: string, style: CombatMove["style"] = "strike", moveLabel?: string, attackerId = "player") {
+    const target = this.combatActorContainer(targetId);
+    const attacker = this.combatActorContainer(attackerId);
+    const x = target?.x ?? this.player?.x ?? this.cameras.main.midPoint.x;
+    const y = target?.y ?? this.player?.y ?? this.cameras.main.midPoint.y;
+    const colors: Record<CombatMove["style"], CombatFxPalette> = {
       strike: { main: 0xf8d44e, accent: 0xffffff, label: "HIT", shake: 0.006 },
       rush: { main: 0x9fc3ff, accent: 0xf8f1c4, label: "RUSH", shake: 0.008 },
       counter: { main: 0x7ed26d, accent: 0xeaf5ff, label: "COUNTER", shake: 0.006 },
@@ -212,6 +237,8 @@ export class VillageScene extends Phaser.Scene {
     const fx = colors[style];
     this.cameras.main.shake(style === "finisher" ? 230 : 140, fx.shake);
     this.playFightSceneStaging(x, y, moveLabel ?? fx.label, style, fx);
+    this.playCombatActorMotion(attacker, target, style, fx);
+    this.playStyleSignatureFx(x, y, style, fx);
 
     const burst = this.add.circle(x, y - 28, 10, fx.main, 0.82)
       .setStrokeStyle(3, fx.accent, 0.86)
@@ -234,26 +261,6 @@ export class VillageScene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(Math.round(y) + 162);
 
-    if (actor) {
-      const direction = actor.graphic.x >= (this.player?.x ?? actor.graphic.x) ? 1 : -1;
-      this.tweens.add({
-        targets: actor.graphic,
-        x: actor.graphic.x + direction * (style === "finisher" ? 22 : 12),
-        y: actor.graphic.y - (style === "rush" ? 3 : 0),
-        duration: 65,
-        yoyo: true,
-        ease: "Quad.Out",
-      });
-      if (this.player) {
-        this.tweens.add({
-          targets: this.player,
-          x: this.player.x + direction * (style === "rush" ? 12 : 6),
-          duration: 72,
-          yoyo: true,
-          ease: "Quad.Out",
-        });
-      }
-    }
     this.tweens.add({
       targets: burst,
       scale: { from: 0.6, to: style === "finisher" ? 3.2 : 2.4 },
@@ -298,12 +305,175 @@ export class VillageScene extends Phaser.Scene {
     });
   }
 
+  playAgentActionFx(actorId: string, actionType: ActionType, text: string, fromDirector = false) {
+    const actor = this.combatActorContainer(actorId);
+    if (!actor) return;
+    const fx = agentFxPalette(actionType, fromDirector);
+    const x = actor.x;
+    const y = actor.y - 38;
+    const depth = Math.round(actor.y) + 175;
+    const ring = this.add.circle(x, actor.y + 4, 20)
+      .setStrokeStyle(3, fx.main, fromDirector ? 0.86 : 0.72)
+      .setDepth(depth - 2);
+    const pulse = this.add.circle(x, actor.y + 4, 6, fx.main, fromDirector ? 0.38 : 0.24)
+      .setDepth(depth - 3);
+    const sigil = this.add.container(x, y).setDepth(depth);
+    const backing = this.add.rectangle(0, 0, 76, 24, 0x05070b, 0.86)
+      .setStrokeStyle(1, fx.main, 0.72);
+    const mark = this.add.text(-27, 0, fx.symbol, {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "13px",
+      color: `#${fx.accent.toString(16).padStart(6, "0")}`,
+      fontStyle: "900",
+    }).setOrigin(0.5);
+    const label = this.add.text(-14, 0, actionFxCaption(text, fx.label), {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "8px",
+      color: "#f4f1e8",
+      fontStyle: "900",
+    }).setOrigin(0, 0.5);
+    sigil.add([backing, mark, label]);
+
+    this.tweens.add({
+      targets: ring,
+      scale: { from: 0.7, to: fromDirector ? 2.6 : 2.05 },
+      alpha: { from: 0.82, to: 0 },
+      duration: fromDirector ? 760 : 540,
+      ease: "Cubic.Out",
+      onComplete: () => ring.destroy(),
+    });
+    this.tweens.add({
+      targets: pulse,
+      scale: { from: 0.6, to: fromDirector ? 4.4 : 3.1 },
+      alpha: { from: fromDirector ? 0.34 : 0.26, to: 0 },
+      duration: fromDirector ? 700 : 480,
+      ease: "Sine.Out",
+      onComplete: () => pulse.destroy(),
+    });
+    this.tweens.add({
+      targets: sigil,
+      y: sigil.y - 24,
+      alpha: { from: 1, to: 0 },
+      duration: 1050,
+      ease: "Cubic.Out",
+      onComplete: () => sigil.destroy(),
+    });
+
+    if (actionType === "move") {
+      this.playMoveTrail(actor, fx);
+    } else if (actionType === "talk" || actionType === "gossip") {
+      this.playDialoguePips(actor, fx);
+    } else if (actionType === "confront") {
+      this.playConfrontMark(actor, fx);
+    } else if (fromDirector) {
+      this.playDirectorBeam(actor, fx);
+    }
+
+    const sprite = actor.getAt(1) as Phaser.GameObjects.Sprite | undefined;
+    sprite?.setTint(fx.accent);
+    this.time.delayedCall(160, () => sprite?.setTint(0xffffff));
+  }
+
+  private playMoveTrail(actor: Phaser.GameObjects.Container, fx: AgentFxPalette) {
+    for (let i = 0; i < 4; i += 1) {
+      const dot = this.add.circle(
+        actor.x - 30 + i * 18,
+        actor.y + 24 + Math.sin(i) * 4,
+        4,
+        i % 2 === 0 ? fx.main : fx.accent,
+        0.62,
+      ).setDepth(Math.round(actor.y) + 168);
+      this.tweens.add({
+        targets: dot,
+        x: dot.x + 24,
+        y: dot.y - 10,
+        alpha: 0,
+        scale: { from: 0.8, to: 1.8 },
+        delay: i * 42,
+        duration: 360,
+        ease: "Sine.Out",
+        onComplete: () => dot.destroy(),
+      });
+    }
+  }
+
+  private playDialoguePips(actor: Phaser.GameObjects.Container, fx: AgentFxPalette) {
+    for (let i = 0; i < 3; i += 1) {
+      const pip = this.add.circle(actor.x - 18 + i * 18, actor.y - 72 - (i % 2) * 4, 5, fx.accent, 0.74)
+        .setStrokeStyle(1, fx.main, 0.72)
+        .setDepth(Math.round(actor.y) + 168);
+      this.tweens.add({
+        targets: pip,
+        y: pip.y - 16,
+        alpha: 0,
+        scale: { from: 0.7, to: 1.5 },
+        delay: i * 80,
+        duration: 520,
+        ease: "Cubic.Out",
+        onComplete: () => pip.destroy(),
+      });
+    }
+  }
+
+  private playConfrontMark(actor: Phaser.GameObjects.Container, fx: AgentFxPalette) {
+    const bolt = this.add.polygon(
+      actor.x,
+      actor.y - 64,
+      [-7, -19, 7, -19, 1, -3, 10, -3, -4, 22, 0, 4, -10, 4],
+      fx.main,
+      0.82,
+    )
+      .setStrokeStyle(2, fx.accent, 0.72)
+      .setDepth(Math.round(actor.y) + 170);
+    this.tweens.add({
+      targets: bolt,
+      y: bolt.y - 18,
+      rotation: 0.14,
+      alpha: 0,
+      scale: { from: 0.8, to: 1.42 },
+      duration: 660,
+      ease: "Back.Out",
+      onComplete: () => bolt.destroy(),
+    });
+  }
+
+  private playDirectorBeam(actor: Phaser.GameObjects.Container, fx: AgentFxPalette) {
+    const height = this.viewportHeight();
+    const beam = this.add.rectangle(actor.x, actor.y - height / 2, 42, height, fx.main, 0.12)
+      .setDepth(Math.round(actor.y) + 166);
+    const focus = this.add.circle(actor.x, actor.y - 24, 30)
+      .setStrokeStyle(4, fx.accent, 0.74)
+      .setDepth(Math.round(actor.y) + 171);
+    this.tweens.add({
+      targets: beam,
+      alpha: 0,
+      scaleX: { from: 0.55, to: 1.4 },
+      duration: 700,
+      ease: "Sine.Out",
+      onComplete: () => beam.destroy(),
+    });
+    this.tweens.add({
+      targets: focus,
+      alpha: 0,
+      scale: { from: 0.7, to: 2.2 },
+      duration: 640,
+      ease: "Cubic.Out",
+      onComplete: () => focus.destroy(),
+    });
+  }
+
+  private combatActorContainer(actorId: string | null | undefined): Phaser.GameObjects.Container | null {
+    if (!actorId) return null;
+    if (actorId === "player") return this.player ?? null;
+    return this.actors.get(actorId)?.graphic ?? null;
+  }
+
   private playFightSceneStaging(
     x: number,
     y: number,
     moveLabel: string,
     style: CombatMove["style"],
-    fx: { main: number; accent: number; label: string; shake: number }
+    fx: CombatFxPalette
   ) {
     const viewW = this.scale.width || FALLBACK_VIEW_W;
     const viewH = this.scale.height || FALLBACK_VIEW_H;
@@ -357,6 +527,242 @@ export class VillageScene extends Phaser.Scene {
         bottomBar.destroy();
         title.destroy();
       },
+    });
+  }
+
+  private playCombatActorMotion(
+    attacker: Phaser.GameObjects.Container | null,
+    target: Phaser.GameObjects.Container | null,
+    style: CombatMove["style"],
+    fx: CombatFxPalette,
+  ) {
+    const focus = target ?? attacker ?? this.player;
+    if (!focus) return;
+    const direction = attacker && target && attacker !== target
+      ? new Phaser.Math.Vector2(target.x - attacker.x, target.y - attacker.y).normalize()
+      : new Phaser.Math.Vector2(1, 0);
+    if (!Number.isFinite(direction.x) || !Number.isFinite(direction.y) || direction.lengthSq() === 0) {
+      direction.set(1, 0);
+    }
+
+    const lungeByStyle: Record<CombatMove["style"], number> = {
+      strike: 18,
+      rush: 34,
+      counter: -16,
+      guard: 0,
+      special: 26,
+      finisher: 30,
+    };
+    const targetReelByStyle: Record<CombatMove["style"], number> = {
+      strike: 14,
+      rush: 20,
+      counter: 10,
+      guard: 4,
+      special: 22,
+      finisher: 34,
+    };
+
+    if (attacker) {
+      const lunge = lungeByStyle[style];
+      this.emitCombatAfterimage(attacker, style === "counter" ? fx.accent : fx.main, -direction.x * 12, -direction.y * 8, 0.36);
+      if (style === "rush" || style === "finisher") {
+        this.time.delayedCall(42, () => this.emitCombatAfterimage(attacker, fx.accent, -direction.x * 24, -direction.y * 12, 0.28));
+      }
+      if (lunge !== 0) {
+        this.tweens.add({
+          targets: attacker,
+          x: attacker.x + direction.x * lunge,
+          y: attacker.y + direction.y * lunge * 0.42,
+          duration: style === "rush" ? 78 : 92,
+          yoyo: true,
+          ease: "Quad.Out",
+        });
+      }
+    }
+
+    if (target) {
+      this.emitCombatAfterimage(target, fx.accent, direction.x * 8, direction.y * 5, 0.24);
+      const sprite = target.getAt(1) as Phaser.GameObjects.Sprite | undefined;
+      sprite?.setTint(fx.accent);
+      this.time.delayedCall(120, () => sprite?.setTint(0xffffff));
+      this.tweens.add({
+        targets: target,
+        x: target.x + direction.x * targetReelByStyle[style],
+        y: target.y + (style === "finisher" ? -10 : direction.y * 7),
+        duration: style === "finisher" ? 105 : 70,
+        yoyo: true,
+        ease: "Back.Out",
+      });
+    }
+
+    if (style === "counter" && attacker) {
+      this.tweens.add({
+        targets: attacker,
+        x: attacker.x - direction.x * 14,
+        y: attacker.y - direction.y * 8,
+        duration: 64,
+        yoyo: true,
+        ease: "Sine.Out",
+      });
+    }
+  }
+
+  private emitCombatAfterimage(
+    actor: Phaser.GameObjects.Container,
+    tint: number,
+    offsetX: number,
+    offsetY: number,
+    alpha: number,
+  ) {
+    const sprite = actor.getAt(1) as Phaser.GameObjects.Sprite | undefined;
+    if (!sprite) return;
+    const ghost = this.add.sprite(actor.x + offsetX, actor.y + offsetY + sprite.y, sprite.texture.key, sprite.frame.name)
+      .setOrigin(sprite.originX, sprite.originY)
+      .setScale(actor.scaleX * sprite.scaleX, actor.scaleY * sprite.scaleY)
+      .setRotation(actor.rotation + sprite.rotation)
+      .setTint(tint)
+      .setAlpha(alpha)
+      .setDepth(Math.round(actor.y) - 1);
+    this.tweens.add({
+      targets: ghost,
+      x: ghost.x - offsetX * 0.45,
+      y: ghost.y - 8,
+      alpha: 0,
+      duration: 260,
+      ease: "Sine.Out",
+      onComplete: () => ghost.destroy(),
+    });
+  }
+
+  private playStyleSignatureFx(
+    x: number,
+    y: number,
+    style: CombatMove["style"],
+    fx: CombatFxPalette,
+  ) {
+    if (style === "rush") {
+      for (let i = 0; i < 5; i += 1) {
+        const hit = this.add.circle(x - 42 + i * 18, y - 32 + Phaser.Math.Between(-10, 10), 5, i % 2 === 0 ? fx.main : fx.accent, 0.76)
+          .setDepth(Math.round(y) + 164);
+        this.tweens.add({
+          targets: hit,
+          scale: { from: 0.5, to: 2.2 },
+          alpha: 0,
+          delay: i * 34,
+          duration: 240,
+          ease: "Cubic.Out",
+          onComplete: () => hit.destroy(),
+        });
+      }
+      return;
+    }
+
+    if (style === "counter") {
+      for (let i = 0; i < 2; i += 1) {
+        const parry = this.add.arc(x, y - 30, 26 + i * 11, 35, 320, false)
+          .setStrokeStyle(4, i === 0 ? fx.accent : fx.main, 0.86)
+          .setDepth(Math.round(y) + 164);
+        this.tweens.add({
+          targets: parry,
+          rotation: i === 0 ? 0.9 : -0.75,
+          scale: 1.32,
+          alpha: 0,
+          duration: 330,
+          ease: "Sine.Out",
+          onComplete: () => parry.destroy(),
+        });
+      }
+      return;
+    }
+
+    if (style === "guard") {
+      const shield = this.add.arc(x, y - 30, 34, 205, 335, false)
+        .setStrokeStyle(7, fx.accent, 0.74)
+        .setDepth(Math.round(y) + 164);
+      const brace = this.add.rectangle(x, y - 24, 46, 32, fx.main, 0.12)
+        .setStrokeStyle(2, fx.accent, 0.48)
+        .setDepth(Math.round(y) + 163);
+      this.tweens.add({
+        targets: [shield, brace],
+        scale: { from: 0.8, to: 1.18 },
+        alpha: 0,
+        duration: 420,
+        ease: "Sine.Out",
+        onComplete: () => {
+          shield.destroy();
+          brace.destroy();
+        },
+      });
+      return;
+    }
+
+    if (style === "special") {
+      const sigil = this.add.star(x, y - 30, 6, 16, 34, fx.main, 0.38)
+        .setStrokeStyle(2, fx.accent, 0.9)
+        .setDepth(Math.round(y) + 163);
+      for (let i = 0; i < 10; i += 1) {
+        const angle = (Math.PI * 2 * i) / 10;
+        const spark = this.add.rectangle(x + Math.cos(angle) * 18, y - 30 + Math.sin(angle) * 18, 14, 3, i % 2 ? fx.main : fx.accent, 0.72)
+          .setRotation(angle)
+          .setDepth(Math.round(y) + 164);
+        this.tweens.add({
+          targets: spark,
+          x: x + Math.cos(angle) * 62,
+          y: y - 30 + Math.sin(angle) * 42,
+          alpha: 0,
+          duration: 390,
+          ease: "Cubic.Out",
+          onComplete: () => spark.destroy(),
+        });
+      }
+      this.tweens.add({
+        targets: sigil,
+        rotation: 1.2,
+        scale: 1.6,
+        alpha: 0,
+        duration: 430,
+        ease: "Sine.Out",
+        onComplete: () => sigil.destroy(),
+      });
+      return;
+    }
+
+    if (style === "finisher") {
+      const flash = this.add.rectangle(this.cameras.main.midPoint.x, this.cameras.main.midPoint.y, this.viewportWidth(), this.viewportHeight(), fx.accent, 0.16)
+        .setScrollFactor(0)
+        .setDepth(4999);
+      const shock = this.add.circle(x, y - 30, 30)
+        .setStrokeStyle(8, fx.main, 0.92)
+        .setDepth(Math.round(y) + 165);
+      this.tweens.add({
+        targets: flash,
+        alpha: 0,
+        duration: 180,
+        ease: "Sine.Out",
+        onComplete: () => flash.destroy(),
+      });
+      this.tweens.add({
+        targets: shock,
+        scale: { from: 0.5, to: 4.6 },
+        alpha: 0,
+        duration: 520,
+        ease: "Cubic.Out",
+        onComplete: () => shock.destroy(),
+      });
+      return;
+    }
+
+    const spark = this.add.rectangle(x, y - 30, 64, 5, fx.accent, 0.86)
+      .setRotation(-0.3)
+      .setDepth(Math.round(y) + 164);
+    this.tweens.add({
+      targets: spark,
+      x: spark.x + 22,
+      scaleX: { from: 0.45, to: 1.35 },
+      alpha: 0,
+      duration: 260,
+      ease: "Sine.Out",
+      onComplete: () => spark.destroy(),
     });
   }
 
@@ -1222,6 +1628,9 @@ export class VillageScene extends Phaser.Scene {
       const previous = new Phaser.Math.Vector2(this.player.x, this.player.y);
       this.player.destroy();
       this.player = undefined;
+      this.playerNameplate?.destroy();
+      this.playerNameplate = undefined;
+      this.playerNameplateKey = "";
       this.player = makeActor(this, "player", playerFillForWorld(this.world), PLAYER_RADIUS, this.world.player.appearance);
       this.player.setPosition(previous.x, previous.y);
       this.playerAppearanceKey = appearanceKey;
@@ -1237,6 +1646,7 @@ export class VillageScene extends Phaser.Scene {
     } else if (first) {
       this.player.setPosition(pos.x, pos.y);
     }
+    this.syncPlayerNameplate();
   }
 
   private syncNpcs(initial: boolean) {
@@ -1244,7 +1654,11 @@ export class VillageScene extends Phaser.Scene {
     const wanted = new Set(this.world.npcs.filter((npc) => npc.id !== this.world?.player.characterId).map((npc) => npc.id));
     for (const id of [...this.actors.keys()]) {
       if (id !== "player" && !wanted.has(id)) {
-        this.actors.get(id)?.graphic.destroy();
+        const actor = this.actors.get(id);
+        actor?.graphic.destroy();
+        actor?.nameplate.destroy();
+        actor?.status?.destroy();
+        actor?.bubble?.destroy();
         this.minimap?.npcDots.get(id)?.destroy();
         this.minimap?.npcDots.delete(id);
         this.actors.delete(id);
@@ -1270,6 +1684,8 @@ export class VillageScene extends Phaser.Scene {
         });
         actor = {
           graphic,
+          nameplate: this.makeActorNameplate(npcNameplateText(npc), npcRoleTag(npc), actorFillForNpc(npc), npc.factionId === "challengers"),
+          nameplateKey: npcNameplateKey(npc),
           bubble: null,
           status: null,
           flashUntil: 0,
@@ -1280,10 +1696,96 @@ export class VillageScene extends Phaser.Scene {
         };
         this.actors.set(npc.id, actor);
       }
+      const nextNameplateKey = npcNameplateKey(npc);
+      if (actor.nameplateKey !== nextNameplateKey) {
+        actor.nameplate.destroy();
+        actor.nameplate = this.makeActorNameplate(npcNameplateText(npc), npcRoleTag(npc), actorFillForNpc(npc), npc.factionId === "challengers");
+        actor.nameplateKey = nextNameplateKey;
+      }
       actor.home.set(target.x, target.y);
       if (initial) actor.graphic.setPosition(target.x, target.y);
       else if (!actor.target) this.tweens.add({ targets: actor.graphic, x: target.x, y: target.y, duration: 500, ease: "Sine.InOut" });
     }
+  }
+
+  private syncPlayerNameplate() {
+    if (!this.world || !this.player) return;
+    const label = this.world.player.name ?? "New Hero";
+    const key = `player:${label}:${this.world.player.characterId ?? ""}`;
+    if (!this.playerNameplate || this.playerNameplateKey !== key) {
+      this.playerNameplate?.destroy();
+      this.playerNameplate = this.makeActorNameplate(label, "Player", playerFillForWorld(this.world), false, true);
+      this.playerNameplateKey = key;
+    }
+    this.positionNameplate(this.playerNameplate, this.player, -64, true);
+  }
+
+  private makeActorNameplate(
+    name: string,
+    role: string,
+    color: number,
+    hostile = false,
+    player = false,
+  ) {
+    const displayName = shortActorName(name);
+    const width = player ? 104 : 88;
+    const height = 26;
+    const border = hostile ? 0xe8846b : player ? 0x58a6ff : color;
+    const bg = this.add.rectangle(0, 0, width, height, 0x05070b, 0.78)
+      .setStrokeStyle(1, border, hostile || player ? 0.72 : 0.42);
+    const badge = this.add.circle(-width / 2 + 15, 0, 10, color, 0.96)
+      .setStrokeStyle(1, player ? 0xf8d44e : 0xf4f1e8, 0.46);
+    const initials = this.add.text(-width / 2 + 15, 0, initialsForName(name), {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "7px",
+      color: "#05070b",
+      fontStyle: "900",
+    }).setOrigin(0.5);
+    const roleText = this.add.text(-width / 2 + 30, -8, role.toUpperCase(), {
+      fontFamily: "ui-sans-serif, system-ui",
+      fontSize: "6px",
+      color: hostile ? "#e8846b" : player ? "#9fc3ff" : "#cbd2df",
+      fontStyle: "900",
+    }).setOrigin(0, 0.5);
+    const nameText = this.add.text(-width / 2 + 30, 5, truncateName(displayName, player ? 14 : 10), {
+      fontFamily: "'Cinzel', serif",
+      fontSize: "9px",
+      color: "#f4f1e8",
+      fontStyle: "900",
+    }).setOrigin(0, 0.5);
+    const container = this.add.container(0, 0, [bg, badge, initials, roleText, nameText])
+      .setDepth(213)
+      .setAlpha(player ? 0.96 : 0.88);
+    container.setSize(width, height);
+    return container;
+  }
+
+  private positionNameplate(
+    nameplate: Phaser.GameObjects.Container,
+    actor: Phaser.GameObjects.Container,
+    offsetY: number,
+    player: boolean,
+    offsetX = 0,
+  ) {
+    nameplate.setPosition(actor.x + offsetX, actor.y + offsetY);
+    nameplate.setDepth(Math.round(actor.y) + (player ? 42 : 38));
+  }
+
+  private nameplateOffsetForNpc(npc: Npc, baseY: number) {
+    if (!this.world) return { x: 0, y: baseY };
+    const sameLocation = this.world.npcs
+      .filter((candidate) =>
+        candidate.id !== this.world?.player.characterId &&
+        candidate.locationId === npc.locationId &&
+        !candidate.combat?.defeated
+      )
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const index = Math.max(0, sameLocation.findIndex((candidate) => candidate.id === npc.id));
+    const center = (sameLocation.length - 1) / 2;
+    return {
+      x: (index - center) * 72,
+      y: baseY - (index % 2) * 8,
+    };
   }
 
   private syncItems() {
@@ -1933,44 +2435,56 @@ export class VillageScene extends Phaser.Scene {
 
   private updateActors(dt: number) {
     for (const [id, actor] of this.actors) {
+      const npc = id === "player" ? null : this.world?.npcs.find((n) => n.id === id);
+      const defeated = Boolean(npc?.combat?.defeated);
       const was = new Phaser.Math.Vector2(actor.graphic.x, actor.graphic.y);
-      const walking = this.updateNpcWander(actor, dt);
+      const walking = defeated ? false : this.updateNpcWander(actor, dt);
       const facing = walking ? new Phaser.Math.Vector2(actor.graphic.x - was.x, actor.graphic.y - was.y).normalize() : new Phaser.Math.Vector2(0, 1);
       this.updateCharacterPose(actor.graphic, walking, facing, false, this.time.now < actor.flashUntil ? 0xf8d44e : undefined);
+      if (defeated) this.applyDefeatedPose(actor.graphic);
       if (walking && this.time.now - actor.lastStepAt > 390) {
         actor.lastStepAt = this.time.now;
         this.emitFootstep(actor.graphic.x, actor.graphic.y + 20, 0.34);
       }
       actor.graphic.setDepth(Math.round(actor.graphic.y));
+      const nameplateOffset = npc ? this.nameplateOffsetForNpc(npc, npc.combat?.defeated ? -34 : -58) : { x: 0, y: -58 };
+      this.positionNameplate(actor.nameplate, actor.graphic, nameplateOffset.y, false, nameplateOffset.x);
+      actor.nameplate.setAlpha(npc?.combat?.defeated ? 0.56 : 0.9);
       actor.bubble?.setPosition(actor.graphic.x, actor.graphic.y - 26);
 
-      const npc = id === "player" ? null : this.world?.npcs.find((n) => n.id === id);
-      const intent = npc?.plan?.currentIntent;
       const playerDist = this.player ? Phaser.Math.Distance.Between(this.player.x, this.player.y, actor.graphic.x, actor.graphic.y) : 999;
-      const shouldShowStatus = playerDist < 180 && intent && !actor.bubble;
+      const mapStatus = npc ? this.npcMapStatus(npc, playerDist) : null;
+      const shouldShowStatus = Boolean(mapStatus) && !actor.bubble;
 
       if (shouldShowStatus) {
-        const labelText = intent.kind.toUpperCase();
+        const labelText = mapStatus!.text;
+        const statusY = actor.graphic.y + (npc?.combat ? -86 : -82);
         if (!actor.status) {
-          actor.status = this.add.text(actor.graphic.x, actor.graphic.y - 52, labelText, {
+          actor.status = this.add.text(actor.graphic.x, statusY - 4, labelText, {
             fontFamily: "'Cinzel', serif",
-            fontSize: "8px",
+            fontSize: "7px",
             fontStyle: "900",
-            color: "#f8d44e",
-            backgroundColor: "rgba(5, 5, 7, 0.85)",
+            color: mapStatus!.color,
+            backgroundColor: mapStatus!.background,
             padding: { x: 6, y: 3 },
-          }).setOrigin(0.5, 1).setDepth(210).setAlpha(0);
+          }).setOrigin(0.5, 1).setDepth(214).setAlpha(0);
 
-          this.tweens.add({ targets: actor.status, alpha: 1, y: actor.graphic.y - 48, duration: 400, ease: "Cubic.Out" });
+          this.tweens.add({ targets: actor.status, alpha: 1, y: statusY, duration: 400, ease: "Cubic.Out" });
         } else {
-          actor.status.setText(labelText).setPosition(actor.graphic.x, actor.graphic.y - 48).setVisible(true).setAlpha(1);
+          actor.status
+            .setText(labelText)
+            .setColor(mapStatus!.color)
+            .setBackgroundColor(mapStatus!.background)
+            .setPosition(actor.graphic.x, statusY)
+            .setVisible(true)
+            .setAlpha(1);
         }
       } else if (actor.status) {
         if (actor.status.visible && actor.status.alpha > 0.5) {
           this.tweens.add({
             targets: actor.status,
             alpha: 0,
-            y: actor.graphic.y - 52,
+            y: actor.graphic.y - 90,
             duration: 300,
             ease: "Cubic.In",
             onComplete: () => { actor.status?.setVisible(false); }
@@ -1979,6 +2493,50 @@ export class VillageScene extends Phaser.Scene {
       }
     }
     this.player?.setDepth(Math.round(this.player.y) + 5);
+    if (this.playerNameplate && this.player) this.positionNameplate(this.playerNameplate, this.player, -64, true);
+  }
+
+  private npcMapStatus(npc: Npc, playerDist: number): { text: string; color: string; background: string } | null {
+    if (npc.combat?.defeated) {
+      return { text: "DOWN", color: "#10151d", background: "#f6d85fee" };
+    }
+    if (npc.combat && playerDist < 420) {
+      const hpPct = Math.round((npc.combat.hp / Math.max(1, npc.combat.maxHp)) * 100);
+      if (hpPct >= 100 && npc.combat.posture >= 100) return null;
+      const color = hpPct <= 30 ? "#f47272" : hpPct <= 65 ? "#f8d44e" : "#f4f1e8";
+      return { text: `${hpPct}% HP · ${npc.combat.posture} PST`, color, background: "rgba(5, 5, 7, 0.9)" };
+    }
+    const intent = npc.plan?.currentIntent;
+    if (intent && playerDist < 260) {
+      const palette: Partial<Record<string, string>> = {
+        help: "#7ed26d",
+        ask: "#9fc3ff",
+        confront: "#f8d44e",
+        gossip: "#e8846b",
+        investigate: "#f4f1e8",
+        move: "#cbd2df",
+        escalate: "#f47272",
+      };
+      return { text: intent.kind.toUpperCase(), color: palette[intent.kind] ?? "#f8d44e", background: "rgba(5, 5, 7, 0.85)" };
+    }
+    return null;
+  }
+
+  private applyDefeatedPose(actor: Phaser.GameObjects.Container) {
+    const sprite = actor.getAt(1) as Phaser.GameObjects.Sprite | undefined;
+    const shadow = actor.getAt(0) as Phaser.GameObjects.Ellipse | undefined;
+    if (sprite) {
+      sprite.setTint(0x8a98ac);
+      sprite.setAlpha(0.72);
+      sprite.setRotation(Phaser.Math.DegToRad(78));
+      sprite.y = PLAYER_RADIUS + 22;
+      sprite.scaleX = 0.92;
+      sprite.scaleY = 0.92;
+    }
+    if (shadow) {
+      shadow.setScale(1.36, 0.7);
+      shadow.setAlpha(0.16);
+    }
   }
 
   private drawAtmosphereParticles() {
@@ -2079,6 +2637,8 @@ export class VillageScene extends Phaser.Scene {
     const walkFrame = walking ? 1 + (Math.floor(this.time.now / 115) % 3) : 0;
     const gait = Math.sin(this.time.now / 86);
     sprite.setFrame(directionIndex * 4 + walkFrame);
+    sprite.setRotation(0);
+    sprite.setAlpha(1);
     sprite.y = PLAYER_RADIUS + 9 + (walking ? Math.abs(gait) * 2.4 : Math.sin((this.time.now + actor.x) / 700) * 0.6);
     sprite.scaleX = walking ? 1 + Math.abs(gait) * 0.035 : 1;
     sprite.scaleY = walking ? 1 - Math.abs(gait) * 0.025 : 1;
@@ -2413,6 +2973,79 @@ function actorFillForNpc(npc: Npc): number {
   if (npc.id === "lena") return 0xa96a42;
   if (npc.id === "orrin") return 0x355a82;
   return npc.tier === "quest" ? 0xb5e48c : 0xff8a65;
+}
+
+function agentFxPalette(actionType: ActionType, fromDirector: boolean): AgentFxPalette {
+  if (fromDirector) return { main: 0xf8d44e, accent: 0xffffff, label: "DIRECTOR", symbol: "!" };
+  const palettes: Partial<Record<ActionType, AgentFxPalette>> = {
+    move: { main: 0x9fc3ff, accent: 0xeaf5ff, label: "MOVE", symbol: ">" },
+    talk: { main: 0x7ed26d, accent: 0xeaf5ff, label: "TALK", symbol: "\"" },
+    gossip: { main: 0xe8846b, accent: 0xf8f1c4, label: "RUMOR", symbol: "?" },
+    confront: { main: 0xf47272, accent: 0xffffff, label: "CLASH", symbol: "!" },
+    inspect: { main: 0xcbd2df, accent: 0xffffff, label: "CHECK", symbol: "*" },
+    remember: { main: 0x9fc3ff, accent: 0xf8f1c4, label: "MEMORY", symbol: "+" },
+    pickup: { main: 0xf8d44e, accent: 0xffffff, label: "ITEM", symbol: "+" },
+    drop: { main: 0x8a98ac, accent: 0xeaf5ff, label: "DROP", symbol: "-" },
+    give: { main: 0x7ed26d, accent: 0xf8f1c4, label: "GIVE", symbol: "+" },
+    offer_quest: { main: 0xf8d44e, accent: 0xffffff, label: "QUEST", symbol: "!" },
+    accept_quest: { main: 0x7ed26d, accent: 0xffffff, label: "ACCEPT", symbol: "!" },
+    complete_quest: { main: 0x7ed26d, accent: 0xf8f1c4, label: "DONE", symbol: "*" },
+    fail_quest: { main: 0xf47272, accent: 0xffffff, label: "FAILED", symbol: "x" },
+    choose_character: { main: 0x58a6ff, accent: 0xffffff, label: "HERO", symbol: "*" },
+  };
+  return palettes[actionType] ?? { main: 0xcbd2df, accent: 0xffffff, label: actionType.toUpperCase(), symbol: "*" };
+}
+
+function actionFxCaption(text: string, fallback: string): string {
+  const compact = text
+    .replace(/\s+/g, " ")
+    .replace(/^(Director clue:|Director beat:)\s*/i, "")
+    .trim();
+  if (!compact) return fallback;
+  const firstWords = compact.split(/\s+/).slice(0, 2).join(" ");
+  return firstWords.length > 12 ? fallback : firstWords.toUpperCase();
+}
+
+function npcNameplateText(npc: Npc): string {
+  return npc.name;
+}
+
+function npcRoleTag(npc: Npc): string {
+  if (npc.factionId === "challengers") return "Hostile";
+  if (npc.factionId === "heroes") return npc.tier === "quest" ? "Quest" : "Hero";
+  return npc.tier === "quest" ? "Quest" : "NPC";
+}
+
+function npcNameplateKey(npc: Npc): string {
+  return [
+    npc.id,
+    npc.name,
+    npc.role ?? "",
+    npc.factionId ?? "",
+    npc.tier ?? "",
+    npc.combat?.defeated ? "down" : "up",
+  ].join("|");
+}
+
+function initialsForName(name: string): string {
+  const short = shortActorName(name);
+  const parts = short.trim().split(/\s+/).filter(Boolean);
+  const value = parts.length > 1 ? `${parts[0]![0]}${parts.at(-1)![0]}` : short.slice(0, 2);
+  return value.toUpperCase();
+}
+
+function shortActorName(name: string): string {
+  if (/speed-o'?-/i.test(name)) return "Sonic";
+  if (/mumen/i.test(name)) return "Mumen";
+  if (/new hero/i.test(name)) return "New Hero";
+  if (name.length <= 12) return name;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts[0] ?? name;
+}
+
+function truncateName(name: string, max: number): string {
+  if (name.length <= max) return name;
+  return `${name.slice(0, Math.max(1, max - 1))}.`;
 }
 
 function playerFillForWorld(world: World): number {

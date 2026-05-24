@@ -91,6 +91,7 @@ function ensureWorldDefaults(world: World): void {
   world.interactables ??= [];
   world.clock ??= { hoursPerTick: 1, hour: 8, day: 1 };
   world.eventLog ??= [];
+  world.player.combat = normalizeCombatState(world.player.combat, 120);
   ensureAgentStateDefaults(world);
   ensureCombatDefaults(world);
   ensureStoryProgress(world);
@@ -126,6 +127,7 @@ export async function runTick(
     }
   }
 
+  recoverPlayerCombat(world, actions);
   world.tick += 1;
   advanceClock(world);
   refreshMoods(world);
@@ -187,8 +189,14 @@ export function applyAction(world: World, action: Action): ActionResult {
         resolveShadowConfrontation(world);
       }
       return applied(action, `${nameOf(world, action.actorId)} confronted ${nameOf(world, action.targetId)}.`);
-    case "fight":
-      applyFightDamage(world, action.targetId, action.moveId);
+    case "fight": {
+      let counterText: string | null = null;
+      if (action.targetId === "player") {
+        applyPlayerFightDamage(world, action.actorId, action.moveId);
+      } else {
+        applyFightDamage(world, action.targetId, action.moveId);
+        counterText = action.actorId === "player" ? applyEnemyCounterPressure(world, action.targetId, action.moveId) : null;
+      }
       remember(world, action.targetId, `${nameOf(world, action.actorId)} used ${combatMoveFor(world, action.moveId).label}: ${action.text ?? "No speech, just action."}`);
       remember(world, action.actorId, `Used ${combatMoveFor(world, action.moveId).label} on ${nameOf(world, action.targetId)}: ${action.text ?? "No speech, just action."}`);
       adjustRelationship(world, action.actorId, action.targetId, -3, { trust: -2, respect: 2, suspicion: 2 });
@@ -196,7 +204,8 @@ export function applyAction(world: World, action: Action): ActionResult {
       nudgeMood(world, action.actorId, { confidence: 8, stress: 3 });
       nudgeMood(world, action.targetId, { stress: 12, confidence: -8, suspicion: 5 });
       if (getNpc(world, action.targetId)?.combat?.defeated) resolveFightConsequences(world, action.actorId, action.targetId);
-      return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId));
+      return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId, counterText));
+    }
     case "choose_character": {
       const chosen = mustNpc(world, action.targetId);
       world.player = {
@@ -314,8 +323,8 @@ function shouldTrackCombat(npc: Npc): boolean {
   return npc.factionId === "challengers" || npc.id === "pax";
 }
 
-function normalizeCombatState(combat: CombatState | undefined): CombatState {
-  const maxHp = combat?.maxHp ?? 100;
+function normalizeCombatState(combat: CombatState | undefined, fallbackMaxHp = 100): CombatState {
+  const maxHp = combat?.maxHp ?? fallbackMaxHp;
   const hp = Math.max(0, Math.min(maxHp, combat?.hp ?? maxHp));
   const posture = Math.max(0, Math.min(100, combat?.posture ?? 100));
   return { maxHp, hp, posture, defeated: combat?.defeated ?? hp <= 0, lastMoveId: combat?.lastMoveId };
@@ -337,34 +346,137 @@ function applyFightDamage(world: World, targetId: string, moveId: string | undef
   }
 }
 
+function applyPlayerFightDamage(world: World, actorId: string, moveId: string | undefined): void {
+  world.player.combat = normalizeCombatState(world.player.combat, 120);
+  const move = combatMoveFor(world, moveId);
+  const attacker = getNpc(world, actorId);
+  const pressureBonus = attacker?.factionId === "challengers" ? 3 : 0;
+  const damage = Math.max(1, Math.round(move.damage * 0.42) + pressureBonus);
+  const postureDamage = Math.max(5, Math.round(move.postureDamage * 0.72) + pressureBonus);
+  world.player.combat.hp = Math.max(0, world.player.combat.hp - damage);
+  world.player.combat.posture = Math.max(0, world.player.combat.posture - postureDamage);
+  world.player.combat.lastMoveId = move.id;
+  world.player.combat.defeated = world.player.combat.hp <= 0;
+}
+
 function resolveFightConsequences(world: World, actorId: string, targetId: string): void {
   if (actorId === "player" && isStoryConfrontationTarget(world, targetId)) {
     resolveShadowConfrontation(world);
   }
-  const tension = world.tensions?.find((candidate) => candidate.involvedIds?.includes(targetId) && candidate.status !== "resolved");
-  if (tension) {
+  for (const tension of world.tensions ?? []) {
+    if (!tension.involvedIds?.includes(targetId) || tension.status === "resolved") continue;
     tension.status = "resolved";
     tension.pressure = Math.max(0, tension.pressure - 35);
+  }
+  if (world.directorState) {
+    world.directorState.pressure = clampPressure(world.directorState.pressure - 18);
+    const reveal = `${nameOf(world, targetId)} was defeated by ${nameOf(world, actorId)}; the immediate threat is cleared.`;
+    if (!world.directorState.pendingReveals?.includes(reveal)) {
+      world.directorState.pendingReveals ??= [];
+      world.directorState.pendingReveals.push(reveal);
+    }
+  }
+  const defeated = getNpc(world, targetId);
+  if (defeated) {
+    for (const ambition of defeated.ambitions ?? []) {
+      ambition.status = "abandoned";
+      ambition.blocker = `${nameOf(world, actorId)} won the fight.`;
+    }
+    defeated.plan ??= {};
+    defeated.plan.currentIntent = {
+      kind: "wait",
+      reason: "Defeated in combat and forced out of the current loop.",
+      updatedTick: world.tick,
+    };
+    defeated.plan.nextActionHint = "Recover off-screen instead of re-engaging this route.";
+    remember(world, targetId, `Defeated by ${nameOf(world, actorId)}; the current challenge is over.`);
   }
   const plan = world.villainPlans?.find((candidate) => candidate.actorId === targetId);
   if (plan) {
     plan.stage += 1;
+    plan.hidden = false;
     plan.pressure = Math.max(0, plan.pressure - 30);
-    plan.nextTrigger = "Recovered after the first direct fight; future loops need stronger combat stakes.";
+    plan.knownFacts ??= [];
+    const fact = `${nameOf(world, targetId)} lost the first direct fight.`;
+    if (!plan.knownFacts.includes(fact)) plan.knownFacts.push(fact);
+    plan.nextTrigger = "Route cleared; future loops need a stronger antagonist escalation.";
+  }
+  if (actorId === "player") {
+    for (const npc of world.npcs) {
+      if (npc.id === targetId || npc.id === world.player.characterId || npc.factionId === "challengers") continue;
+      remember(world, npc.id, `${nameOf(world, "player")} defeated ${nameOf(world, targetId)} and cleared the immediate threat.`);
+      adjustRelationshipAxes(world, npc.id, "player", { trust: 1, respect: 2, suspicion: -1 });
+      nudgeMood(world, npc.id, { stress: -10, confidence: 6, suspicion: -4 });
+    }
   }
 }
 
-function fightOutcomeText(world: World, actorId: string, targetId: string, moveId: string | undefined): string {
+function applyEnemyCounterPressure(world: World, targetId: string, playerMoveId: string | undefined): string | null {
+  const target = getNpc(world, targetId);
+  if (!target?.combat || target.combat.defeated) return null;
+  world.player.combat = normalizeCombatState(world.player.combat, 120);
+  const playerCombat = world.player.combat;
+  const playerMove = combatMoveFor(world, playerMoveId);
+  const pressure = target.combat.posture > 60 ? 13 : target.combat.posture > 25 ? 8 : 4;
+  const mitigation: Record<ReturnType<typeof combatMoveFor>["style"], number> = {
+    strike: 0,
+    rush: -1,
+    counter: -7,
+    guard: -10,
+    special: -3,
+    finisher: 0,
+  };
+  const damage = Math.max(0, pressure + mitigation[playerMove.style]);
+  const postureDamage = Math.max(3, Math.round(damage * 1.7));
+  playerCombat.hp = Math.max(0, playerCombat.hp - damage);
+  playerCombat.posture = Math.max(0, playerCombat.posture - postureDamage);
+  playerCombat.defeated = playerCombat.hp <= 0;
+  if (damage <= 0) {
+    return `${nameOf(world, targetId)} tries to answer, but ${nameOf(world, "player")} holds the guard.`;
+  }
+  if (playerCombat.defeated) {
+    return `${nameOf(world, targetId)} counters for ${damage}, dropping ${nameOf(world, "player")} to 0 HP.`;
+  }
+  return `${nameOf(world, targetId)} counters for ${damage}; ${nameOf(world, "player")} has ${playerCombat.hp}/${playerCombat.maxHp} HP.`;
+}
+
+function recoverPlayerCombat(world: World, actions: AppliedAction[]): void {
+  const playerInCombat = actions.some((entry) =>
+    entry.action.type === "fight" && (entry.action.actorId === "player" || entry.action.targetId === "player")
+  );
+  if (playerInCombat) return;
+  world.player.combat = normalizeCombatState(world.player.combat, 120);
+  const combat = world.player.combat;
+  if (combat.defeated) {
+    combat.hp = Math.max(combat.hp, Math.round(combat.maxHp * 0.42));
+    combat.posture = Math.max(combat.posture, 45);
+    combat.defeated = false;
+    return;
+  }
+  combat.hp = Math.min(combat.maxHp, combat.hp + 8);
+  combat.posture = Math.min(100, combat.posture + 14);
+}
+
+function fightOutcomeText(world: World, actorId: string, targetId: string, moveId: string | undefined, counterText: string | null = null): string {
   const move = combatMoveFor(world, moveId);
+  if (targetId === "player") {
+    const combat = world.player.combat;
+    const hpText = combat ? ` ${nameOf(world, targetId)} has ${combat.hp}/${combat.maxHp} HP left.` : "";
+    if (combat?.defeated) {
+      return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}. ${nameOf(world, targetId)} is down and needs to recover.`;
+    }
+    return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}`;
+  }
   const combat = getNpc(world, targetId)?.combat;
   const hpText = combat ? ` ${nameOf(world, targetId)} has ${combat.hp}/${combat.maxHp} HP left.` : "";
+  const counter = counterText ? ` ${counterText}` : "";
   if (world.id === "opm_z_city" && targetId === "pax") {
     if (combat?.defeated) {
       return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}. The overpass challenger is knocked out of the first patrol loop.`;
     }
-    return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}`;
+    return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}${counter}`;
   }
-  return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}`;
+  return `${nameOf(world, actorId)} ${move.impact} on ${nameOf(world, targetId)}.${hpText}${counter}`;
 }
 
 function applyQuestDeltas(world: World, deltas: Record<string, number> | undefined, completerId: string | undefined): void {
@@ -552,7 +664,7 @@ export function validateAction(world: World, action: Action | unknown): Validati
 
   if (a.type === "talk" || a.type === "gossip" || a.type === "confront" || a.type === "fight") {
     const targetId = (a as { targetId?: string }).targetId;
-    if (!targetId || !getNpc(world, targetId)) return invalid("Unknown target.");
+    if (!targetId || (targetId !== "player" && !getNpc(world, targetId))) return invalid("Unknown target.");
   }
   if (a.type === "gossip") {
     const aboutId = (a as { aboutId?: string }).aboutId;
@@ -588,6 +700,7 @@ export function validateAction(world: World, action: Action | unknown): Validati
     const targetId = (a as { targetId?: string }).targetId;
     const there = locationOf(world, targetId ?? "");
     if (here !== there) return invalid("Target is not here.");
+    if (a.actorId === "player" && normalizeCombatState(world.player.combat, 120).defeated) return invalid("Player is down.");
     const text = (a as { text?: unknown }).text;
     if (text !== undefined && typeof text !== "string") return invalid("Fight text must be a string.");
     const moveId = (a as { moveId?: unknown }).moveId;
@@ -595,7 +708,8 @@ export function validateAction(world: World, action: Action | unknown): Validati
     if (typeof moveId === "string" && !combatMovesFor(world).some((move) => move.id === moveId)) {
       return invalid("Unknown fight move.");
     }
-    if (getNpc(world, targetId ?? "")?.combat?.defeated) return invalid("Target is already defeated.");
+    if (targetId === "player" && normalizeCombatState(world.player.combat, 120).defeated) return invalid("Player is already down.");
+    if (targetId !== "player" && getNpc(world, targetId ?? "")?.combat?.defeated) return invalid("Target is already defeated.");
   }
 
   if (a.type === "pickup" || a.type === "drop" || a.type === "give") {
@@ -663,6 +777,7 @@ export function proposeNpcActions(world: World): Action[] {
         text: "Sonic is turning the overpass alert into a challenge stage.",
       });
     }
+    actions.push(...hostileCombatActions(world, actions));
     actions.push(...scheduledNpcMoveActions(world, actions));
     return actions;
   }
@@ -686,8 +801,42 @@ export function proposeNpcActions(world: World): Action[] {
       text: "Mira is angry about the missing tools; return them before asking for herbs.",
     });
   }
+  actions.push(...hostileCombatActions(world, actions));
   actions.push(...scheduledNpcMoveActions(world, actions));
   return actions;
+}
+
+function hostileCombatActions(world: World, existingActions: Action[], limit = 1): Action[] {
+  const busyActors = new Set(existingActions.map((action) => action.actorId));
+  const playerCombat = normalizeCombatState(world.player.combat, 120);
+  if (playerCombat.defeated) return [];
+  const actions: Action[] = [];
+  for (const npc of world.npcs) {
+    if (actions.length >= limit) break;
+    if (npc.id === world.player.characterId || busyActors.has(npc.id)) continue;
+    if (!shouldTrackCombat(npc) || npc.combat?.defeated) continue;
+    if (npc.locationId !== world.player.locationId) continue;
+    const moveId = hostileMoveId(world, npc);
+    const move = combatMoveFor(world, moveId);
+    actions.push({
+      type: "fight",
+      actorId: npc.id,
+      targetId: "player",
+      moveId,
+      text: `${npc.name} presses the player with ${move.label}: ${move.description}`,
+    });
+    busyActors.add(npc.id);
+  }
+  return actions;
+}
+
+function hostileMoveId(world: World, npc: Npc): string {
+  if (world.id === "opm_z_city" && npc.id === "pax") {
+    const playerPosture = normalizeCombatState(world.player.combat, 120).posture;
+    return playerPosture <= 40 ? "guard_break" : "serious_side_step";
+  }
+  const moves = combatMovesFor(world);
+  return moves.find((move) => move.id === "rush")?.id ?? moves.find((move) => move.style === "rush")?.id ?? moves[0]!.id;
 }
 
 function scheduledNpcMoveActions(world: World, existingActions: Action[], limit = 2): Action[] {

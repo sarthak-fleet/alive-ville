@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 import { combatMovesFor } from "../../../src/combat.ts";
+import { activeObjectives } from "../../../src/objectives.ts";
+import type { Npc, World } from "../../../src/types.ts";
 import { Button } from "../atoms/Button.tsx";
 import { Panel } from "../atoms/Panel.tsx";
 import { useWorldStore } from "../store/world.ts";
@@ -25,7 +27,9 @@ export function ActionBar() {
   const talkOptions = here.length ? here : world.npcs.filter((npc) => npc.id !== world.player.characterId);
   const combatMoves = combatMovesFor(world);
   const selectedMove = combatMoves.find((move) => move.id === fightMoveId) ?? combatMoves[0]!;
-  const hostileHere = here.find((npc) => (npc.factionId === "challengers" || npc.id === "pax") && !npc.combat?.defeated);
+  const playerCombat = world.player.combat;
+  const playerDefeated = Boolean(playerCombat?.defeated);
+  const hostileHere = activeFightTarget(world, here, playerDefeated);
   const propsHere = world.interactables?.filter((prop) => prop.locationId === world.player.locationId) ?? [];
   const exitsHere = (world.exits ?? []).filter((exit) => exit.from === world.player.locationId || (exit.bidirectional && exit.to === world.player.locationId));
   const adjacentLocations = exitsHere
@@ -141,17 +145,65 @@ export function ActionBar() {
       </div>
       <div className="row">
         <label>Fight</label>
-        <select value={selectedMove.id} onChange={(event) => setFightMoveId(event.target.value)} disabled={!hostileHere}>
-          {combatMoves.map((move) => <option key={move.id} value={move.id}>{move.label}</option>)}
-        </select>
-        <span className="hint">
-          {hostileHere
-            ? `${hostileHere.name}: ${hostileHere.combat?.hp ?? 100}/${hostileHere.combat?.maxHp ?? 100} HP · ${selectedMove.description}`
-            : "No hostile target here."}
-        </span>
-        <Button onClick={onFight} disabled={!hostileHere}>Use move</Button>
+        <div className="combat-command">
+          <div className="combat-target">
+            {playerCombat && (
+              <div className="combat-self">
+                <strong>{world.player.name ?? "Player"}</strong>
+                <span>{playerCombat.hp}/{playerCombat.maxHp} HP · {playerCombat.posture} posture</span>
+              </div>
+            )}
+            {hostileHere
+              ? (
+                  <>
+                    <strong>{hostileHere.name}</strong>
+                    <span>{hostileHere.combat?.hp ?? 100}/{hostileHere.combat?.maxHp ?? 100} HP · {hostileHere.combat?.posture ?? 100} posture</span>
+                  </>
+                )
+              : <span>{playerDefeated ? "You are down. Wait or reload to reset the exchange." : "No active fight. Talk to a hostile NPC or follow a fight objective."}</span>}
+          </div>
+          <div className="move-strip" aria-label="Fight moves">
+            {combatMoves.map((move) => (
+              <button
+                key={move.id}
+                type="button"
+                className={`move-card ${move.style}${selectedMove.id === move.id ? " active" : ""}`}
+                disabled={!hostileHere}
+                onClick={() => {
+                  setFightMoveId(move.id);
+                  void send({
+                    type: "fight",
+                    targetId: hostileHere!.id,
+                    moveId: move.id,
+                    text: `${move.label}: ${move.description}`,
+                  } as never);
+                }}
+              >
+                <span>{move.style}</span>
+                <strong>{move.label}</strong>
+                <small>{move.damage} dmg · {move.postureDamage} pst</small>
+              </button>
+            ))}
+          </div>
+          <p className="combat-move-copy">{selectedMove.description}</p>
+          <Button onClick={onFight} disabled={!hostileHere}>Repeat selected</Button>
+        </div>
       </div>
       <div className="hint">Click any location on the map to walk. Click an NPC for memories.</div>
     </Panel>
+  );
+}
+
+function activeFightTarget(world: World, here: Npc[], playerDefeated: boolean): Npc | undefined {
+  if (playerDefeated) return undefined;
+  const objective = activeObjectives(world)[0];
+  if (objective?.storyAction === "fight_challenger" && objective.locationId === world.player.locationId) {
+    const target = here.find((npc) => npc.id === (objective.storyTargetId ?? "pax") && !npc.combat?.defeated);
+    if (target) return target;
+  }
+  return here.find((npc) =>
+    !npc.combat?.defeated &&
+    Boolean(npc.combat) &&
+    ((npc.combat!.hp < npc.combat!.maxHp) || npc.combat!.posture < 100)
   );
 }

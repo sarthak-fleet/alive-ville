@@ -18,6 +18,7 @@ import { playActionCues, updateMusicMood } from "../audio.ts";
 export interface BubbleEvent {
   id: number;
   actorId: string | null;
+  sourceActorId: string | null;
   text: string;
   fromDirector: boolean;
   actionType: TickSummary["actions"][number]["action"]["type"];
@@ -27,6 +28,7 @@ export interface BubbleEvent {
   combatHpBefore?: number;
   combatHpAfter?: number;
   combatHpMax?: number;
+  startsAt: number;
   expiresAt: number;
 }
 
@@ -177,8 +179,9 @@ function commitTick(
   summary: TickSummary,
   previousWorld: World | null
 ): void {
-  const expires = performance.now() + 4200;
-  const newBubbles = summary.actions.map((entry) => {
+  const now = performance.now();
+  const expires = now + 4200;
+  const newBubbles = summary.actions.flatMap((entry) => {
     const action = entry.action;
     const combatMove = action.type === "fight" ? combatMoveFor(world, action.moveId) : null;
     let combatTarget: World["npcs"][number] | null = null;
@@ -187,20 +190,25 @@ function commitTick(
       combatTarget = world.npcs.find((npc) => npc.id === action.targetId) ?? null;
       previousCombatTarget = previousWorld?.npcs.find((npc) => npc.id === action.targetId) ?? null;
     }
-    return {
+    const targetIsPlayer = action.type === "fight" && action.targetId === "player";
+    const primary: BubbleEvent = {
       id: ++bubbleSeq,
       actorId: bubbleActorId(entry),
+      sourceActorId: action.actorId ?? null,
       text: bubbleText(entry),
       fromDirector: Boolean(entry.fromDirector),
       actionType: entry.action.type,
       combatStyle: combatMove?.style,
       combatLabel: combatMove?.label,
-      combatTargetName: combatTarget?.name,
-      combatHpBefore: previousCombatTarget?.combat?.hp,
-      combatHpAfter: combatTarget?.combat?.hp,
-      combatHpMax: combatTarget?.combat?.maxHp,
+      combatTargetName: targetIsPlayer ? world.player.name ?? "Player" : combatTarget?.name,
+      combatHpBefore: targetIsPlayer ? previousWorld?.player.combat?.hp : previousCombatTarget?.combat?.hp,
+      combatHpAfter: targetIsPlayer ? world.player.combat?.hp : combatTarget?.combat?.hp,
+      combatHpMax: targetIsPlayer ? world.player.combat?.maxHp : combatTarget?.combat?.maxHp,
+      startsAt: now,
       expiresAt: expires,
     };
+    const counter = counterBubbleForPlayerAttack(world, previousWorld, entry, now, expires);
+    return counter ? [primary, counter] : [primary];
   });
   set({
     world,
@@ -208,6 +216,38 @@ function commitTick(
     lastSummary: summary,
     bubbles: [...get().bubbles, ...newBubbles],
   });
+}
+
+function counterBubbleForPlayerAttack(
+  world: World,
+  previousWorld: World | null,
+  entry: TickSummary["actions"][number],
+  now: number,
+  expires: number
+): BubbleEvent | null {
+  const action = entry.action;
+  if (action.type !== "fight" || action.actorId !== "player" || action.targetId === "player") return null;
+  const previousHp = previousWorld?.player.combat?.hp ?? world.player.combat?.maxHp ?? 120;
+  const nextHp = world.player.combat?.hp ?? previousHp;
+  if (nextHp >= previousHp) return null;
+  const attacker = world.npcs.find((npc) => npc.id === action.targetId);
+  if (!attacker || attacker.combat?.defeated) return null;
+  return {
+    id: ++bubbleSeq,
+    actorId: "player",
+    sourceActorId: attacker.id,
+    text: `${attacker.name} counters.`,
+    fromDirector: false,
+    actionType: "fight",
+    combatStyle: "counter",
+    combatLabel: "Counter",
+    combatTargetName: world.player.name ?? "Player",
+    combatHpBefore: previousHp,
+    combatHpAfter: nextHp,
+    combatHpMax: world.player.combat?.maxHp,
+    startsAt: now + 520,
+    expiresAt: expires + 520,
+  };
 }
 
 function isStoryPackage(value: unknown): value is Parameters<typeof importStoryPackage>[0] {

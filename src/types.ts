@@ -278,6 +278,7 @@ export interface Player {
   name?: string;
   characterId?: ActorId;
   appearance?: CharacterAppearance;
+  combat?: CombatState;
 }
 
 export interface Story {

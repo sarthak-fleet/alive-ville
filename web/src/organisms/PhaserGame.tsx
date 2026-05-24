@@ -71,9 +71,17 @@ export function PhaserGame() {
       }
       const newBubbles = state.bubbles.slice(prev.bubbles.length);
       for (const bubble of newBubbles) {
-        if (bubble.actionType === "fight" && bubble.actorId) scene.playCombatFx(bubble.actorId, bubble.combatStyle, bubble.combatLabel);
-        if ((bubble.fromDirector || bubble.actionType === "fight") && bubble.actorId) scene.flashActor(bubble.actorId);
-        if (bubble.actorId) scene.showBubble(bubble.actorId, bubble.text);
+        const playBubble = () => {
+          if (bubble.actionType === "fight" && bubble.actorId) scene.playCombatFx(bubble.actorId, bubble.combatStyle, bubble.combatLabel, bubble.sourceActorId ?? undefined);
+          if (bubble.actionType !== "fight" && bubble.actorId) scene.playAgentActionFx(bubble.actorId, bubble.actionType, bubble.text, bubble.fromDirector);
+          if (bubble.actorId) scene.flashActor(bubble.actorId);
+          if (bubble.actionType === "fight" && bubble.sourceActorId && bubble.sourceActorId !== "player") scene.flashActor(bubble.sourceActorId);
+          const speakerId = bubble.actionType === "fight" && bubble.sourceActorId && bubble.sourceActorId !== "player" ? bubble.sourceActorId : bubble.actorId;
+          if (speakerId) scene.showBubble(speakerId, bubble.text);
+        };
+        const delay = Math.max(0, bubble.startsAt - performance.now());
+        if (delay > 0) window.setTimeout(playBubble, delay);
+        else playBubble();
       }
     });
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" role="img" aria-label="New Hero portrait">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="36%" r="66%">
+      <stop offset="0%" stop-color="#9fc3ff"/>
+      <stop offset="54%" stop-color="#27384f"/>
+      <stop offset="100%" stop-color="#10151d"/>
+    </radialGradient>
+    <linearGradient id="cape" x1="24" x2="122" y1="42" y2="130" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58a6ff"/>
+      <stop offset="1" stop-color="#1f5c96"/>
+    </linearGradient>
+  </defs>
+  <rect width="150" height="150" rx="24" fill="url(#bg)"/>
+  <path d="M36 136c4-29 19-45 39-45s36 16 40 45H36z" fill="url(#cape)"/>
+  <path d="M43 125c9-16 19-23 32-23s24 7 32 23H43z" fill="#f8d44e"/>
+  <path d="M51 62c0-20 10-34 26-34s27 14 27 34c0 25-12 40-27 40S51 87 51 62z" fill="#efb17e"/>
+  <path d="M48 58c4-24 16-36 35-36 13 6 21 18 23 36-9-8-18-12-28-12-11 0-21 4-30 12z" fill="#382417"/>
+  <path d="M47 55c11-17 28-25 51-22 4 8 7 16 8 24-18-11-38-12-59-2z" fill="#5b351d"/>
+  <circle cx="65" cy="67" r="4" fill="#10151d"/>
+  <circle cx="89" cy="67" r="4" fill="#10151d"/>
+  <path d="M68 84c7 5 14 5 21 0" fill="none" stroke="#8b3a35" stroke-width="4" stroke-linecap="round"/>
+  <path d="M31 135c10-19 24-31 44-35 21 4 35 16 44 35H31z" fill="none" stroke="#f8d44e" stroke-width="5" opacity=".75"/>
+  <path d="M112 39l13 7-13 7-7 13-7-13-13-7 13-7 7-13 7 13z" fill="#f8d44e" opacity=".9"/>
+</svg>
