@@ -29,7 +29,9 @@ void AAshmentWorldClient::FetchState()
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     FString BaseUrl = ServerBaseUrl;
     BaseUrl.RemoveFromEnd(TEXT("/"));
-    Request->SetURL(BaseUrl + TEXT("/api/unreal/state"));
+    const FString StateUrl = BaseUrl + TEXT("/api/unreal/state");
+    UE_LOG(LogTemp, Display, TEXT("Ashment Unreal fetching bridge state from %s"), *StateUrl);
+    Request->SetURL(StateUrl);
     Request->SetVerb(TEXT("GET"));
     Request->SetHeader(TEXT("Accept"), TEXT("application/json"));
     Request->OnProcessRequestComplete().BindUObject(this, &AAshmentWorldClient::OnStateResponse);
@@ -59,6 +61,12 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
 {
     ClearSpawned();
 
+    int32 LocationCount = 0;
+    int32 ActorCount = 0;
+    int32 ItemCount = 0;
+    int32 PropCount = 0;
+    int32 ObjectiveCount = 0;
+
     const TArray<TSharedPtr<FJsonValue>>* Locations = nullptr;
     if (Root->TryGetArrayField(TEXT("locations"), Locations))
     {
@@ -77,6 +85,7 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
 
             SpawnPrimitive(CubeMesh, Name, Location, Scale, bActive ? Ground + FLinearColor(0.12f, 0.12f, 0.04f) : Ground);
             SpawnLabel(Name, FVector(Center.X, Center.Y, Size.Z + 140.f), bActive ? 42.f : 34.f, bActive ? FLinearColor(1.f, 0.84f, 0.18f) : FLinearColor(0.68f, 0.74f, 0.84f));
+            ++LocationCount;
         }
     }
 
@@ -94,6 +103,7 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
             const FLinearColor Color = bPlayer ? FLinearColor(0.2f, 0.55f, 1.f) : bQuest ? FLinearColor(0.72f, 0.9f, 0.55f) : FLinearColor(0.95f, 0.45f, 0.32f);
             SpawnPrimitive(SphereMesh, Name, Position, FVector(0.82f), Color);
             SpawnLabel(Name, Position + FVector(0.f, 0.f, 110.f), bPlayer ? 30.f : 24.f, Color);
+            ++ActorCount;
         }
     }
 
@@ -107,6 +117,7 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
             const FVector Position = ReadVector(Object->GetObjectField(TEXT("position")));
             const FLinearColor Color = ReadColor(Object->GetObjectField(TEXT("emissiveColor")), FLinearColor(1.f, 0.84f, 0.25f));
             SpawnPrimitive(CylinderMesh, Object->GetStringField(TEXT("name")), Position, FVector(0.34f, 0.34f, 0.2f), Color);
+            ++ItemCount;
         }
     }
 
@@ -119,6 +130,7 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
             if (!Object.IsValid()) continue;
             const FVector Position = ReadVector(Object->GetObjectField(TEXT("position")));
             SpawnPrimitive(CubeMesh, Object->GetStringField(TEXT("name")), Position, FVector(0.35f, 0.35f, 0.55f), FLinearColor(0.55f, 0.5f, 0.42f));
+            ++PropCount;
         }
     }
 
@@ -133,8 +145,21 @@ void AAshmentWorldClient::RenderState(const TSharedPtr<FJsonObject>& Root)
             const bool bPrimary = Object->GetBoolField(TEXT("primary"));
             SpawnPrimitive(SphereMesh, Object->GetStringField(TEXT("questTitle")), Position + FVector(0.f, 0.f, 120.f), bPrimary ? FVector(0.42f) : FVector(0.28f), FLinearColor(1.f, 0.84f, 0.18f));
             SpawnLabel(Object->GetStringField(TEXT("actionLabel")), Position + FVector(0.f, 0.f, 205.f), bPrimary ? 30.f : 22.f, FLinearColor(1.f, 0.84f, 0.18f));
+            ++ObjectiveCount;
         }
     }
+
+    UE_LOG(
+        LogTemp,
+        Display,
+        TEXT("Ashment Unreal rendered bridge state: %d locations, %d actors, %d items, %d props, %d objectives, %d spawned actors"),
+        LocationCount,
+        ActorCount,
+        ItemCount,
+        PropCount,
+        ObjectiveCount,
+        SpawnedActors.Num()
+    );
 }
 
 void AAshmentWorldClient::ClearSpawned()
@@ -155,9 +180,9 @@ AActor* AAshmentWorldClient::SpawnPrimitive(UStaticMesh* Mesh, const FString& Na
     Actor->SetActorLabel(Name);
 #endif
     UStaticMeshComponent* MeshComponent = Actor->GetStaticMeshComponent();
+    MeshComponent->SetMobility(EComponentMobility::Movable);
     MeshComponent->SetStaticMesh(Mesh);
     MeshComponent->SetWorldScale3D(Scale);
-    MeshComponent->SetMobility(EComponentMobility::Movable);
     if (BaseMaterial)
     {
         UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(BaseMaterial, Actor);

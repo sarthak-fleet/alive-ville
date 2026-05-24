@@ -12,6 +12,8 @@ public class AshmentUnreal : ModuleRules
             "CoreUObject",
             "Engine",
             "InputCore",
+            "AIModule",
+            "NavigationSystem",
             "HTTP",
             "Json",
             "JsonUtilities"

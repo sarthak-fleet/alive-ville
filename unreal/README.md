@@ -58,7 +58,9 @@ The bridge intentionally sends Unreal-friendly centimeters, colors, active objec
 ## Current C++ Scaffold
 
 - `AshmentWorldClient`: fetches the bridge state and spawns runtime scene primitives for locations, actors, items, props, and objectives.
-- `AshmentPlayerPawn`: simple free-fly camera pawn for early inspection.
+- `AshmentStrategyPawn`: orthographic top-down camera pawn adapted from the UE 5.7 TopDown strategy template pattern.
+- `AshmentStrategyUnit`: AI-controlled character base for bridge-driven agents once the debug spheres are replaced with real units.
+- `AshmentPlayerPawn`: legacy free-fly camera pawn kept for early inspection/debug.
 - `AshmentUnrealGameMode`: spawns the world client if the level does not already contain one.
 
 This is not the final art/gameplay layer. Once the sample base is chosen, the generated primitives should become a debug visualization while the real scene uses sample/marketplace-quality assets wired to the same bridge.

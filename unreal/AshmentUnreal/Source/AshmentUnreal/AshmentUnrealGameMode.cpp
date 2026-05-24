@@ -1,12 +1,12 @@
 #include "AshmentUnrealGameMode.h"
 
-#include "AshmentPlayerPawn.h"
+#include "AshmentStrategyPawn.h"
 #include "AshmentWorldClient.h"
 #include "EngineUtils.h"
 
 AAshmentUnrealGameMode::AAshmentUnrealGameMode()
 {
-    DefaultPawnClass = AAshmentPlayerPawn::StaticClass();
+    DefaultPawnClass = AAshmentStrategyPawn::StaticClass();
 }
 
 void AAshmentUnrealGameMode::BeginPlay()
