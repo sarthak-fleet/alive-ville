@@ -23,6 +23,10 @@ Avoid GPL or unlicensed code/assets unless we intentionally accept those obligat
 - `astro-landing/`: public marketing site.
 - `unreal/AshmentUnreal/`: shelved Unreal C++ client scaffold and bridge target.
 
+## Current Playable Snapshot
+
+The default browser route now opens the 2D Agent Town prototype: one larger Z-City overworld, enterable rooms, a small quest chain, and character/prop interactions. See [docs/agent-town-handoff.md](docs/agent-town-handoff.md) before continuing this track.
+
 ## Run The Simulation
 
 ```sh

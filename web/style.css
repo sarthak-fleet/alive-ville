@@ -22,9 +22,9 @@
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  background: #111827;
-  color: #f6f1e8;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  background: #10161d;
+  color: #f8f0d8;
   overflow: hidden;
 }
 
@@ -42,49 +42,61 @@
 .agent-town-panel {
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 18px;
-  border-left: 1px solid rgba(246, 241, 232, 0.12);
-  background: #151b27;
-  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.24);
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border-left: 1px solid rgba(79, 54, 28, 0.58);
+  background:
+    linear-gradient(180deg, rgba(51, 34, 19, 0.3), transparent 26%),
+    #211a16;
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.28);
 }
 
 .agent-town-kicker {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: rgba(246, 241, 232, 0.68);
+  color: rgba(248, 240, 216, 0.66);
   font-size: 12px;
   font-weight: 800;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .agent-town-card,
 .agent-town-objective,
 .agent-town-log {
-  border: 1px solid rgba(246, 241, 232, 0.12);
+  border: 1px solid rgba(117, 78, 40, 0.58);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(180deg, rgba(255, 236, 181, 0.07), rgba(83, 50, 25, 0.08)),
+    rgba(41, 30, 23, 0.92);
+  box-shadow: inset 0 1px rgba(255, 242, 199, 0.08);
 }
 
 .agent-town-card {
   display: grid;
-  gap: 10px;
-  padding: 18px;
+  gap: 8px;
+  padding: 14px;
 }
 
-.agent-town-card small {
+.agent-town-card small,
+.agent-town-objective small,
+.agent-town-zones > small {
   color: #f8d44e;
   font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.agent-town-card h1 {
+.agent-town-card h2,
+.agent-town-objective h1 {
+  margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
-  font-family: var(--font-sans);
-  font-size: 30px;
+  color: #fff4ca;
+  font-family: var(--font-display);
+  font-size: 23px;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -93,52 +105,110 @@
 .agent-town-objective p,
 .agent-town-log p {
   margin: 0;
-  color: rgba(246, 241, 232, 0.76);
+  color: rgba(248, 240, 216, 0.78);
 }
 
-.agent-town-card button {
+.agent-town-card button,
+.agent-town-objective button {
   justify-self: start;
-  min-width: 92px;
+  max-width: 100%;
   min-height: 40px;
-  border-color: rgba(248, 212, 78, 0.44);
-  color: #111827;
+  border-color: rgba(248, 212, 78, 0.48);
+  color: #21170f;
   background: #f8d44e;
+  box-shadow: 0 2px rgba(80, 51, 16, 0.54);
 }
 
 .agent-town-objective {
   display: grid;
-  gap: 6px;
-  padding: 14px;
+  gap: 9px;
+  padding: 16px;
 }
 
 .agent-town-objective button {
-  justify-self: start;
-  min-height: 38px;
-  margin-top: 6px;
-  padding: 9px 12px;
-  border-color: rgba(248, 212, 78, 0.44);
-  color: #111827;
+  margin-top: 2px;
+}
+
+.agent-town-steps {
+  display: grid;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-town-steps li {
+  position: relative;
+  min-height: 26px;
+  padding: 5px 8px 5px 27px;
+  border: 1px solid rgba(248, 212, 78, 0.13);
+  border-radius: 6px;
+  color: rgba(248, 240, 216, 0.66);
+  background: rgba(12, 9, 7, 0.24);
+}
+
+.agent-town-steps li::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(248, 240, 216, 0.38);
+}
+
+.agent-town-steps li.current {
+  border-color: rgba(248, 212, 78, 0.5);
+  color: #fff4ca;
+  background: rgba(248, 212, 78, 0.1);
+}
+
+.agent-town-steps li.current::before {
   background: #f8d44e;
+}
+
+.agent-town-steps li.done {
+  color: rgba(248, 240, 216, 0.44);
+  text-decoration: line-through;
+}
+
+.agent-town-steps li.done::before {
+  background: #8fcb7c;
 }
 
 .agent-town-zones {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
 .agent-town-zones button {
-  min-height: 42px;
-  padding: 8px;
-  border-color: rgba(246, 241, 232, 0.14);
-  color: rgba(246, 241, 232, 0.78);
-  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  padding: 8px 10px;
+  border-color: rgba(117, 78, 40, 0.58);
+  color: rgba(248, 240, 216, 0.78);
+  background: rgba(255, 244, 202, 0.04);
+}
+
+.agent-town-zones button small {
+  color: rgba(248, 240, 216, 0.46);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .agent-town-zones button.active {
   border-color: rgba(248, 212, 78, 0.55);
-  color: #111827;
+  color: #21170f;
   background: #f8d44e;
+}
+
+.agent-town-zones button.active small {
+  color: rgba(33, 23, 15, 0.68);
 }
 
 .agent-town-zones button:disabled {
@@ -149,35 +219,38 @@
   display: grid;
   gap: 4px;
   padding: 11px 14px;
-  border: 1px solid rgba(246, 241, 232, 0.1);
+  border: 1px solid rgba(117, 78, 40, 0.42);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(12, 9, 7, 0.22);
 }
 
 .agent-town-inventory small {
-  color: rgba(246, 241, 232, 0.54);
+  color: rgba(248, 240, 216, 0.54);
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .agent-town-inventory p {
   margin: 0;
-  color: rgba(246, 241, 232, 0.82);
+  color: rgba(248, 240, 216, 0.82);
 }
 
 .agent-town-objective strong {
+  color: #fff4ca;
   font-size: 16px;
 }
 
 .agent-town-log {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  max-height: 170px;
+  padding: 12px;
+  overflow: auto;
 }
 
 .agent-town-log p {
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(246, 241, 232, 0.09);
+  border-bottom: 1px solid rgba(248, 240, 216, 0.09);
 }
 
 .agent-town-log p:last-child {
@@ -186,7 +259,7 @@
 }
 
 .agent-town-panel > a {
-  color: rgba(246, 241, 232, 0.58);
+  color: rgba(248, 240, 216, 0.5);
   font-size: 12px;
 }
 
