@@ -134,7 +134,7 @@ describe("server", () => {
 
       const html = await fetch(`http://localhost:${port}/`);
       expect(html.status).toBe(200);
-      expect(await html.text()).toMatch(/Ashment Village/);
+      expect(await html.text()).toMatch(/Aliveville/);
     } finally {
       child.kill();
     }
