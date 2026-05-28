@@ -64,12 +64,12 @@
     ]
   },
   "dependencies": {
-    "@saas-maker/posthog-client": "^0.1.0",
     "phaser": "^4.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "three": "^0.184.0",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.13",
+    "posthog-js": "^1.372.1"
   },
   "prettier": "@saas-maker/prettier-config"
 }

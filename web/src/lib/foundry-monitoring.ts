@@ -1,4 +1,4 @@
-import { initPostHog, track } from "@saas-maker/posthog-client";
+import { posthog } from "posthog-js";
 
 const PROJECT_SLUG = "ai-game";
 const POSTHOG_HOST = "https://us.i.posthog.com";
@@ -12,7 +12,14 @@ export function installBrowserMonitoring(): void {
   installed = true;
 
   const apiKey = posthogApiKey();
-  if (apiKey) initPostHog({ apiKey, host: posthogHost() });
+  if (apiKey) {
+    posthog.init(apiKey, {
+      api_host: posthogHost(),
+      person_profiles: "always",
+      capture_pageview: false,
+      autocapture: false,
+    });
+  }
 
   window.addEventListener("error", (event) => {
     capturePageCrash(event.error ?? event.message, "window_error");
@@ -28,8 +35,7 @@ export function capturePageCrash(
 ): void {
   try {
     const normalized = normalizeError(error);
-    track("foundry_page_crash", {
-      project_slug: PROJECT_SLUG,
+    trackEvent("foundry_page_crash", {
       route: currentRoute(),
       source,
       error_name: normalized.name,
@@ -39,6 +45,10 @@ export function capturePageCrash(
   } catch {
     // Monitoring is best-effort and must never create another crash path.
   }
+}
+
+export function trackEvent(event: string, properties: Record<string, unknown> = {}): void {
+  posthog.capture(event, { project_id: PROJECT_SLUG, ...properties });
 }
 
 function posthogApiKey(): string | undefined {
