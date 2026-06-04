@@ -51,6 +51,11 @@ async function runOpmWorldPlaytest(): Promise<void> {
     await expect(page.locator(".phaser-host canvas")).toHaveCount(1);
     await expect(page.locator(".app-shell")).toHaveClass(/view-2d/);
     await expect(page.locator(".app-shell")).toHaveClass(/focus-mode/);
+    await expect(page.getByLabel("Player status")).toBeVisible();
+    await expect(page.getByLabel("AI agent pulse")).toBeVisible();
+    await page.getByLabel("Open hero roster").click();
+    await expect(page.getByLabel("Hero roster")).toBeVisible();
+    await page.getByLabel("Close roster").click();
     await expectObjective(page, "Recover Saitama's grocery coupon");
     await expect(page.getByRole("button", { name: "2D" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "3D" })).toHaveCount(0);

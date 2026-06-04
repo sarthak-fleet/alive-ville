@@ -24,7 +24,7 @@ export function expandedCompletionReport(rootDir = process.cwd()): ExpandedCompl
       file("web/src/organisms/AgentPulse.tsx"),
       packageDependency("three"),
       packageDependency("phaser"),
-      source("web/src/templates/AppShell.tsx", ["2D", "3D", "lazy", "ThreeWorld", "const PhaserGame = lazy", "useState<\"2d\" | \"3d\">(\"2d\")", "PlayerStatus", "AgentPulse", "focusMode", "Escape", "aria-pressed={focusMode}"]),
+      source("web/src/templates/AppShell.tsx", ["const PhaserGame = lazy", "PhaserGame", "PlayerStatus", "AgentPulse", "focusMode", "view-2d", "Escape", "2D world loading"]),
       file("unreal/AshmentUnreal/AshmentUnreal.uproject"),
       source("unreal/AshmentUnreal/Source/AshmentUnreal/AshmentWorldClient.cpp", ["/api/unreal/state", "SpawnPrimitive", "SpawnLabel", "locations", "actors", "objectives"]),
       source("src/unreal-bridge.ts", ["ashment-unreal-v1", "unrealWorldStateFromWorld", "UnrealWorldState", "WORLD_TO_UNREAL_CM"]),

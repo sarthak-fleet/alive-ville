@@ -53,7 +53,7 @@ export function commercialReadinessReport(rootDir = process.cwd()): CommercialRe
         "objectives",
       ]),
       source("unreal/AshmentUnreal/Source/AshmentUnreal/AshmentPlayerPawn.cpp", ["MoveForward", "MoveRight", "MoveUp", "Turn", "LookUp"]),
-      source("web/src/templates/AppShell.tsx", ["useState<\"2d\" | \"3d\">(\"2d\")", "PhaserGame", "ThreeWorld", "PlayerStatus", "AgentPulse"]),
+      source("web/src/templates/AppShell.tsx", ["const PhaserGame = lazy", "PhaserGame", "PlayerStatus", "AgentPulse", "focusMode", "view-2d"]),
       source("web/src/phaser/VillageScene.ts", ["makeActor", "playCombatFx", "playAgentActionFx", "makeActorNameplate", "ambientBarksForLocation"]),
       source("tests/playtests/opm-world.ts", ["phaser-host canvas", "Player status", "AI agent pulse", "Hero roster", "Route complete"]),
       source("web/src/three/world-scene.ts", [
