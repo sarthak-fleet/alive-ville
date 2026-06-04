@@ -495,7 +495,7 @@ import '../styles/global.css';
     </section>
 
     <!-- THE PORTAL SECTION -->
-    <section id="portal-section" class="relative w-full h-[600vh] bg-[#010102] z-30">
+    <section id="portal-section" class="relative w-full h-[260vh] bg-[#010102] z-30">
         <div class="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center px-6">
 
             <ThreePortal />
@@ -619,8 +619,47 @@ import '../styles/global.css';
         </div>
     </section>
 
+    <!-- POST-PORTAL STATUS -->
+    <section class="relative z-40 border-y border-white/5 bg-[#050507] px-6 py-24">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-16 items-center">
+            <div class="space-y-8">
+                <span class="tag border-[#f8d44e]/20 text-[#f8d44e]">World Link Stable</span>
+                <div class="space-y-5">
+                    <h2 class="text-4xl md:text-6xl font-black tracking-tight text-white">The village keeps moving after entry.</h2>
+                    <p class="text-white/40 text-lg leading-relaxed font-light max-w-xl">
+                        Access Ashment opens the simulation surface, but the real promise is persistence: agents keep schedules, relationships, memories, and narrative pressure in sync.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card p-7 min-h-44 flex flex-col justify-between">
+                    <span class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/20">Agents</span>
+                    <div>
+                        <p class="text-4xl font-black text-white">05</p>
+                        <p class="mt-2 text-sm text-white/35 leading-relaxed">NPCs with guarded secrets, needs, and trust state.</p>
+                    </div>
+                </div>
+                <div class="glass-card p-7 min-h-44 flex flex-col justify-between">
+                    <span class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/20">Memory</span>
+                    <div>
+                        <p class="text-4xl font-black text-white">Graph</p>
+                        <p class="mt-2 text-sm text-white/35 leading-relaxed">Local retrieval shapes dialogue, gossip, and choices.</p>
+                    </div>
+                </div>
+                <div class="glass-card p-7 min-h-44 flex flex-col justify-between">
+                    <span class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/20">Loop</span>
+                    <div>
+                        <p class="text-4xl font-black text-white">Live</p>
+                        <p class="mt-2 text-sm text-white/35 leading-relaxed">A director nudges tension when the world goes quiet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- FOOTER -->
-    <footer class="relative py-40 border-t border-white/5 bg-[#010102] transition-opacity duration-500">
+    <footer class="relative py-28 border-t border-white/5 bg-[#010102] transition-opacity duration-500">
         <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-24">
             <div class="col-span-2 space-y-10">
                 <div class="logo">ASHMENT</div>
@@ -645,7 +684,7 @@ import '../styles/global.css';
                 </ul>
             </div>
         </div>
-        <div class="max-w-7xl mx-auto px-6 mt-40 pt-12 border-t border-white/5 flex justify-between items-center text-[0.6rem] text-white/10 uppercase tracking-[0.6em] font-mono">
+        <div class="max-w-7xl mx-auto px-6 mt-24 pt-12 border-t border-white/5 flex justify-between items-center text-[0.6rem] text-white/10 uppercase tracking-[0.6em] font-mono">
             <span>© 2026 ASHMENT</span>
             <span>Core Sync Established</span>
         </div>
@@ -768,7 +807,6 @@ import '../styles/global.css';
                 if (!portalSection || !portalFrame || !portalContent || !gameOverlay) return;
                 const rect = portalSection.getBoundingClientRect();
                 const scrollProgress = Math.max(0, Math.min(1, -rect.top / (rect.height - window.innerHeight)));
-                const footer = document.querySelector('footer');
                 const nav = document.querySelector('nav');
 
                 const scale = 1 + Math.pow(scrollProgress, 4) * 50;
@@ -781,14 +819,12 @@ import '../styles/global.css';
                     gameOverlay.style.opacity = '1';
                     gameOverlay.style.pointerEvents = 'auto';
                     gameOverlay.style.visibility = 'visible';
-                    if (footer) footer.style.opacity = '0';
                     if (nav) nav.style.opacity = '0';
                     if (!gameStarted) { startMiniGame(); gameStarted = true; }
                 } else {
                     gameOverlay.style.opacity = '0';
                     gameOverlay.style.pointerEvents = 'none';
                     gameOverlay.style.visibility = 'hidden';
-                    if (footer) footer.style.opacity = '1';
                     if (nav) nav.style.opacity = '1';
                 }
             });
