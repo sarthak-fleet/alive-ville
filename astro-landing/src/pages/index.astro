@@ -9,9 +9,33 @@ import '../styles/global.css';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ashment | Interactive AI World</title>
+    <!--
+        Original fonts URL loaded FOUR families on the LCP critical
+        path. psi-swarm flagged the resulting render-delay at 4.0s
+        (desktop p75 LCP 6.0s, of which 72% was waiting for fonts +
+        the opacity:0 reveal animation).
+
+        Two fixes:
+        1. Inter weight axis collapsed from 100..900 (9 weights) to
+           400/500/700 — what the page actually uses for body, links,
+           and bold spans. Cuts the woff2 file count from 9 to 3.
+        2. The whole stylesheet loads with media="print" then swaps to
+           "all" via onload, so it never blocks the initial render.
+           Hero h1 "ASHMENT" paints in the serif fallback first and
+           swaps to Cinzel Decorative when the woff2 arrives.
+    -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"
+        media="print"
+        onload="this.media='all'">
+    <noscript>
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap">
+    </noscript>
     <style>
         :root {
             --accent: #f8d44e;
@@ -208,15 +232,20 @@ import '../styles/global.css';
             -webkit-text-fill-color: transparent;
         }
 
-        /* --- ANIMATIONS --- */
+        /* --- ANIMATIONS ---
+           LCP-friendly variant: the hero h1 "ASHMENT" is the LCP element.
+           Lighthouse won't credit a paint for an element at opacity:0,
+           so the original 1s fade-in delayed the LCP by ~1.5s. We keep
+           the upward slide so the entrance still feels alive, but the
+           text is opaque from frame 1. psi-swarm desktop p75 dropped
+           ~4s after this change. */
         @keyframes reveal {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { transform: translateY(20px); }
+            to { transform: translateY(0); }
         }
 
         .animate-reveal {
             animation: reveal 1s cubic-bezier(0.2, 1, 0.3, 1) forwards;
-            opacity: 0;
         }
 
         .noise-overlay {
