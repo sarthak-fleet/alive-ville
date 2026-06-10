@@ -10,7 +10,7 @@ const TSX = new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url).pathnam
 
 function startServer(port: number, env: Record<string, string> = {}): Promise<ChildProcess> {
   const child = spawn(process.execPath, [TSX, SERVER], {
-    env: { ...process.env, PORT: String(port), LLM_API_KEY: "", LLM_BASE_URL: "", ...env },
+    env: { ...process.env, PORT: String(port), LLM_API_KEY: "", LLM_BASE_URL: "", AUTOSAVE: "0", ...env },
     stdio: ["ignore", "pipe", "pipe"],
   });
   return new Promise((resolve, reject) => {

@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, normalize } from "node:path";
+import { dirname, extname, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { readAgentLoopCheckpoints, upsertAgentLoopCheckpoint, writeAgentLoopCheckpoints } from "./agent-checkpoint-store.ts";
 import { createAgentLoop } from "./agent-loop.ts";
@@ -18,7 +19,8 @@ import { validateWorldIngestSource, worldSourceToWorld } from "./world-ingest.ts
 
 const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;
-const WEB_ROOT = new URL(process.env["WEB_ROOT"] ?? "./web/", CWD);
+// trailing slash matters: URL resolution drops the last path segment without it
+const WEB_ROOT = new URL(`${(process.env["WEB_ROOT"] ?? "./web/").replace(/\/$/, "")}/`, CWD);
 const WORLD_PATH = new URL(process.env["WORLD_FILE"] ?? "./worlds/village.json", CWD);
 const CUTSCENE_MANIFEST_PATH = new URL("./web/assets/cutscenes/manifest.json", CWD);
 const LLM_MAX_NPCS = Number(process.env["LLM_MAX_NPCS"] ?? 5);
@@ -40,8 +42,28 @@ const MIME: Record<string, string> = {
   ".svg": "image/svg+xml",
 };
 
+const AUTOSAVE_PATH = new URL(process.env["AUTOSAVE_FILE"] ?? "./tmp/autosave-world.json", CWD);
+const AUTOSAVE_ENABLED = process.env["AUTOSAVE"] !== "0";
+const AUTOSAVE_INTERVAL_MS = 10_000;
+
 const INITIAL_WORLD_JSON = readFileSync(WORLD_PATH, "utf8");
-const world = parseInitialWorld();
+const world = loadAutosave() ?? parseInitialWorld();
+
+/** progress must survive server restarts: load the last autosave when present */
+function loadAutosave(): World | null {
+  if (!AUTOSAVE_ENABLED) return null;
+  try {
+    const path = fileURLToPath(AUTOSAVE_PATH);
+    if (!existsSync(path)) return null;
+    const saved = JSON.parse(readFileSync(path, "utf8")) as World;
+    if (!saved || typeof saved !== "object" || !("npcs" in saved)) return null;
+    console.info(`[autosave] resuming "${saved.name}" at tick ${saved.tick} from ${path}`);
+    return saved;
+  } catch (error) {
+    console.error("[autosave] failed to load, starting fresh:", (error as Error).message);
+    return null;
+  }
+}
 const initialAgentLoopCheckpoints = readAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH)
   .filter((checkpoint) => checkpoint.world.id === world.id);
 const propose = isLlmEnabled() ? createLlmProposer({ tier: "normal", maxNpcs: LLM_MAX_NPCS }) : undefined;
@@ -59,8 +81,40 @@ setInterval(() => {
 
 createArcForWorld(engine.state);
 
+// ---------------------------------------------------------------------------
+// Autosave: every mutation path calls checkArc() or replaceEngineState(), so
+// marking dirty there + a 10s atomic writer keeps progress restart-proof.
+let autosaveDirty = false;
+
+function markDirty(): void {
+  autosaveDirty = true;
+}
+
+function flushAutosave(): void {
+  if (!AUTOSAVE_ENABLED || !autosaveDirty) return;
+  autosaveDirty = false;
+  try {
+    const path = fileURLToPath(AUTOSAVE_PATH);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(`${path}.tmp`, JSON.stringify(engine.state));
+    renameSync(`${path}.tmp`, path);
+  } catch (error) {
+    autosaveDirty = true;
+    console.error("[autosave] write failed:", (error as Error).message);
+  }
+}
+
+setInterval(flushAutosave, AUTOSAVE_INTERVAL_MS).unref();
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => {
+    flushAutosave();
+    process.exit(0);
+  });
+}
+
 /** check arc progress after world mutations; broadcast a director-style beat on stage advance */
 function checkArc(): void {
+  markDirty();
   const beat = evaluateArc(engine.state);
   if (!beat) return;
   broadcastSse("tick", {
@@ -381,6 +435,7 @@ async function replaceEngineState(nextWorld: World) {
   await agentLoop.waitForIdle();
   engine.setState(nextWorld);
   createArcForWorld(engine.state);
+  markDirty();
   const status = agentLoop.clearCheckpoints();
   writeAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH, []);
   clearDialogueHistories();

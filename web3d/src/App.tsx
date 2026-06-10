@@ -3,6 +3,7 @@ import "./hud/hud.css";
 import { useEffect } from "react";
 
 import { Hud } from "./hud/Hud.tsx";
+import { Onboarding } from "./hud/Onboarding.tsx";
 import { StartFlow } from "./hud/StartFlow.tsx";
 import { GameWorld } from "./scene/GameWorld.tsx";
 import { useUiStore } from "./store/ui.ts";
@@ -44,6 +45,7 @@ export function App() {
     <div style={{ position: "absolute", inset: 0 }}>
       <GameWorld world={world} />
       {gamePhase === "playing" ? <Hud /> : null}
+      <Onboarding />
       <StartFlow />
     </div>
   );

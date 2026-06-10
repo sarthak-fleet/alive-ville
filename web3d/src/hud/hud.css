@@ -279,6 +279,75 @@
   }
 }
 
+.onboarding {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 340px;
+  background: rgba(14, 18, 28, 0.92);
+  border: 1px solid rgba(130, 160, 220, 0.25);
+  border-radius: 14px;
+  padding: 20px 22px;
+  color: #e8ecf5;
+  z-index: 40;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+}
+
+.onboarding-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.onboarding-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.onboarding-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #c6cede;
+}
+
+.onboarding-key {
+  min-width: 56px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-weight: 700;
+  font-size: 12px;
+  color: #f1f5fb;
+}
+
+.onboarding-goal {
+  font-size: 12px;
+  color: #9aa6bc;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.onboarding button {
+  width: 100%;
+  background: #2563b8;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  padding: 9px 0;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 .screen-center button {
   background: #2563b8;
   border: none;
