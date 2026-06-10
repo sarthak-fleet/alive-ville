@@ -1,0 +1,20 @@
+# Aliveville
+
+> Aliveville is an interactive AI world experiment — a persistent ecosystem exploring autonomous agent behavior, narrative emergence, and playable 3D exploration.
+
+Marketing site at aliveville.com. Game client and simulation code live in the ai-game monorepo.
+
+## Product
+
+- [Home](https://aliveville.com/): Interactive landing and world preview
+- [Privacy](https://aliveville.com/privacy): Privacy policy for this site
+- [Terms](https://aliveville.com/terms): Terms of use
+
+## Source
+
+- [GitHub — ai-game](https://github.com/sarthak-fleet/ai-game): Monorepo (simulation, web3d client, astro landing)
+
+## Optional
+
+- [Foundry](https://sassmaker.com): Fleet showcase
+- [Sarthak Agrawal](https://sarthakagrawal.dev): Builder portfolio
