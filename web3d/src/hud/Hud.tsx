@@ -7,6 +7,7 @@ import { isSfxEnabled, pickupChime, questChime, setSfxEnabled } from "../audio/s
 import { useCombatStore } from "../combat/store.ts";
 import { isTypingTarget } from "../controls/input.ts";
 import { requestTeleport } from "../controls/runtime.ts";
+import { useDirectorStore } from "../director/store.ts";
 import { worldPressure } from "../mapping/mood.ts";
 import { useUiStore } from "../store/ui.ts";
 import { useWorldStore } from "../store/world.ts";
@@ -65,6 +66,9 @@ export function Hud() {
       const ui = useUiStore.getState();
       const current = ui.interactionTarget;
       if (!current || ui.dialogueNpcId) return;
+      if (useDirectorStore.getState().cutscene) return;
+      // stop the same keystroke from typing "e" into the dialogue input it opens
+      event.preventDefault();
       if (current.kind === "npc") openDialogue(current.id);
       if (current.kind === "item") {
         pickupChime();
