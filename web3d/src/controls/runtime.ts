@@ -14,6 +14,13 @@ export function addCameraShake(amount: number): void {
   cameraShake.value = Math.min(0.6, Math.max(cameraShake.value, amount));
 }
 
+/** one-shot teleport consumed by the player controller (door transitions) */
+export const teleportRequest: { target: { x: number; z: number } | null } = { target: null };
+
+export function requestTeleport(x: number, z: number): void {
+  teleportRequest.target = { x, z };
+}
+
 export interface LiveActor {
   position: THREE.Vector3;
   npcId: string;

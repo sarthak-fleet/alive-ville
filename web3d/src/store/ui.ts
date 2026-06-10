@@ -7,7 +7,7 @@ export interface DialogueLine {
 }
 
 export interface InteractionTarget {
-  kind: "npc" | "item" | "prop";
+  kind: "npc" | "item" | "prop" | "door";
   id: string;
   label: string;
   verb: string;
@@ -18,6 +18,9 @@ interface UiStore {
   dialogueLines: DialogueLine[];
   dialogueBusy: boolean;
   interactionTarget: InteractionTarget | null;
+  /** district id whose interior the player is currently inside, if any */
+  interiorDistrictId: string | null;
+  setInteriorDistrictId: (districtId: string | null) => void;
   openDialogue: (npcId: string) => void;
   pushDialogueLine: (line: DialogueLine) => void;
   setDialogueBusy: (busy: boolean) => void;
@@ -30,6 +33,11 @@ export const useUiStore = create<UiStore>((set, get) => ({
   dialogueLines: [],
   dialogueBusy: false,
   interactionTarget: null,
+  interiorDistrictId: null,
+
+  setInteriorDistrictId(districtId) {
+    set({ interiorDistrictId: districtId });
+  },
 
   openDialogue(npcId) {
     if (get().dialogueNpcId === npcId) return;

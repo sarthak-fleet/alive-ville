@@ -13,6 +13,7 @@ import { cityModelFor } from "../worldgen/cache.ts";
 import { computePlacements } from "../worldgen/placements.ts";
 import { CityGround } from "./CityGround.tsx";
 import { District, InteractableMarker, ItemMarker } from "./District.tsx";
+import { Interior } from "./Interior.tsx";
 import { Lighting } from "./Lighting.tsx";
 
 // low-end escape hatch + debugging: ?nofx disables the post-processing chain
@@ -22,6 +23,11 @@ export function GameWorld({ world }: { world: World }) {
   const model = cityModelFor(world);
   const placements = useMemo(() => computePlacements(world, model.districts), [world, model]);
   const night = isNight(world.clock);
+
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const debug = (window as unknown as Record<string, unknown>)["__game"] as Record<string, unknown> | undefined;
+    if (debug) debug["doors"] = model.doors;
+  }
 
   const activeDistrict = model.districts.find((district) => district.locationId === world.player.locationId) ?? model.districts[0];
   if (!activeDistrict) return null;
@@ -45,6 +51,9 @@ export function GameWorld({ world }: { world: World }) {
           <CityGround model={model} baseColor={activeDistrict.palette.ground} />
           {model.districts.map((district) => (
             <District key={district.locationId} district={district} night={night} />
+          ))}
+          {model.interiors.map((interior) => (
+            <Interior key={interior.districtId} interior={interior} />
           ))}
           {placements.items.map((item) => (
             <ItemMarker key={item.itemId} item={item} />

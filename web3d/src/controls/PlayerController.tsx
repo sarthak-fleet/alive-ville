@@ -14,7 +14,7 @@ import { useWorldStore } from "../store/world.ts";
 import type { DistrictModel, WorldModel } from "../worldgen/index.ts";
 import type { WorldPlacements } from "../worldgen/placements.ts";
 import { attachInput, input } from "./input.ts";
-import { cameraShake, cameraState, npcRegistry, playerHeading, playerPosition } from "./runtime.ts";
+import { cameraShake, cameraState, npcRegistry, playerHeading, playerPosition, teleportRequest } from "./runtime.ts";
 
 const WALK_SPEED = 3.2;
 const RUN_SPEED = 6.2;
@@ -171,6 +171,17 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     const controller = controllerRef.current;
     if (!rigidBody || !controller) return;
     const s = state.current;
+
+    // door transitions request a one-shot teleport
+    if (teleportRequest.target) {
+      const { x, z } = teleportRequest.target;
+      teleportRequest.target = null;
+      rigidBody.setNextKinematicTranslation({ x, y: CAPSULE_CENTER_Y + 0.2, z });
+      playerPosition.set(x, 0, z);
+      s.velocity.set(0, 0, 0);
+      s.lookInitialized = false;
+      return;
+    }
 
     // director cutscene: camera orbits the focus actor, player is frozen
     const cutscene = useDirectorStore.getState().cutscene;
@@ -332,7 +343,7 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     // interaction scan + district-crossing detection at ~10Hz
     if (frame.clock.elapsedTime - s.lastScan > 0.1) {
       s.lastScan = frame.clock.elapsedTime;
-      setInteractionTarget(scanInteractions(world, placements));
+      setInteractionTarget(scanInteractions(world, placements, model));
 
       const here = model.districts.find(
         (d) =>
@@ -376,8 +387,28 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
   );
 }
 
-function scanInteractions(world: World, placements: WorldPlacements) {
-  let best: { kind: "npc" | "item" | "prop"; id: string; label: string; verb: string; distance: number } | null = null;
+function scanInteractions(world: World, placements: WorldPlacements, model: WorldModel) {
+  let best: { kind: "npc" | "item" | "prop" | "door"; id: string; label: string; verb: string; distance: number } | null = null;
+
+  const interiorDistrictId = useUiStore.getState().interiorDistrictId;
+  if (interiorDistrictId) {
+    // inside: the only interaction is the exit door
+    const interior = model.interiors.find((entry) => entry.districtId === interiorDistrictId);
+    if (interior) {
+      const distance = Math.hypot(interior.exit.x - playerPosition.x, interior.exit.z - playerPosition.z);
+      if (distance < INTERACT_RANGE) {
+        return { kind: "door" as const, id: interior.districtId, label: interior.label, verb: "Leave" };
+      }
+    }
+    return null;
+  }
+
+  for (const door of model.doors) {
+    const distance = Math.hypot(door.x - playerPosition.x, door.z - playerPosition.z);
+    if (distance < INTERACT_RANGE && (!best || distance < best.distance)) {
+      best = { kind: "door", id: door.districtId, label: door.label, verb: "Enter", distance };
+    }
+  }
 
   const combatEnemies = useCombatStore.getState().enemies;
   for (const actor of npcRegistry.values()) {

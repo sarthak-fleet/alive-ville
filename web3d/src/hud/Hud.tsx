@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { timeOfDay } from "../../../src/types.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { isTypingTarget } from "../controls/input.ts";
+import { requestTeleport } from "../controls/runtime.ts";
 import { useUiStore } from "../store/ui.ts";
 import { useWorldStore } from "../store/world.ts";
+import { cityModelFor } from "../worldgen/cache.ts";
 import { Dialogue } from "./Dialogue.tsx";
 import { ImportScreen } from "./ImportScreen.tsx";
 import { Letterbox } from "./Letterbox.tsx";
@@ -23,6 +25,7 @@ export function Hud() {
   const target = useUiStore((state) => state.interactionTarget);
   const dialogueNpcId = useUiStore((state) => state.dialogueNpcId);
   const openDialogue = useUiStore((state) => state.openDialogue);
+  const interiorDistrictId = useUiStore((state) => state.interiorDistrictId);
   const [importOpen, setImportOpen] = useState(false);
   const playerHp = useCombatStore((state) => state.playerHp);
   const playerMaxHp = useCombatStore((state) => state.playerMaxHp);
@@ -37,11 +40,31 @@ export function Hud() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.code !== "KeyE" || isTypingTarget(event.target)) return;
-      const current = useUiStore.getState().interactionTarget;
-      if (!current || useUiStore.getState().dialogueNpcId) return;
+      const ui = useUiStore.getState();
+      const current = ui.interactionTarget;
+      if (!current || ui.dialogueNpcId) return;
       if (current.kind === "npc") openDialogue(current.id);
       if (current.kind === "item") void send({ type: "pickup", itemId: current.id });
       if (current.kind === "prop") void send({ type: "inspect", propId: current.id });
+      if (current.kind === "door") {
+        const currentWorld = useWorldStore.getState().world;
+        if (!currentWorld) return;
+        const cityModel = cityModelFor(currentWorld);
+        if (ui.interiorDistrictId === current.id) {
+          const door = cityModel.doors.find((entry) => entry.districtId === current.id);
+          if (door) {
+            requestTeleport(door.outsideX, door.outsideZ);
+            ui.setInteriorDistrictId(null);
+          }
+        } else {
+          const interior = cityModel.interiors.find((entry) => entry.districtId === current.id);
+          if (interior) {
+            requestTeleport(interior.spawn.x, interior.spawn.z);
+            ui.setInteriorDistrictId(current.id);
+          }
+        }
+        ui.setInteractionTarget(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -49,6 +72,9 @@ export function Hud() {
 
   if (!world) return null;
 
+  const interiorLabel = interiorDistrictId
+    ? cityModelFor(world).interiors.find((entry) => entry.districtId === interiorDistrictId)?.label
+    : null;
   const location = world.locations.find((entry) => entry.id === world.player.locationId);
 
   return (
@@ -56,7 +82,8 @@ export function Hud() {
       <div className="topbar">
         <div className="topbar-title">{world.story?.title ?? world.name}</div>
         <div className="topbar-meta">
-          {location?.name ?? "Unknown"} · Day {world.clock.day} · {String(world.clock.hour).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
+          {interiorLabel ? `Inside ${interiorLabel}` : location?.name ?? "Unknown"} · Day {world.clock.day} ·{" "}
+          {String(world.clock.hour).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
         </div>
         <div className="topbar-actions">
           <button

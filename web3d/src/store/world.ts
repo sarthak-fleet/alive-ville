@@ -10,6 +10,7 @@ import {
   subscribeEvents,
 } from "../api/client.ts";
 import { useDirectorStore } from "../director/store.ts";
+import { useUiStore } from "./ui.ts";
 
 export interface WorldEvent {
   id: number;
@@ -113,6 +114,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
           try {
             const world = await fetchState();
             set({ world, events: [], lastSummary: null, agentLoopRunning: false });
+            useUiStore.getState().setInteriorDistrictId(null);
             await resetCombatForWorld();
           } catch {
             // transient fetch failure; the next tick reconciles
@@ -167,6 +169,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       if (!source || typeof source !== "object") throw new Error("World source is missing");
       const result = await importWorldSource(source as never);
       set({ world: result.state, events: [], lastSummary: null, importing: false, error: null, agentLoopRunning: false });
+      useUiStore.getState().setInteriorDistrictId(null);
       await resetCombatForWorld();
     } catch (error) {
       set({ importing: false });

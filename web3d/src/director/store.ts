@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { TickSummary, World } from "../../../src/types.ts";
+import { useUiStore } from "../store/ui.ts";
 
 export interface Cutscene {
   id: number;
@@ -53,6 +54,8 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
     const state = get();
     if (state.cutscene) return;
     if (performance.now() - state.lastEndedAt < COOLDOWN_MS) return;
+    // the beat's actor isn't visible from inside a building — skip cinematics there
+    if (useUiStore.getState().interiorDistrictId) return;
 
     // villain plan advanced a stage → highest-drama beat
     for (const plan of world.villainPlans ?? []) {

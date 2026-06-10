@@ -22,11 +22,14 @@ Aliveville is a browser-playable AI world simulator. The active product track is
 
 - LLM dialogue in the 3D client: `POST /api/dialogue` generates in-character NPC replies (persona + memories + secrets + quests) without consuming sim ticks, records both turns as NPC memories, and falls back to scripted tick-talk when no LLM credentials are configured. Enable by setting `LLM_API_KEY`/`LLM_BASE_URL` (see `.env.example`).
 
+- Enterable interiors: each district's anchor building has a marked door; entering teleports into a deterministic dollhouse room furnished by role (inn/forge/home/…), with HUD location label and exit door. No sim cost; cutscenes suppressed inside.
+
 ## Planned Next
 
 1. Combat polish: rigged CC0 characters (Quaternius pack needs manual download — itch-gated), posture/stagger, character-specific movesets from `src/combat.ts`.
-2. Living-world depth: LLM-backed NPC dialogue/proposals in the 3D client (enable LLM mode on the server), interiors for enterable buildings, richer prop kits per district role.
+2. Interior depth: move the district's quest NPC inside its anchor building, interior-specific interactables/clues, building-specific names.
 3. Make `web3d` the default production build target once it fully supersedes the 2D client.
+4. Enable LLM mode by adding `LLM_API_KEY` to `.env` (user action) — dialogue + agent proposals + director all activate from it.
 
 ## Deferred / Parked
 

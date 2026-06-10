@@ -66,6 +66,23 @@ City level (`worldgen/streets.ts`, `worldgen/navgraph.ts`):
 - Static geometry caches by map content (`scene/GameWorld.tsx` modelCache);
   per-tick changes (items, NPC locations) recompute via `worldgen/placements.ts`.
 
+## Interiors (`worldgen/interiors.ts`, `scene/Interior.tsx`)
+
+Each district's largest building is enterable: a doorframe with a lantern marks
+it, and `E — Enter` teleports the player into a dollhouse room (low walls, no
+ceiling — the existing follow camera looks over them, no occlusion handling
+needed). Rooms generate deterministically: palette-derived floor/walls, a
+furniture plan by role keyword (inn → counter/tables/hearth; forge →
+anvil/crates; home → bed/rug/plants…), warm point light, and an exit door that
+returns the player just outside.
+
+Rooms are placed far south of the city bounds and stay mounted — entering is a
+one-shot teleport (`controls/runtime.ts requestTeleport`), so there's no scene
+swap, no physics churn, and district-crossing detection stays naturally
+silent (the player is outside every plot). Cutscenes are suppressed while
+inside. Interior state lives in the UI store (`interiorDistrictId`) and resets
+on world import/replace.
+
 ## LLM dialogue (`src/dialogue.ts`, `POST /api/dialogue`)
 
 With `LLM_API_KEY` + `LLM_BASE_URL` set (see `.env.example` — OpenAI-compatible

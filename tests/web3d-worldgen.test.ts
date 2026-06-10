@@ -80,6 +80,38 @@ describe("web3d worldgen", () => {
     }
   });
 
+  it("generates one enterable interior per district, furniture inside walls", () => {
+    const model = generateWorldModel(world);
+    expect(model.interiors).toHaveLength(world.locations.length);
+    expect(model.doors).toHaveLength(world.locations.length);
+    for (const interior of model.interiors) {
+      expect(interior.furniture.length).toBeGreaterThanOrEqual(4);
+      for (const piece of interior.furniture) {
+        expect(piece.x).toBeGreaterThan(interior.origin.x + 0.5);
+        expect(piece.x).toBeLessThan(interior.origin.x + interior.width - 0.5);
+        expect(piece.z).toBeGreaterThan(interior.origin.z + 0.5);
+        expect(piece.z).toBeLessThan(interior.origin.z + interior.depth - 0.5);
+      }
+      // rooms live outside the city footprint
+      expect(interior.origin.z).toBeGreaterThan(model.bounds.maxZ + 50);
+      // spawn is clear of the spawn-lane furniture slots
+      const nearSpawn = interior.furniture.filter(
+        (piece) => Math.hypot(piece.x - interior.spawn.x, piece.z - interior.spawn.z) < 1
+      );
+      expect(nearSpawn).toHaveLength(0);
+    }
+    // doors sit on their anchor building's face toward the courtyard
+    for (const door of model.doors) {
+      const district = model.districts.find((entry) => entry.locationId === door.districtId)!;
+      const inPlot =
+        door.x >= district.origin.x - 1 &&
+        door.x <= district.origin.x + district.width + 1 &&
+        door.z >= district.origin.z - 1 &&
+        door.z <= district.origin.z + district.depth + 1;
+      expect(inPlot).toBe(true);
+    }
+  });
+
   it("places every co-located NPC and loose item", () => {
     const location = world.locations.find((l) => l.id === world.player.locationId)!;
     const district = generateDistrict(world, location);
