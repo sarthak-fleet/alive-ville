@@ -1,0 +1,29 @@
+# fly launch --no-deploy && fly secrets set LLM_API_KEY=... ADMIN_TOKEN=... && fly deploy
+app = "aliveville"
+primary_region = "sin"
+
+[build]
+
+[env]
+  PORT = "8080"
+  WEB_ROOT = "./dist/web3d"
+  LLM_BASE_URL = "https://free-ai-gateway.sarthakagrawal927.workers.dev/v1"
+  LLM_MODEL_NORMAL = "groq-llama-70b"
+  LLM_MODEL_QUEST = "groq-gpt-oss-120b"
+  LLM_PROJECT_ID = "ai-game"
+  MAX_SESSIONS = "30"
+
+[mounts]
+  source = "aliveville_data"
+  destination = "/app/tmp"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,0 +1,10 @@
+node_modules
+tmp
+dist
+.git
+*.png
+web/assets/cutscenes
+docs
+unreal
+.env
+.env.*
