@@ -9,6 +9,7 @@ import { scaledDelta } from "../controls/runtime.ts";
 import { type ActorVisual, stableHash } from "../mapping/visuals.ts";
 import { toonGradientMap, toonMaterial } from "../scene/toon.ts";
 import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
+import { outfitColorsFor, paintOutfit } from "./clothing.ts";
 
 const MODEL_URL = "/assets/characters/ual.glb";
 const TARGET_HEIGHT = 1.7;
@@ -91,16 +92,27 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
   const speedRef = useRef(0);
   const defeatedRef = useRef(false);
 
+  // primitive deps: the visual object's identity churns with every sim tick
+  const { color, accentColor, skinColor, bodyShape } = visual;
+
   const { scene, mixer, actions, normalizeScale, headBone, chestBone, hipsBone } = useMemo(() => {
     const cloned = cloneSkeleton(gltf.scene);
     const box = new THREE.Box3().setFromObject(cloned);
     const height = Math.max(0.01, box.max.y - box.min.y);
     const normalize = TARGET_HEIGHT / height;
 
-    const bodyMaterial = new THREE.MeshToonMaterial({ color: new THREE.Color(visual.color), gradientMap: toonGradientMap() });
+    // clothing zones painted as vertex colors over the shared mannequin
+    const outfit = outfitColorsFor({ color, accentColor, skinColor, bodyShape }, seedId);
+    const bodyMaterial = new THREE.MeshToonMaterial({
+      color: new THREE.Color("#ffffff"),
+      vertexColors: true,
+      gradientMap: toonGradientMap(),
+    });
     cloned.traverse((object: THREE.Object3D) => {
       const mesh = object as THREE.SkinnedMesh;
       if (mesh.isSkinnedMesh || (mesh as unknown as THREE.Mesh).isMesh) {
+        mesh.geometry = mesh.geometry.clone();
+        paintOutfit(mesh.geometry, outfit);
         mesh.material = bodyMaterial;
         mesh.castShadow = true;
         mesh.frustumCulled = false;
@@ -121,7 +133,7 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
       chestBone: cloned.getObjectByName("spine_03") ?? cloned.getObjectByName("neck_01") ?? null,
       hipsBone: cloned.getObjectByName("pelvis") ?? cloned.getObjectByName("Hips") ?? cloned.getObjectByName("spine_01") ?? null,
     };
-  }, [gltf, visual.color]);
+  }, [gltf, color, accentColor, skinColor, bodyShape, seedId]);
 
   // Identity decor (hair/eyes/cape) lives OUTSIDE the skeleton in clean model
   // space and follows its bone every frame — bone-local scale/axis conventions
@@ -292,14 +304,14 @@ function buildHeadDecor(outer: THREE.Group, style: HairStyle, hairColor: string,
   group.position.set(0, 0.12, 0);
   outer.add(group);
 
-  // anime eyes
+  // anime eyes — sit at mid-face, not the hairline
   for (const side of [-1, 1]) {
-    const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), toonMaterial("#f6f7fb"));
-    eyeWhite.scale.set(1, 1.5, 0.5);
-    eyeWhite.position.set(side * radius * 0.42, 0.035, radius * 0.92);
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), toonMaterial("#1d2330"));
-    iris.scale.set(1, 1.45, 0.5);
-    iris.position.set(side * radius * 0.42, 0.032, radius * 0.97);
+    const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), toonMaterial("#f6f7fb"));
+    eyeWhite.scale.set(1, 1.4, 0.5);
+    eyeWhite.position.set(side * radius * 0.4, -0.015, radius * 0.92);
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), toonMaterial("#1d2330"));
+    iris.scale.set(1, 1.4, 0.5);
+    iris.position.set(side * radius * 0.4, -0.017, radius * 0.97);
     group.add(eyeWhite, iris);
   }
   if (visual.bodyShape === "mechanical") {

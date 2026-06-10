@@ -59,6 +59,7 @@ function agencyFor(npc: NpcData): number {
 export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
   const group = useRef<THREE.Group>(null);
   const animation = useRef<CharacterAnimationHandle>(null);
+  const labelRef = useRef<THREE.Group>(null);
   // position prop must stay constant: movement is imperative, and a reactive
   // position would teleport the node whenever the sim relocates the NPC
   const [initialSpawn] = useState(() => ({ x: spawn.x, z: spawn.z, heading: spawn.heading }));
@@ -140,6 +141,10 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     if (!node) return;
     const s = state.current;
     const time = frame.clock.elapsedTime;
+
+    // labels only read up close — far away they're just noise
+    const label = labelRef.current;
+    if (label) label.visible = node.position.distanceTo(frame.camera.position) < 26;
 
     const clientDefeated = Boolean(enemy?.defeated) || Boolean(npc.combat?.defeated);
     animation.current?.setDefeated(clientDefeated);
@@ -262,12 +267,14 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
   return (
     <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
       <RiggedCharacter ref={animation} visual={visual} appearance={npc.appearance} seedId={npc.id} personaText={personaText} />
-      <Billboard position={[0, 2.35, 0]}>
+      <Billboard ref={labelRef} position={[0, 2.2, 0]}>
         <Text
-          fontSize={0.24}
-          color={defeated ? "#8b93a3" : hostile ? "#ff7a6a" : "#ffffff"}
-          outlineWidth={0.02}
+          fontSize={0.19}
+          color={defeated ? "#8b93a3" : hostile ? "#ff7a6a" : "#e8ecf5"}
+          fillOpacity={0.92}
+          outlineWidth={0.014}
           outlineColor="#101421"
+          outlineOpacity={0.75}
           anchorX="center"
         >
           {npc.name}

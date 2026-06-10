@@ -184,30 +184,53 @@ export function pavingTexture(baseColor: string): THREE.CanvasTexture {
   const cached = pavingCache.get(baseColor);
   if (cached) return cached;
   const rng = mulberry32(seedFromString(baseColor));
-  const [canvas, ctx] = makeCanvas(256, 256);
+  const size = 256;
+  const [canvas, ctx] = makeCanvas(size, size);
   const tile = 32;
-  for (let y = 0; y < 256; y += tile) {
-    for (let x = 0; x < 256; x += tile) {
-      ctx.fillStyle = shade(baseColor, -0.04 + rng() * 0.12);
-      ctx.fillRect(x, y, tile, tile);
+  // running-bond stones with per-tile tone, inner AO and the odd worn slab
+  ctx.fillStyle = shade(baseColor, -0.3);
+  ctx.fillRect(0, 0, size, size);
+  for (let row = 0; row < size / tile; row += 1) {
+    const offset = row % 2 === 0 ? 0 : tile / 2;
+    for (let x = -tile; x < size; x += tile) {
+      const px = x + offset;
+      const py = row * tile;
+      const worn = rng() > 0.88;
+      const tone = worn ? -0.18 - rng() * 0.08 : -0.05 + rng() * 0.16;
+      ctx.fillStyle = shade(baseColor, tone);
+      ctx.fillRect(px + 1.5, py + 1.5, tile - 3, tile - 3);
+      // soft top-light bevel
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(px + 1.5, py + 1.5, tile - 3, 3);
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(px + 1.5, py + tile - 4.5, tile - 3, 3);
+      // surface speckle
+      if (rng() > 0.4) {
+        ctx.fillStyle = `rgba(${rng() > 0.5 ? "255,255,255" : "0,0,0"}, ${0.03 + rng() * 0.05})`;
+        ctx.fillRect(px + 4 + rng() * (tile - 12), py + 4 + rng() * (tile - 12), 3 + rng() * 5, 2 + rng() * 4);
+      }
     }
-  }
-  ctx.strokeStyle = shade(baseColor, -0.25);
-  ctx.lineWidth = 2;
-  for (let i = 0; i <= 256; i += tile) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i, 256);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(256, i);
-    ctx.stroke();
   }
   const texture = asTexture(canvas);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   pavingCache.set(baseColor, texture);
   return texture;
+}
+
+let poolTexture: THREE.CanvasTexture | null = null;
+
+/** radial falloff disc for warm lamp pools on the ground */
+export function lightPoolTexture(): THREE.CanvasTexture {
+  if (poolTexture) return poolTexture;
+  const [canvas, ctx] = makeCanvas(128, 128);
+  const gradient = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+  gradient.addColorStop(0, "rgba(255,255,255,0.85)");
+  gradient.addColorStop(0.45, "rgba(255,255,255,0.32)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 128, 128);
+  poolTexture = asTexture(canvas);
+  return poolTexture;
 }
 
 const speckleCache = new Map<string, THREE.CanvasTexture>();

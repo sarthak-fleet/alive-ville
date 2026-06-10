@@ -9,7 +9,7 @@ import type { BuildingModel, DistrictModel, ItemPlacement, PropModel } from "../
 import type { InteractablePlacement } from "../worldgen/model.ts";
 import { mulberry32, seedFromString } from "../worldgen/rng.ts";
 import { registerOccluder, unregisterOccluder } from "./occlusion.ts";
-import { facadeMaterial, pavingTexture, speckleTexture } from "./textures.ts";
+import { facadeMaterial, lightPoolTexture, pavingTexture, speckleTexture } from "./textures.ts";
 import { toonGradientMap, toonMaterial } from "./toon.ts";
 
 const OUTLINE = "#101421";
@@ -35,7 +35,7 @@ export const District = memo(function District({ district, night }: { district: 
         <Building key={building.id} building={building} night={night} courtyard={district.courtyard} />
       ))}
       {district.props.map((prop) => (
-        <Prop key={prop.id} prop={prop} />
+        <Prop key={prop.id} prop={prop} night={night} />
       ))}
       <Text
         position={[cx, 11, cz]}
@@ -163,7 +163,7 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
   );
 }
 
-function Prop({ prop }: { prop: PropModel }) {
+function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
   const baseMat = toonMaterial(prop.color);
   const accentMat = toonMaterial(prop.accentColor, prop.kind === "lamp" ? prop.accentColor : undefined);
   return (
@@ -176,6 +176,19 @@ function Prop({ prop }: { prop: PropModel }) {
           <mesh position={[0, 3.3, 0]} material={accentMat}>
             <sphereGeometry args={[0.28, 12, 8]} />
           </mesh>
+          {night ? (
+            <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[7, 7]} />
+              <meshBasicMaterial
+                map={lightPoolTexture()}
+                color="#ffc878"
+                transparent
+                opacity={0.5}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+              />
+            </mesh>
+          ) : null}
         </>
       ) : prop.kind === "bench" ? (
         <mesh position={[0, 0.3, 0]} castShadow material={baseMat}>
