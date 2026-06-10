@@ -17,6 +17,7 @@ import { CityGround } from "./CityGround.tsx";
 import { District, InteractableMarker, ItemMarker } from "./District.tsx";
 import { Interior } from "./Interior.tsx";
 import { Lighting } from "./Lighting.tsx";
+import { Skyline } from "./Skyline.tsx";
 
 // low-end escape hatch + debugging: ?nofx disables the post-processing chain
 const POST_FX_ENABLED = typeof window === "undefined" || !new URLSearchParams(window.location.search).has("nofx");
@@ -57,6 +58,7 @@ export function GameWorld({ world }: { world: World }) {
           <Lighting world={world} target={{ x: activeDistrict.courtyard.x, z: activeDistrict.courtyard.z }} />
           {night ? <Stars radius={300} depth={60} count={2200} factor={5} saturation={0.1} fade speed={0.6} /> : null}
           <CityGround model={model} baseColor={activeDistrict.palette.ground} />
+          <Skyline model={model} worldId={world.id} night={night} />
           {model.districts.map((district) => (
             <District key={district.locationId} district={district} night={night} />
           ))}

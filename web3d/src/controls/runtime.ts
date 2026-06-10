@@ -33,6 +33,13 @@ export function knockback(npcId: string, direction: { x: number; z: number }, fo
   actor.node.position.z += direction.z * force;
 }
 
+/** player gesture hook, filled by the controller once its rig mounts */
+export const playerGestureHook: { fire: ((kind: "pickup" | "interact") => void) | null } = { fire: null };
+
+export function playerGesture(kind: "pickup" | "interact"): void {
+  playerGestureHook.fire?.(kind);
+}
+
 /** one-shot teleport consumed by the player controller (door transitions) */
 export const teleportRequest: { target: { x: number; z: number } | null } = { target: null };
 

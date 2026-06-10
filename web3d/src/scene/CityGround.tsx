@@ -4,10 +4,12 @@ import * as THREE from "three";
 
 import { shiftColor } from "../worldgen/district.ts";
 import type { WorldModel } from "../worldgen/index.ts";
-import { speckleTexture, streetTexture } from "./textures.ts";
+import { crosswalkTexture, speckleTexture, streetTexture } from "./textures.ts";
 import { toonGradientMap, toonMaterial } from "./toon.ts";
 
 const APRON = 30;
+const manholeMat = new THREE.MeshBasicMaterial({ color: "#23272f" });
+const manholeRimMat = new THREE.MeshBasicMaterial({ color: "#3b414d" });
 
 export const CityGround = memo(function CityGround({ model, baseColor }: { model: WorldModel; baseColor: string }) {
   const { bounds } = model;
@@ -65,6 +67,30 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
           material={segment.material}
         >
           <boxGeometry args={[segment.width, 0.024, segment.length]} />
+        </mesh>
+      ))}
+      {/* manholes: one per longer street segment, nudged off the centerline */}
+      {streetSegments
+        .filter((segment) => segment.length > 14)
+        .map((segment, index) => (
+          <group key={`mh-${index}`} position={[segment.cx, 0.028, segment.cz]} rotation={[0, segment.angle, 0]}>
+            <mesh position={[index % 2 === 0 ? 1.1 : -1.1, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} material={manholeMat}>
+              <circleGeometry args={[0.55, 16]} />
+            </mesh>
+            <mesh position={[index % 2 === 0 ? 1.1 : -1.1, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} material={manholeRimMat}>
+              <ringGeometry args={[0.42, 0.5, 16]} />
+            </mesh>
+          </group>
+        ))}
+      {/* crosswalks at district gates */}
+      {model.gates.map((gate, index) => (
+        <mesh
+          key={`cw-${index}`}
+          position={[gate.x, 0.026, gate.z]}
+          rotation={[-Math.PI / 2, 0, gate.rotationY]}
+        >
+          <planeGeometry args={[6.4, 3]} />
+          <meshBasicMaterial map={crosswalkTexture()} transparent depthWrite={false} polygonOffset polygonOffsetFactor={-1} />
         </mesh>
       ))}
       {/* every building has a real door */}

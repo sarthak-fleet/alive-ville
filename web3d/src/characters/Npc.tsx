@@ -146,6 +146,8 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     const label = labelRef.current;
     if (label) label.visible = node.position.distanceTo(frame.camera.position) < 26;
 
+    animation.current?.setTalking?.(inDialogue);
+
     const clientDefeated = Boolean(enemy?.defeated) || Boolean(npc.combat?.defeated);
     animation.current?.setDefeated(clientDefeated);
     if (clientDefeated) {

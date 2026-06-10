@@ -6,7 +6,7 @@ import { updateMusicMood } from "../audio/music.ts";
 import { isSfxEnabled, pickupChime, questChime, setSfxEnabled } from "../audio/sfx.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { isTypingTarget } from "../controls/input.ts";
-import { requestTeleport } from "../controls/runtime.ts";
+import { playerGesture, requestTeleport } from "../controls/runtime.ts";
 import { useDirectorStore } from "../director/store.ts";
 import { worldPressure } from "../mapping/mood.ts";
 import { useUiStore } from "../store/ui.ts";
@@ -72,9 +72,13 @@ export function Hud() {
       if (current.kind === "npc") openDialogue(current.id);
       if (current.kind === "item") {
         pickupChime();
+        playerGesture("pickup");
         void send({ type: "pickup", itemId: current.id });
       }
-      if (current.kind === "prop") void send({ type: "inspect", propId: current.id });
+      if (current.kind === "prop") {
+        playerGesture("interact");
+        void send({ type: "inspect", propId: current.id });
+      }
       if (current.kind === "door") {
         const currentWorld = useWorldStore.getState().world;
         if (!currentWorld) return;

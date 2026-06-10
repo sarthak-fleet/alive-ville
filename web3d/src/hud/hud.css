@@ -254,6 +254,29 @@
   justify-content: center;
   gap: 12px;
   color: #f1f5fb;
+  background: radial-gradient(ellipse at 50% 35%, #1b2335 0%, #0c111d 70%);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.screen-center::before {
+  content: "ALIVEVILLE";
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  color: #e8ecf5;
+  text-shadow: 0 0 24px rgba(120, 170, 255, 0.45);
+  animation: loading-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .screen-center button {

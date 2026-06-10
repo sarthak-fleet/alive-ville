@@ -36,6 +36,11 @@ const COMBAT_CLIPS: Record<CombatAnimKind, { clip: string; durationScale?: numbe
   telegraph: { clip: "Spell_Simple_Enter" },
 };
 
+const GESTURE_CLIPS: Record<"pickup" | "interact", string> = {
+  pickup: "PickUp_Table",
+  interact: "Interact",
+};
+
 interface RiggedCharacterProps {
   visual: ActorVisual;
   appearance?: CharacterAppearance;
@@ -185,8 +190,20 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
 
   const currentLocomotion = useRef<string>("");
   const overlayUntil = useRef(0);
+  const talkingRef = useRef(false);
 
   const flashUntil = useRef(0);
+
+  const playOverlay = (clipName: string, fadeIn: number) => {
+    const action = actions.get(clipName);
+    if (!action) return;
+    action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.fadeIn(fadeIn).play();
+    overlayUntil.current = performance.now() + action.getClip().duration * 1000;
+    window.setTimeout(() => action.fadeOut(0.12), Math.max(0, action.getClip().duration * 1000 - 120));
+  };
 
   useImperativeHandle(ref, () => ({
     setSpeed: (speed: number) => {
@@ -195,16 +212,14 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
     flash: () => {
       flashUntil.current = performance.now() + 140;
     },
+    setTalking: (talking: boolean) => {
+      talkingRef.current = talking;
+    },
+    gesture: (kind: "pickup" | "interact") => {
+      playOverlay(GESTURE_CLIPS[kind], 0.12);
+    },
     trigger: (kind: CombatAnimKind) => {
-      const spec = COMBAT_CLIPS[kind];
-      const action = actions.get(spec.clip);
-      if (!action) return;
-      action.reset();
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.fadeIn(0.06).play();
-      overlayUntil.current = performance.now() + action.getClip().duration * 1000;
-      window.setTimeout(() => action.fadeOut(0.12), Math.max(0, action.getClip().duration * 1000 - 120));
+      playOverlay(COMBAT_CLIPS[kind].clip, 0.06);
     },
     setDefeated: (defeated: boolean) => {
       if (defeated === defeatedRef.current) return;
@@ -270,13 +285,15 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
     const speed = speedRef.current;
     let next: LocomotionEntry = LOCOMOTION[0]!;
     for (const entry of LOCOMOTION) if (speed >= entry.minSpeed) next = entry;
-    const action = actions.get(next.clip);
+    // conversational idle while a dialogue is open
+    const targetClip = next.clip === "Idle_Loop" && talkingRef.current ? "Idle_Talking_Loop" : next.clip;
+    const action = actions.get(targetClip);
     if (!action) return;
-    if (currentLocomotion.current !== next.clip) {
+    if (currentLocomotion.current !== targetClip) {
       const previous = actions.get(currentLocomotion.current);
       previous?.fadeOut(0.18);
       action.reset().fadeIn(0.18).play();
-      currentLocomotion.current = next.clip;
+      currentLocomotion.current = targetClip;
     }
     if (next.baseSpeed) {
       action.timeScale = THREE.MathUtils.clamp(speed / next.baseSpeed, 0.7, 1.5);

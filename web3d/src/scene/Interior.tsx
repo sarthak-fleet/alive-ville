@@ -1,9 +1,12 @@
 import { Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { memo } from "react";
+import { memo, useMemo } from "react";
+import * as THREE from "three";
 
+import { stableHash } from "../mapping/visuals.ts";
 import type { FurnitureModel, InteriorModel } from "../worldgen/interiors.ts";
-import { toonMaterial } from "./toon.ts";
+import { lightPoolTexture, plankTexture } from "./textures.ts";
+import { toonGradientMap, toonMaterial } from "./toon.ts";
 
 const WALL_THICKNESS = 0.35;
 const DOOR_GAP = 2.4;
@@ -12,7 +15,12 @@ export const Interior = memo(function Interior({ interior }: { interior: Interio
   const { origin, width, depth, wallHeight } = interior;
   const cx = origin.x + width / 2;
   const cz = origin.z + depth / 2;
-  const floorMat = toonMaterial(interior.floorColor);
+  const floorMat = useMemo(() => {
+    const texture = plankTexture(interior.floorColor).clone();
+    texture.repeat.set(width / 5, depth / 5);
+    texture.needsUpdate = true;
+    return new THREE.MeshToonMaterial({ map: texture, gradientMap: toonGradientMap() });
+  }, [interior.floorColor, width, depth]);
   const wallMat = toonMaterial(interior.wallColor);
   const trimMat = toonMaterial(interior.accentColor);
 
@@ -63,14 +71,44 @@ export const Interior = memo(function Interior({ interior }: { interior: Interio
         </mesh>
       </RigidBody>
 
-      {/* skirting trim */}
+      {/* skirting trim all around */}
       <mesh position={[cx, 0.12, origin.z + WALL_THICKNESS / 2 + 0.04]} material={trimMat}>
         <boxGeometry args={[width - 0.2, 0.24, 0.06]} />
       </mesh>
+      <mesh position={[origin.x + WALL_THICKNESS / 2 + 0.04, 0.12, cz]} material={trimMat}>
+        <boxGeometry args={[0.06, 0.24, depth - 0.2]} />
+      </mesh>
+      <mesh position={[origin.x + width - WALL_THICKNESS / 2 - 0.04, 0.12, cz]} material={trimMat}>
+        <boxGeometry args={[0.06, 0.24, depth - 0.2]} />
+      </mesh>
+
+      {/* wall dressing: framed art and a soft-glow window on the back wall */}
+      <WallDressing interior={interior} cx={cx} />
 
       {interior.furniture.map((piece) => (
         <Furniture key={piece.id} piece={piece} />
       ))}
+
+      {/* ceiling fixture + warm floor pool under it */}
+      <group position={[cx, 0, cz]}>
+        <mesh position={[0, wallHeight - 0.25, 0]} material={toonMaterial("#3a3f4c")}>
+          <cylinderGeometry args={[0.05, 0.05, 0.5, 6]} />
+        </mesh>
+        <mesh position={[0, wallHeight - 0.58, 0]} material={toonMaterial("#ffe7bd", "#ffd9a0")}>
+          <sphereGeometry args={[0.2, 12, 10]} />
+        </mesh>
+        <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[Math.min(width, depth) * 0.9, Math.min(width, depth) * 0.9]} />
+          <meshBasicMaterial
+            map={lightPoolTexture()}
+            color="#ffd9a0"
+            transparent
+            opacity={0.22}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
 
       {/* warm room light */}
       <pointLight position={[cx, wallHeight - 0.4, cz]} color="#ffd9a8" intensity={30} distance={Math.max(width, depth) * 1.4} decay={1.7} />
@@ -81,6 +119,44 @@ export const Interior = memo(function Interior({ interior }: { interior: Interio
     </group>
   );
 });
+
+const ART_COLORS = ["#7fb0d8", "#d8a26a", "#9cc78a", "#c98aa8", "#b9a2e0", "#e0c878"];
+
+function WallDressing({ interior, cx }: { interior: InteriorModel; cx: number }) {
+  const { origin, width, wallHeight } = interior;
+  const hash = stableHash(interior.buildingId);
+  const backZ = origin.z + WALL_THICKNESS / 2 + 0.06;
+  const artA = ART_COLORS[hash % ART_COLORS.length]!;
+  const artB = ART_COLORS[(hash >> 3) % ART_COLORS.length]!;
+  const artY = Math.min(wallHeight - 0.9, 1.9);
+  return (
+    <group>
+      {/* window with a soft glow — rooms shouldn't feel like sealed boxes */}
+      <mesh position={[cx - width * 0.22, artY, backZ]} material={toonMaterial("#4a4034")}>
+        <boxGeometry args={[1.5, 1.2, 0.06]} />
+      </mesh>
+      <mesh position={[cx - width * 0.22, artY, backZ + 0.035]} material={toonMaterial("#bcd8f0", "#9cc0e8")}>
+        <boxGeometry args={[1.3, 1, 0.02]} />
+      </mesh>
+      <mesh position={[cx - width * 0.22, artY, backZ + 0.05]} material={toonMaterial("#4a4034")}>
+        <boxGeometry args={[0.06, 1, 0.02]} />
+      </mesh>
+      {/* two framed pieces */}
+      <mesh position={[cx + width * 0.2, artY + 0.1, backZ]} material={toonMaterial("#3d3225")}>
+        <boxGeometry args={[0.9, 0.7, 0.05]} />
+      </mesh>
+      <mesh position={[cx + width * 0.2, artY + 0.1, backZ + 0.03]} material={toonMaterial(artA)}>
+        <boxGeometry args={[0.74, 0.54, 0.02]} />
+      </mesh>
+      <mesh position={[cx + width * 0.34, artY - 0.35, backZ]} material={toonMaterial("#3d3225")}>
+        <boxGeometry args={[0.5, 0.5, 0.05]} />
+      </mesh>
+      <mesh position={[cx + width * 0.34, artY - 0.35, backZ + 0.03]} material={toonMaterial(artB)}>
+        <boxGeometry args={[0.38, 0.38, 0.02]} />
+      </mesh>
+    </group>
+  );
+}
 
 function Furniture({ piece }: { piece: FurnitureModel }) {
   const wood = toonMaterial("#7a5a3d");
@@ -154,9 +230,14 @@ function Furniture({ piece }: { piece: FurnitureModel }) {
         );
       case "rug":
         return (
-          <mesh position={[0, 0.02, 0]} receiveShadow material={accent}>
-            <cylinderGeometry args={[1.15, 1.15, 0.03, 18]} />
-          </mesh>
+          <>
+            <mesh position={[0, 0.02, 0]} receiveShadow material={accent}>
+              <cylinderGeometry args={[1.15, 1.15, 0.03, 18]} />
+            </mesh>
+            <mesh position={[0, 0.035, 0]} receiveShadow material={base}>
+              <cylinderGeometry args={[0.72, 0.72, 0.015, 18]} />
+            </mesh>
+          </>
         );
       case "hearth":
         return (

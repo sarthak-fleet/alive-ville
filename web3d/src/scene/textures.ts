@@ -311,6 +311,52 @@ export function pavingTexture(baseColor: string): THREE.CanvasTexture {
   return texture;
 }
 
+const plankCache = new Map<string, THREE.CanvasTexture>();
+
+/** interior wood planks with staggered joints and grain */
+export function plankTexture(baseColor: string): THREE.CanvasTexture {
+  const cached = plankCache.get(baseColor);
+  if (cached) return cached;
+  const rng = mulberry32(seedFromString(`plank:${baseColor}`));
+  const size = 256;
+  const [canvas, ctx] = makeCanvas(size, size);
+  const row = 26;
+  for (let y = 0; y < size; y += row) {
+    ctx.fillStyle = shade(baseColor, -0.06 + rng() * 0.14);
+    ctx.fillRect(0, y, size, row);
+    // joints
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillRect(0, y, size, 2);
+    const joints = 2 + Math.floor(rng() * 2);
+    for (let j = 0; j < joints; j += 1) {
+      ctx.fillRect(rng() * size, y, 2, row);
+    }
+    // grain
+    for (let g = 0; g < 5; g += 1) {
+      ctx.fillStyle = `rgba(0,0,0,${0.04 + rng() * 0.05})`;
+      ctx.fillRect(rng() * size, y + 4 + rng() * (row - 8), 30 + rng() * 80, 1.5);
+    }
+  }
+  const texture = asTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  plankCache.set(baseColor, texture);
+  return texture;
+}
+
+let zebraTexture: THREE.CanvasTexture | null = null;
+
+/** white zebra stripes on transparent, for crosswalk decals at gates */
+export function crosswalkTexture(): THREE.CanvasTexture {
+  if (zebraTexture) return zebraTexture;
+  const [canvas, ctx] = makeCanvas(128, 64);
+  ctx.fillStyle = "rgba(235, 235, 225, 0.85)";
+  for (let x = 6; x < 128; x += 24) {
+    ctx.fillRect(x, 4, 13, 56);
+  }
+  zebraTexture = asTexture(canvas);
+  return zebraTexture;
+}
+
 let poolTexture: THREE.CanvasTexture | null = null;
 
 /** radial falloff disc for warm lamp pools on the ground */

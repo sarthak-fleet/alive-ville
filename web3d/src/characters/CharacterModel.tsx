@@ -39,6 +39,10 @@ export interface CharacterAnimationHandle {
   setDefeated: (defeated: boolean) => void;
   /** brief red damage flash (optional) */
   flash?: () => void;
+  /** conversational idle while a dialogue is open (optional) */
+  setTalking?: (talking: boolean) => void;
+  /** one-shot non-combat gesture (optional; rig only) */
+  gesture?: (kind: "pickup" | "interact") => void;
 }
 
 const COMBAT_ANIM_MS: Record<CombatAnimKind, number> = {
