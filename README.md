@@ -2,6 +2,8 @@
 
 Website: https://aliveville.com
 
+Live marketing site: `ai-game/astro-landing` (Astro + Three.js). Deploys to Cloudflare Pages.
+
 Aliveville is an AI world simulator with a 2D browser RPG client as the active player-facing track. The TypeScript app in this repo owns the simulation server, world ingest, autonomous agent loop, quests, saves, and browser game surface. The Unreal project under `unreal/AshmentUnreal` remains a shelved bridge target for a later rebuild.
 
 ## Direction
