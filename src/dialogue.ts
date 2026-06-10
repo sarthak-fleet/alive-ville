@@ -23,6 +23,8 @@ export interface DialogueOptions {
   complete?: DialogueCompleter;
   /** stream visible reply tokens as they arrive (the @@ control tail is held back) */
   onToken?: (delta: string) => void;
+  /** namespace for conversation history (per-session servers pass the session id) */
+  historyKey?: string;
 }
 
 export interface DialogueRelationship {
@@ -46,8 +48,8 @@ export interface DialogueFailure {
 /** Per-world, per-NPC conversation history — persists across dialogue sessions. */
 const histories = new Map<string, DialogueTurn[]>();
 
-function historyFor(worldId: string, npcId: string): DialogueTurn[] {
-  const key = `${worldId}:${npcId}`;
+function historyFor(worldId: string, npcId: string, historyKey?: string): DialogueTurn[] {
+  const key = `${historyKey ?? ""}|${worldId}:${npcId}`;
   let history = histories.get(key);
   if (!history) {
     history = [];
@@ -56,8 +58,14 @@ function historyFor(worldId: string, npcId: string): DialogueTurn[] {
   return history;
 }
 
-export function clearDialogueHistories(): void {
-  histories.clear();
+export function clearDialogueHistories(historyKey?: string): void {
+  if (historyKey === undefined) {
+    histories.clear();
+    return;
+  }
+  for (const key of [...histories.keys()]) {
+    if (key.startsWith(`${historyKey}|`)) histories.delete(key);
+  }
 }
 
 export function dialogueAvailable(): boolean {
@@ -71,10 +79,14 @@ export function relationshipFor(npc: Npc): DialogueRelationship {
   return { score, label };
 }
 
-export function dialogueContext(world: World, npcId: string): { turns: DialogueTurn[]; relationship: DialogueRelationship } | null {
+export function dialogueContext(
+  world: World,
+  npcId: string,
+  historyKey?: string
+): { turns: DialogueTurn[]; relationship: DialogueRelationship } | null {
   const npc = world.npcs.find((entry) => entry.id === npcId);
   if (!npc) return null;
-  return { turns: historyFor(world.id, npcId), relationship: relationshipFor(npc) };
+  return { turns: historyFor(world.id, npcId, historyKey), relationship: relationshipFor(npc) };
 }
 
 /**
@@ -100,7 +112,7 @@ export async function generateDialogueReply(
     return { ok: false, reason: "npc_not_here" };
   }
 
-  const history = historyFor(world.id, npcId);
+  const history = historyFor(world.id, npcId, options.historyKey);
   const system = buildDialogueSystem(world, npc);
   const user = buildDialogueUser(world, npc, history, playerText);
 

@@ -7,13 +7,37 @@ export interface TickResponse {
   state: World;
 }
 
+const SESSION_KEY = "aliveville_session";
+let cachedSessionId: string | null = null;
+
+/** stable per-browser session id — the server keeps an isolated world per session */
+export function sessionId(): string {
+  if (cachedSessionId) return cachedSessionId;
+  try {
+    let id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    cachedSessionId = id;
+  } catch {
+    cachedSessionId = "main";
+  }
+  return cachedSessionId;
+}
+
+/** append the session to an API path (EventSource cannot send headers) */
+export function api(path: string): string {
+  return `${path}${path.includes("?") ? "&" : "?"}session=${sessionId()}`;
+}
+
 export async function fetchState(): Promise<World> {
-  const res = await fetch("/api/state");
+  const res = await fetch(api("/api/state"));
   return readApiJson<World>(res, "fetchState");
 }
 
 export async function postTick(action: PlayerAction | null): Promise<TickResponse> {
-  const res = await fetch("/api/tick", {
+  const res = await fetch(api("/api/tick"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ action }),
@@ -43,7 +67,7 @@ export interface DialogueHistoryResponse {
 }
 
 export async function postDialogue(npcId: string, text: string): Promise<DialogueResponse> {
-  const res = await fetch("/api/dialogue", {
+  const res = await fetch(api("/api/dialogue"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ npcId, text }),
@@ -57,7 +81,7 @@ export async function postDialogueStream(
   text: string,
   onToken: (delta: string) => void
 ): Promise<DialogueResponse> {
-  const res = await fetch("/api/dialogue", {
+  const res = await fetch(api("/api/dialogue"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ npcId, text, stream: true }),
@@ -97,17 +121,17 @@ export async function postDialogueStream(
 }
 
 export async function fetchDialogueHistory(npcId: string): Promise<DialogueHistoryResponse> {
-  const res = await fetch(`/api/dialogue/history?npcId=${encodeURIComponent(npcId)}`);
+  const res = await fetch(api(`/api/dialogue/history?npcId=${encodeURIComponent(npcId)}`));
   return readApiJson<DialogueHistoryResponse>(res, "fetchDialogueHistory");
 }
 
 export async function fetchAgentLoopStatus(): Promise<AgentLoopStatus> {
-  const res = await fetch("/api/agent-loop/status");
+  const res = await fetch(api("/api/agent-loop/status"));
   return readApiJson<AgentLoopStatus>(res, "fetchAgentLoopStatus");
 }
 
 export async function setAgentLoopRunning(running: boolean): Promise<AgentLoopStatus> {
-  const res = await fetch(`/api/agent-loop/${running ? "start" : "stop"}`, { method: "POST" });
+  const res = await fetch(api(`/api/agent-loop/${running ? "start" : "stop"}`), { method: "POST" });
   return readApiJson<AgentLoopStatus>(res, "setAgentLoopRunning");
 }
 
@@ -117,7 +141,7 @@ export interface WorldMutationResponse {
 }
 
 export async function importWorldSource(source: WorldIngestSource): Promise<WorldMutationResponse> {
-  const res = await fetch("/api/import-world-source", {
+  const res = await fetch(api("/api/import-world-source"), {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ source }),
@@ -136,7 +160,7 @@ export interface LiveEventHandlers {
 }
 
 export function subscribeEvents(handlers: LiveEventHandlers): () => void {
-  const source = new EventSource("/api/events");
+  const source = new EventSource(api("/api/events"));
   source.addEventListener("tick", (event) => {
     try {
       const payload = JSON.parse((event as MessageEvent).data) as { summary: TickSummary };

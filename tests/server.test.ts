@@ -233,6 +233,70 @@ describe("server", () => {
       rmSync(checkpointDir, { recursive: true, force: true });
     }
   });
+
+  test("sessions get isolated worlds", async () => {
+    const port = 5900 + Math.floor(Math.random() * 200);
+    const child = await startServer(port);
+    try {
+      // tick visitor-a's world twice; visitor-b and main stay untouched
+      for (let i = 0; i < 2; i += 1) {
+        const tick = await fetch(`http://localhost:${port}/api/tick?session=visitor-a`, { method: "POST" });
+        expect(tick.status).toBe(200);
+      }
+      const a = (await (await fetch(`http://localhost:${port}/api/state?session=visitor-a`)).json()) as { tick: number };
+      const b = (await (await fetch(`http://localhost:${port}/api/state?session=visitor-b`)).json()) as { tick: number };
+      const main = (await (await fetch(`http://localhost:${port}/api/state`)).json()) as { tick: number };
+      expect(a.tick).toBe(2);
+      expect(b.tick).toBe(0);
+      expect(main.tick).toBe(0);
+
+      // world replacement is also per-session
+      const animeSource = JSON.parse(readFileSync(new URL("../fixtures/anime/opm-ingest-source.json", import.meta.url), "utf8")) as unknown;
+      const imported = await fetch(`http://localhost:${port}/api/import-world-source?session=visitor-a`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ source: animeSource }),
+      });
+      expect(imported.status).toBe(200);
+      const aAfter = (await (await fetch(`http://localhost:${port}/api/state?session=visitor-a`)).json()) as { id: string };
+      const mainAfter = (await (await fetch(`http://localhost:${port}/api/state`)).json()) as { id: string };
+      expect(aAfter.id).toBe("opm_ingested_z_city");
+      expect(mainAfter.id).toBe("ashment");
+    } finally {
+      child.kill();
+    }
+  });
+
+  test("admin token gates /api/restore and world replacement is rate limited", async () => {
+    const port = 6100 + Math.floor(Math.random() * 200);
+    const child = await startServer(port, { ADMIN_TOKEN: "secret" });
+    try {
+      const world = (await (await fetch(`http://localhost:${port}/api/state`)).json()) as Record<string, unknown>;
+      const denied = await fetch(`http://localhost:${port}/api/restore`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ world }),
+      });
+      expect(denied.status).toBe(403);
+      const allowed = await fetch(`http://localhost:${port}/api/restore`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-admin-token": "secret" },
+        body: JSON.stringify({ world }),
+      });
+      expect(allowed.status).toBe(200);
+
+      // replace_world bucket: 6 per 10 minutes (the restore above consumed none)
+      const statuses: number[] = [];
+      for (let i = 0; i < 7; i += 1) {
+        const reset = await fetch(`http://localhost:${port}/api/reset?session=limited`, { method: "POST" });
+        statuses.push(reset.status);
+      }
+      expect(statuses.slice(0, 6).every((status) => status === 200)).toBe(true);
+      expect(statuses[6]).toBe(429);
+    } finally {
+      child.kill();
+    }
+  });
 });
 
 function waitForExit(child: ChildProcess): Promise<void> {

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { api } from "../api/client.ts";
+
 import { combatMovesFor } from "../../../src/combat.ts";
 import type { World } from "../../../src/types.ts";
 import { deathThud, hitImpact, hurt } from "../audio/sfx.ts";
@@ -213,7 +215,7 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
  */
 async function reportSparWon(): Promise<void> {
   try {
-    await fetch("/api/arc/event", {
+    await fetch(api("/api/arc/event"), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ kind: "spar_won" }),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { api } from "../api/client.ts";
 import { ensureAudio, uiBlip } from "../audio/sfx.ts";
 import { actorVisualFor, clothingColorsFor } from "../mapping/visuals.ts";
 import { useUiStore } from "../store/ui.ts";
@@ -26,7 +27,7 @@ export function StartFlow() {
     if (phase !== "title") return;
     void (async () => {
       try {
-        const res = await fetch("/api/worlds");
+        const res = await fetch(api("/api/worlds"));
         const data = (await res.json()) as { worlds: BundledWorld[] };
         setWorlds(data.worlds);
       } catch {
@@ -48,7 +49,7 @@ export function StartFlow() {
     }
     setBusy(id);
     try {
-      const res = await fetch("/api/worlds/select", {
+      const res = await fetch(api("/api/worlds/select"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ id }),
