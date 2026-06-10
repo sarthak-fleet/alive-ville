@@ -20,6 +20,8 @@ Aliveville is a browser-playable AI world simulator. The active product track is
 - Save/load and route-complete replay support the core exploration loop.
 - The project direction is documented as spatial, stateful, and simulation-led rather than a generic text adventure.
 
+- LLM dialogue in the 3D client: `POST /api/dialogue` generates in-character NPC replies (persona + memories + secrets + quests) without consuming sim ticks, records both turns as NPC memories, and falls back to scripted tick-talk when no LLM credentials are configured. Enable by setting `LLM_API_KEY`/`LLM_BASE_URL` (see `.env.example`).
+
 ## Planned Next
 
 1. Combat polish: rigged CC0 characters (Quaternius pack needs manual download — itch-gated), posture/stagger, character-specific movesets from `src/combat.ts`.

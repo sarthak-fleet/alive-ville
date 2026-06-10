@@ -23,6 +23,21 @@ export async function postTick(action: PlayerAction | null): Promise<TickRespons
   return data;
 }
 
+export interface DialogueResponse {
+  llm: boolean;
+  reply?: string;
+  error?: string;
+}
+
+export async function postDialogue(npcId: string, text: string): Promise<DialogueResponse> {
+  const res = await fetch("/api/dialogue", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ npcId, text }),
+  });
+  return readApiJson<DialogueResponse>(res, "postDialogue");
+}
+
 export async function fetchAgentLoopStatus(): Promise<AgentLoopStatus> {
   const res = await fetch("/api/agent-loop/status");
   return readApiJson<AgentLoopStatus>(res, "fetchAgentLoopStatus");

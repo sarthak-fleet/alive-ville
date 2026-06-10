@@ -1,7 +1,11 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
+import { postDialogue } from "../api/client.ts";
 import { useUiStore } from "../store/ui.ts";
 import { npcById, useWorldStore } from "../store/world.ts";
+
+// remembered per session so the scripted fallback skips a wasted round-trip
+let llmDialogueAvailable: boolean | null = null;
 
 export function Dialogue() {
   const dialogueNpcId = useUiStore((state) => state.dialogueNpcId);
@@ -43,6 +47,27 @@ export function Dialogue() {
     setDraft("");
     pushLine({ speaker: "player", speakerName: world?.player.name ?? "You", text });
     setBusy(true);
+
+    // LLM conversation first: in-character, free-flowing, no sim tick consumed
+    if (llmDialogueAvailable !== false) {
+      try {
+        const response = await postDialogue(npc.id, text);
+        llmDialogueAvailable = response.llm;
+        if (response.llm && response.reply) {
+          setBusy(false);
+          pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
+          inputRef.current?.focus();
+          return;
+        }
+        if (response.llm && response.error) {
+          // LLM mode on but this call failed — fall through to the scripted path
+        }
+      } catch {
+        llmDialogueAvailable = false;
+      }
+    }
+
+    // scripted fallback: a talk action through the tick engine
     const summary = await send({ type: "talk", targetId: npc.id, text });
     setBusy(false);
     if (!summary) return;

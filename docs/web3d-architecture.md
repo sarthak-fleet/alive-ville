@@ -66,6 +66,27 @@ City level (`worldgen/streets.ts`, `worldgen/navgraph.ts`):
 - Static geometry caches by map content (`scene/GameWorld.tsx` modelCache);
   per-tick changes (items, NPC locations) recompute via `worldgen/placements.ts`.
 
+## LLM dialogue (`src/dialogue.ts`, `POST /api/dialogue`)
+
+With `LLM_API_KEY` + `LLM_BASE_URL` set (see `.env.example` — OpenAI-compatible
+gateway), conversations become free-flowing and in-character:
+
+- The endpoint builds a persona prompt from the NPC's traits, speech style,
+  mood, goals, secrets, relevant memories (RAG via `retrieveMemories`), nearby
+  characters, and quests — grounded in the imported world's story, never a
+  hardcoded setting.
+- Replies do **not** consume a sim tick (the clock doesn't jump 2h per line);
+  both turns are written into `npc.memories`, so the agent loop and later
+  conversations stay consistent with what was said.
+- Per-NPC conversation history is held server-side (capped, cleared on world
+  replace). Quest-tier NPCs use the quest-tier model.
+- Without credentials the endpoint answers `{llm:false}` and the client falls
+  back to the scripted tick-talk path; the client remembers the answer to skip
+  the extra round-trip. The agent loop's LLM proposer/director activate from
+  the same env switch (that plumbing predates web3d).
+- Tested: unit tests with an injected completer (`tests/dialogue.test.ts`) and
+  a browser E2E against a local fake OpenAI-compatible server.
+
 ## Sim ↔ client sync
 
 - Server stays authoritative and tick-based; client runs 60 fps locally.

@@ -4,6 +4,7 @@ import { extname, normalize } from "node:path";
 
 import { readAgentLoopCheckpoints, upsertAgentLoopCheckpoint, writeAgentLoopCheckpoints } from "./agent-checkpoint-store.ts";
 import { createAgentLoop } from "./agent-loop.ts";
+import { clearDialogueHistories, dialogueAvailable, generateDialogueReply } from "./dialogue.ts";
 import { createDirector } from "./director.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, proposeAction } from "./llm/router.ts";
@@ -193,6 +194,18 @@ const server = createServer(async (req, res) => {
       return json(res, 400, { error: (error as Error).message });
     }
   }
+  if (url.pathname === "/api/dialogue" && req.method === "POST") {
+    if (!dialogueAvailable()) return json(res, 200, { llm: false });
+    const body = await readJson(req).catch(() => null);
+    const npcId = body && typeof body === "object" ? (body as { npcId?: unknown }).npcId : undefined;
+    const text = body && typeof body === "object" ? (body as { text?: unknown }).text : undefined;
+    if (typeof npcId !== "string" || typeof text !== "string" || !text.trim()) {
+      return json(res, 400, { error: "npcId and text are required" });
+    }
+    const result = await generateDialogueReply(engine.state, npcId, text.trim().slice(0, 500));
+    if (!result.ok) return json(res, 200, { llm: true, error: result.reason });
+    return json(res, 200, { llm: true, reply: result.reply });
+  }
   if (url.pathname === "/api/tick" && req.method === "POST") {
     const body = await readJson(req).catch(() => null);
     try {
@@ -238,6 +251,7 @@ async function replaceEngineState(nextWorld: World) {
   engine.setState(nextWorld);
   const status = agentLoop.clearCheckpoints();
   writeAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH, []);
+  clearDialogueHistories();
   broadcastSse("world", { worldId: engine.state.id, tick: engine.state.tick });
   return status;
 }

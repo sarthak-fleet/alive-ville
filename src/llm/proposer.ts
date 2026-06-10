@@ -24,7 +24,7 @@ export function createLlmProposer({ tier = "normal", maxNpcs = 5, propose = prop
 }
 
 async function proposeOne(world: World, npc: Npc, tier: Tier, propose: ProposeFn): Promise<Action | null> {
-  const system = buildSystem(npc);
+  const system = buildSystem(world, npc);
   const user = buildContext(world, npc);
   const result = await propose({ tier, system, user });
   if ("skipped" in result && result.skipped) return null;
@@ -49,7 +49,7 @@ function pickActiveNpcs(world: World): Npc[] {
   return world.npcs.filter((npc) => npc.tier !== "background");
 }
 
-function buildSystem(npc: Npc): string {
+function buildSystem(world: World, npc: Npc): string {
   const goals = (npc.goals ?? []).join("; ");
   const traits = [
     ...(npc.traits?.personality ?? []),
@@ -57,7 +57,7 @@ function buildSystem(npc: Npc): string {
     ...(npc.traits?.flaws ?? []).map((flaw) => `flaw: ${flaw}`),
   ].join(", ");
   return [
-    `You are ${npc.name} (id: ${npc.id}) in the village of Ashment.`,
+    `You are ${npc.name} (id: ${npc.id}) in ${world.story?.title ?? world.name}.`,
     `Role: ${npc.role ?? npc.tier ?? "villager"}.`,
     npc.factionId ? `Faction: ${npc.factionId}.` : "",
     npc.description ? `Description: ${npc.description}` : "",
