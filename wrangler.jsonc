@@ -15,16 +15,23 @@
   "durable_objects": {
     "bindings": [{ "name": "SESSIONS", "class_name": "GameSessionDO" }]
   },
+  // same-account worker→worker fetches over workers.dev are blocked;
+  // the LLM gateway is called through this service binding instead
+  "services": [{ "binding": "GATEWAY", "service": "free-ai-gateway" }],
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameSessionDO"] }],
   "vars": {
     "LLM_BASE_URL": "https://free-ai-gateway.sarthakagrawal927.workers.dev/v1",
-    "LLM_MODEL_NORMAL": "groq-llama-70b",
+    // groq-llama-70b 404s upstream (deprecated); the gateway currently
+    // resolves these through its fallback chain
+    "LLM_MODEL_NORMAL": "groq-gpt-oss-120b",
     "LLM_MODEL_QUEST": "groq-gpt-oss-120b",
     "LLM_PROJECT_ID": "ai-game"
   },
-  "routes": [
-    { "pattern": "aliveville.com", "custom_domain": true },
-    { "pattern": "www.aliveville.com", "custom_domain": true }
-  ],
+  "workers_dev": true,
+  // re-enable once the aliveville.com zone is active in this account:
+  // "routes": [
+  //   { "pattern": "aliveville.com", "custom_domain": true },
+  //   { "pattern": "www.aliveville.com", "custom_domain": true }
+  // ],
   "observability": { "enabled": true }
 }

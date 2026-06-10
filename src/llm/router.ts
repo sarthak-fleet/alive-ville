@@ -2,6 +2,14 @@ import type { ProposeMeta, ProposeRequest, ProposeResult, Tier } from "../types.
 import { logLlmCall } from "./log.ts";
 import { ACTION_SCHEMA_PROMPT, parseActionJson } from "./schema.ts";
 
+type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
+let llmFetch: FetchLike = (url, init) => fetch(url, init);
+
+/** Workers cannot fetch sibling *.workers.dev directly — inject a service-binding fetch instead. */
+export function setLlmFetch(fn: FetchLike): void {
+  llmFetch = fn;
+}
+
 const TIER_MODEL: Record<Tier, () => string | null> = {
   background: () => null,
   normal: () => process.env["LLM_MODEL_NORMAL"] ?? "deepseek-chat",
@@ -67,7 +75,7 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
   let error: string | null = null;
 
   try {
-    const response = await fetch(url, {
+    const response = await llmFetch(url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -122,7 +130,7 @@ export async function streamText({ tier = "quest", system, user, signal, onToken
   let error: string | null = null;
 
   try {
-    const response = await fetch(url, {
+    const response = await llmFetch(url, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -202,7 +210,7 @@ export async function completeText({ tier = "quest", system, user, signal }: Com
   let error: string | null = null;
 
   try {
-    const response = await fetch(url, {
+    const response = await llmFetch(url, {
       method: "POST",
       headers: {
         "content-type": "application/json",

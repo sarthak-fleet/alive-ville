@@ -3,7 +3,7 @@ import { createArcForWorld, evaluateArc, markSparWon } from "../../src/arcs.ts";
 import { clearDialogueHistories, dialogueAvailable, dialogueContext, generateDialogueReply } from "../../src/dialogue.ts";
 import { createDirector } from "../../src/director.ts";
 import { createLlmProposer } from "../../src/llm/proposer.ts";
-import { isLlmEnabled, proposeAction } from "../../src/llm/router.ts";
+import { isLlmEnabled, proposeAction, setLlmFetch } from "../../src/llm/router.ts";
 import { createEngine } from "../../src/simulation.ts";
 import type { PlayerAction, World } from "../../src/types.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "../../src/world-ingest.ts";
@@ -11,6 +11,7 @@ import { BUNDLED_WORLDS, defaultWorld, worldForEntry } from "./catalog.ts";
 
 interface Env {
   ADMIN_TOKEN?: string;
+  GATEWAY?: { fetch: (url: string, init: RequestInit) => Promise<Response> };
   [key: string]: unknown;
 }
 
@@ -55,6 +56,12 @@ export class GameSessionDO {
       for (const [key, value] of Object.entries(env)) {
         if (typeof value === "string") proc.env[key] = value;
       }
+    }
+    // route LLM calls through the service binding — direct workers.dev
+    // fetches between workers in the same account are blocked
+    if (env.GATEWAY) {
+      const gateway = env.GATEWAY;
+      setLlmFetch((url, init) => gateway.fetch(url, init));
     }
   }
 
