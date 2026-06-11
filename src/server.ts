@@ -8,8 +8,9 @@ import { createAgentLoop } from "./agent-loop.ts";
 import { createArcForWorld, evaluateArc, markSparWon } from "./arcs.ts";
 import { clearDialogueHistories, dialogueAvailable, dialogueContext, generateDialogueReply } from "./dialogue.ts";
 import { createDirector } from "./director.ts";
+import { fandomToWorldSource } from "./fandom-import.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
-import { isLlmEnabled, proposeAction } from "./llm/router.ts";
+import { isLlmEnabled, isLocalLlmBackend, proposeAction } from "./llm/router.ts";
 import { applyWorldPacing, createEngine } from "./simulation.ts";
 import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
@@ -23,7 +24,8 @@ const CWD = `file://${process.cwd()}/`;
 const WEB_ROOT = new URL(`${(process.env["WEB_ROOT"] ?? "./web/").replace(/\/$/, "")}/`, CWD);
 const WORLD_PATH = new URL(process.env["WORLD_FILE"] ?? "./worlds/village.json", CWD);
 const CUTSCENE_MANIFEST_PATH = new URL("./web/assets/cutscenes/manifest.json", CWD);
-const LLM_MAX_NPCS = Number(process.env["LLM_MAX_NPCS"] ?? 5);
+// free local backends can afford much broader ambient intelligence
+const LLM_MAX_NPCS = Number(process.env["LLM_MAX_NPCS"] ?? (isLocalLlmBackend() ? 10 : 5));
 const AGENT_LOOP_INTERVAL_MS = Number(process.env["AGENT_LOOP_INTERVAL_MS"] ?? 4_000);
 const AGENT_LOOP_MAX_TICKS = process.env["AGENT_LOOP_MAX_TICKS"] ? Number(process.env["AGENT_LOOP_MAX_TICKS"]) : null;
 const AGENT_LOOP_MAX_CHECKPOINTS = Number(process.env["AGENT_LOOP_MAX_CHECKPOINTS"] ?? 24);
@@ -345,6 +347,19 @@ const server = createServer(async (req, res) => {
       if (issues.length > 0) return json(res, 400, { error: "invalid_story_package", issues });
       const agentLoopStatus = await replaceEngineState(session, worldFromStoryPackage(pkg as never));
       return json(res, 200, { ok: true, state: engine.state, agentLoopStatus });
+    } catch (error) {
+      return json(res, 400, { error: (error as Error).message });
+    }
+  }
+  if (url.pathname === "/api/import-fandom" && req.method === "POST") {
+    if (rateLimited(session, "replace_world")) return json(res, 429, { error: "rate_limited" });
+    const body = await readJson(req).catch(() => null);
+    const query = body && typeof body === "object" ? (body as { query?: unknown }).query : undefined;
+    if (typeof query !== "string" || !query.trim()) return json(res, 400, { error: "query is required" });
+    try {
+      const imported = await fandomToWorldSource(query);
+      const agentLoopStatus = await replaceEngineState(session, worldSourceToWorld(imported.source));
+      return json(res, 200, { ok: true, state: engine.state, wiki: imported.wiki, notes: imported.notes, agentLoopStatus });
     } catch (error) {
       return json(res, 400, { error: (error as Error).message });
     }

@@ -24,6 +24,11 @@ const TIER_MODEL: Record<Tier, () => string | null> = {
   quest: () => process.env["LLM_MODEL_QUEST"] ?? "deepseek-reasoner",
 };
 
+/** a free local backend (local-ai server or CLI) is driving the brains */
+export function isLocalLlmBackend(): boolean {
+  return Boolean(localAiUrl() ?? cliBackend());
+}
+
 export function isLlmEnabled(): boolean {
   // local-ai server, CLI backend (claude/codex), or any OpenAI-compatible
   // endpoint. Local servers like Ollama/LM Studio need no API key.
@@ -60,6 +65,10 @@ export interface CompleteTextRequest {
   system: string;
   user: string;
   signal?: AbortSignal;
+  /** override the env timeout (long generations like world imports) */
+  timeoutMs?: number;
+  /** explicit model id, bypassing tier mapping (world imports need a strong non-reasoning model) */
+  model?: string;
 }
 
 export type CompleteTextResult =
@@ -159,17 +168,17 @@ export interface StreamTextRequest extends CompleteTextRequest {
 }
 
 /** Streaming variant of completeText: emits deltas via onToken, resolves with the full text. */
-export async function streamText({ tier = "quest", system, user, signal, onToken }: StreamTextRequest): Promise<CompleteTextResult> {
+export async function streamText({ tier = "quest", system, user, signal, onToken, timeoutMs: timeoutOverride, model: modelOverride }: StreamTextRequest): Promise<CompleteTextResult> {
   if (tier === "background") return { skipped: true, reason: "background tier" };
   if (!isLlmEnabled()) return { skipped: true, reason: "no LLM_API_KEY" };
 
   if (localAiUrl() || cliBackend()) return localCompleteAs("streamText", tier, system, user, onToken);
 
-  const model = TIER_MODEL[tier]?.();
+  const model = modelOverride ?? TIER_MODEL[tier]?.();
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
 
   const url = `${process.env["LLM_BASE_URL"]!.replace(/\/$/, "")}/chat/completions`;
-  const timeoutMs = Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
+  const timeoutMs = timeoutOverride ?? Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs * 2);
   signal?.addEventListener("abort", () => ac.abort(), { once: true });
@@ -243,17 +252,17 @@ export async function streamText({ tier = "quest", system, user, signal, onToken
   return { text: raw.trim(), raw, meta };
 }
 
-export async function completeText({ tier = "quest", system, user, signal }: CompleteTextRequest): Promise<CompleteTextResult> {
+export async function completeText({ tier = "quest", system, user, signal, timeoutMs: timeoutOverride, model: modelOverride }: CompleteTextRequest): Promise<CompleteTextResult> {
   if (tier === "background") return { skipped: true, reason: "background tier" };
   if (!isLlmEnabled()) return { skipped: true, reason: "no LLM_API_KEY" };
 
   if (localAiUrl() || cliBackend()) return localCompleteAs("completeText", tier, system, user);
 
-  const model = TIER_MODEL[tier]?.();
+  const model = modelOverride ?? TIER_MODEL[tier]?.();
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
 
   const url = `${process.env["LLM_BASE_URL"]!.replace(/\/$/, "")}/chat/completions`;
-  const timeoutMs = Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
+  const timeoutMs = timeoutOverride ?? Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), timeoutMs);
   signal?.addEventListener("abort", () => ac.abort(), { once: true });

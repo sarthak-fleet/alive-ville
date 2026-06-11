@@ -70,6 +70,29 @@ function toastsFrom(summary: TickSummary): WorldEvent[] {
   });
 }
 
+const INITIATION_COOLDOWN_MS = 90_000;
+let lastInitiationAt = Number.NEGATIVE_INFINITY;
+
+/** the world talks back: a same-place NPC addressing the player opens the conversation */
+async function maybeNpcInitiatesDialogue(summary: TickSummary, world: World): Promise<void> {
+  const ui = useUiStore.getState();
+  if (ui.gamePhase !== "playing" || ui.dialogueNpcId || ui.interiorBuildingId) return;
+  if (useDirectorStore.getState().cutscene) return;
+  const { useCombatStore } = await import("../combat/store.ts");
+  if (Object.values(useCombatStore.getState().enemies).some((enemy) => enemy.hostile && !enemy.defeated)) return;
+  if (performance.now() - lastInitiationAt < INITIATION_COOLDOWN_MS) return;
+  for (const entry of summary.actions) {
+    const action = entry.action as { type: string; actorId?: string; targetId?: string; text?: string };
+    if (!["talk", "confront", "gossip"].includes(action.type)) continue;
+    if (action.targetId !== "player" || !action.actorId || action.actorId === "player") continue;
+    const npc = world.npcs.find((candidate) => candidate.id === action.actorId);
+    if (!npc || npc.combat?.defeated || npc.locationId !== world.player.locationId) continue;
+    lastInitiationAt = performance.now();
+    useUiStore.getState().openDialogue(npc.id, action.text ?? entry.text);
+    return;
+  }
+}
+
 export const useWorldStore = create<WorldStore>((set, get) => ({
   world: null,
   loading: false,
@@ -111,6 +134,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
               events: [...get().events, ...toastsFrom(summary)],
             });
             useDirectorStore.getState().maybeTriggerFromSummary(summary, prevWorld, world);
+            await maybeNpcInitiatesDialogue(summary, world);
             await markHostilesFrom(summary);
           } catch {
             // transient fetch failure; the next tick reconciles

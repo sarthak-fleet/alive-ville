@@ -105,13 +105,71 @@ export function StartFlow() {
                 </button>
               ))}
             </div>
-            <div className="start-hint">Or import any world JSON in-game via “Import world”.</div>
+            <FandomImport
+              busy={busy}
+              onStart={() => setBusy("fandom")}
+              onDone={(err) => {
+                setBusy(null);
+                if (err) setError(err);
+                else setPhase("character");
+              }}
+            />
           </>
         ) : (
           <CharacterSelect world={world} busy={busy} onPick={(id) => void selectCharacter(id)} onBack={() => setPhase("title")} />
         )}
         {error ? <div className="start-error">{error}</div> : null}
       </div>
+    </div>
+  );
+}
+
+/** type any franchise name — the server researches the fandom wiki and builds the world */
+function FandomImport({ busy, onStart, onDone }: { busy: string | null; onStart: () => void; onDone: (error: string | null) => void }) {
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+
+  const run = async () => {
+    if (!query.trim() || busy) return;
+    ensureAudio();
+    uiBlip();
+    onStart();
+    setStatus("Researching the wiki and building the world… (~1 min)");
+    try {
+      const res = await fetch(api("/api/import-fandom"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string; wiki?: string | null };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? `import failed: ${res.status}`);
+      setStatus(null);
+      await useWorldStore.getState().init();
+      onDone(null);
+    } catch (error) {
+      setStatus(null);
+      onDone((error as Error).message);
+    }
+  };
+
+  return (
+    <div className="fandom-import">
+      <div className="fandom-import-row">
+        <input
+          type="text"
+          value={query}
+          placeholder="Summon any world… e.g. Naruto, One Piece, Attack on Titan"
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void run();
+          }}
+          disabled={busy !== null}
+        />
+        <button type="button" disabled={busy !== null || !query.trim()} onClick={() => void run()}>
+          {busy === "fandom" ? "Summoning…" : "Summon"}
+        </button>
+      </div>
+      <div className="start-hint">{status ?? "Built live from the fandom wiki — or paste world JSON in-game via “Import world”."}</div>
     </div>
   );
 }

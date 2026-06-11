@@ -4,7 +4,7 @@ import { applyAction, locationName, retrieveMemories, validateAction } from "./s
 import type { Action, Npc, World } from "./types.ts";
 
 const HISTORY_LIMIT = 24;
-const MEMORY_LIMIT = 5;
+const MEMORY_LIMIT = Number(process.env["LLM_MEMORY_LIMIT"] ?? 5);
 const REPLY_MAX_CHARS = 420;
 
 export interface DialogueTurn {

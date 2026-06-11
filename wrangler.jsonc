@@ -26,6 +26,7 @@
     "LLM_MODEL_NORMAL": "mistral-large",
     "LLM_MODEL_QUEST": "mistral-large",
     "LLM_MODEL_PROPOSE": "cerebras-llama-8b",
+    "LLM_MODEL_RESEARCH": "mistral-large",
     "LLM_TIMEOUT_MS": "20000",
     "LLM_PROJECT_ID": "ai-game"
   },

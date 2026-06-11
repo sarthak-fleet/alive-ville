@@ -2,6 +2,7 @@ import { createAgentLoop } from "../../src/agent-loop.ts";
 import { createArcForWorld, evaluateArc, markSparWon } from "../../src/arcs.ts";
 import { clearDialogueHistories, dialogueAvailable, dialogueContext, generateDialogueReply } from "../../src/dialogue.ts";
 import { createDirector } from "../../src/director.ts";
+import { fandomToWorldSource } from "../../src/fandom-import.ts";
 import { createLlmProposer } from "../../src/llm/proposer.ts";
 import { isLlmEnabled, proposeAction, setLlmFetch } from "../../src/llm/router.ts";
 import { applyWorldPacing, createEngine } from "../../src/simulation.ts";
@@ -220,6 +221,19 @@ export class GameSessionDO {
         }, 25_000);
       }
       return new Response(readable, { headers: SSE_HEADERS });
+    }
+    if (path === "/api/import-fandom" && request.method === "POST") {
+      if (this.rateLimited("replace_world")) return json(429, { error: "rate_limited" });
+      const body = (await request.json().catch(() => null)) as { query?: unknown } | null;
+      const query = body?.query;
+      if (typeof query !== "string" || !query.trim()) return json(400, { error: "query is required" });
+      try {
+        const imported = await fandomToWorldSource(query);
+        const agentLoopStatus = await this.replaceWorld(worldSourceToWorld(imported.source));
+        return json(200, { ok: true, state: engine.state, wiki: imported.wiki, notes: imported.notes, agentLoopStatus });
+      } catch (error) {
+        return json(400, { error: (error as Error).message });
+      }
     }
     if ((path === "/api/import-world-source" || path === "/api/import-anime") && request.method === "POST") {
       if (this.rateLimited("replace_world")) return json(429, { error: "rate_limited" });

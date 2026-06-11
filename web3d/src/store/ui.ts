@@ -19,13 +19,15 @@ interface UiStore {
   gamePhase: GamePhase;
   setGamePhase: (phase: GamePhase) => void;
   dialogueNpcId: string | null;
+  /** NPC-initiated conversations open with their line already said */
+  dialogueOpener: string | null;
   dialogueLines: DialogueLine[];
   dialogueBusy: boolean;
   interactionTarget: InteractionTarget | null;
   /** building id whose interior the player is currently inside, if any */
   interiorBuildingId: string | null;
   setInteriorBuildingId: (buildingId: string | null) => void;
-  openDialogue: (npcId: string) => void;
+  openDialogue: (npcId: string, opener?: string) => void;
   setDialogueLines: (lines: DialogueLine[]) => void;
   pushDialogueLine: (line: DialogueLine) => void;
   updateLastDialogueLine: (text: string) => void;
@@ -40,6 +42,7 @@ export const useUiStore = create<UiStore>((set, get) => ({
     set({ gamePhase: phase });
   },
   dialogueNpcId: null,
+  dialogueOpener: null,
   dialogueLines: [],
   dialogueBusy: false,
   interactionTarget: null,
@@ -49,9 +52,9 @@ export const useUiStore = create<UiStore>((set, get) => ({
     set({ interiorBuildingId: buildingId });
   },
 
-  openDialogue(npcId) {
+  openDialogue(npcId, opener) {
     if (get().dialogueNpcId === npcId) return;
-    set({ dialogueNpcId: npcId, dialogueLines: [], dialogueBusy: false });
+    set({ dialogueNpcId: npcId, dialogueOpener: opener ?? null, dialogueLines: [], dialogueBusy: false });
   },
   setDialogueLines(lines) {
     set({ dialogueLines: lines });
@@ -68,7 +71,7 @@ export const useUiStore = create<UiStore>((set, get) => ({
     set({ dialogueBusy: busy });
   },
   closeDialogue() {
-    set({ dialogueNpcId: null, dialogueLines: [], dialogueBusy: false });
+    set({ dialogueNpcId: null, dialogueOpener: null, dialogueLines: [], dialogueBusy: false });
   },
   setInteractionTarget(target) {
     const current = get().interactionTarget;

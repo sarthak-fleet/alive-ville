@@ -56,6 +56,13 @@ The gateway treats `body.model` as advisory; the router pins the model via
 the `x-gateway-force-model` header. Pick healthy ids from
 `GET /v1/routing/status`. Other backends ignore the extra header.
 
+## Smart-local mode
+
+Local backends are free, so the sim gets smarter automatically when one is
+active: ambient proposals cover 10 NPCs per tick instead of 5
+(`LLM_MAX_NPCS` overrides). Worth pairing with `LLM_MEMORY_LIMIT=8` for
+deeper conversational recall.
+
 ## Knobs
 
 | env | default | meaning |
@@ -63,5 +70,7 @@ the `x-gateway-force-model` header. Pick healthy ids from
 | `LLM_MODEL_NORMAL` / `LLM_MODEL_QUEST` | deepseek | dialogue model by NPC tier |
 | `LLM_MODEL_PROPOSE` | = NORMAL | ambient agent-loop proposals (the call-volume hog) |
 | `LLM_TIMEOUT_MS` | 8000 | per-call timeout (2× for streams) |
+| `LLM_MEMORY_LIMIT` | 5 | memories retrieved per dialogue turn |
+| `LLM_MODEL_RESEARCH` | = QUEST | model for fandom world imports (strong, non-reasoning) |
 | `LLM_TEMPERATURE` | 0.7 | sampling temperature |
 | `LLM_NO_THINK` | unset | `1` suppresses chain-of-thought on reasoning models |

@@ -56,6 +56,15 @@ export function Dialogue() {
         }
       } catch {
         // history is a nice-to-have; conversation still works without it
+      } finally {
+        // NPC-initiated conversation: show their opening line
+        const ui = useUiStore.getState();
+        const opener = ui.dialogueOpener;
+        const openerNpc = npcById(useWorldStore.getState().world, dialogueNpcId);
+        if (!cancelled && opener && openerNpc) {
+          ui.pushDialogueLine({ speaker: "npc", speakerName: openerNpc.name, text: opener });
+          useUiStore.setState({ dialogueOpener: null });
+        }
       }
     })();
     return () => {

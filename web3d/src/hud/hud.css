@@ -279,6 +279,48 @@
   }
 }
 
+.fandom-import {
+  margin-top: 18px;
+}
+
+.fandom-import-row {
+  display: flex;
+  gap: 8px;
+  max-width: 520px;
+  margin: 0 auto 8px;
+}
+
+.fandom-import-row input {
+  flex: 1;
+  background: rgba(14, 18, 28, 0.85);
+  border: 1px solid rgba(130, 160, 220, 0.3);
+  border-radius: 10px;
+  color: #e8ecf5;
+  padding: 11px 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.fandom-import-row input:focus {
+  border-color: #7fd0ff;
+}
+
+.fandom-import-row button {
+  background: linear-gradient(135deg, #7c5cff, #2563b8);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  padding: 0 22px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.fandom-import-row button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .start-columns {
   display: flex;
   gap: 18px;
