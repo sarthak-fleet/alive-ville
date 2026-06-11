@@ -206,6 +206,17 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
   const overlayUntil = useRef(0);
   const talkingRef = useRef(false);
 
+  // prime the idle pose immediately — without this the first frames render
+  // the bind pose (arms straight out, parallel to the ground)
+  useEffect(() => {
+    if (currentLocomotion.current) return;
+    const idle = actions.get("Idle_Loop");
+    if (!idle) return;
+    idle.play();
+    currentLocomotion.current = "Idle_Loop";
+    mixer.update(0);
+  }, [actions, mixer]);
+
   const flashUntil = useRef(0);
 
   const playOverlay = (clipName: string, fadeIn: number) => {

@@ -110,9 +110,21 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
       },
     };
   });
-  const characters = CHARACTER_SLOTS.map((id, index) => characterToNpc(source, id, index));
+  // every source character becomes an NPC: the first five take the template
+  // slots (their ids get remapped to name slugs downstream), the rest join
+  // with name-slug ids directly
+  const castSize = Math.max(CHARACTER_SLOTS.length, source.characters.length);
+  const antagonistIndex = resolveAntagonistIndex(source, castSize);
+  const characters = Array.from({ length: castSize }, (_, index) =>
+    characterToNpc(
+      source,
+      index < CHARACTER_SLOTS.length ? CHARACTER_SLOTS[index]! : slugId(source.characters[index]!.name),
+      index,
+      index === antagonistIndex
+    )
+  );
   const artifacts = artifactSet(source);
-  const antagonist = characters.at(-1)!;
+  const antagonist = characters[antagonistIndex] ?? characters.at(-1)!;
   return {
     id: worldId,
     name: `${source.title} Playable Slice`,
@@ -225,17 +237,27 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
   };
 }
 
-function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[number], index: number): Npc {
+/** the declared conflict antagonist wins; otherwise the last listed character */
+function resolveAntagonistIndex(source: AnimeIngestSource, castSize: number): number {
+  const declared = source.conflicts?.[0]?.antagonist?.trim().toLowerCase();
+  if (declared) {
+    const found = source.characters.findIndex((draft) => draft.name.trim().toLowerCase() === declared);
+    if (found >= 0) return found;
+  }
+  return Math.min(source.characters.length, castSize) - 1;
+}
+
+function characterToNpc(source: AnimeIngestSource, id: string, index: number, isAntagonist: boolean): Npc {
   const draft = source.characters[index] ?? source.characters[source.characters.length - 1]!;
-  const factionId = draft.faction ? slugId(draft.faction) : index === CHARACTER_SLOTS.length - 1 ? "challengers" : "allies";
-  const needs = needsFor(index);
+  const factionId = draft.faction ? slugId(draft.faction) : isAntagonist ? "challengers" : "allies";
+  const needs = needsFor(index, isAntagonist);
   const palette = draft.look?.palette ?? paletteFor(index);
   const visualTags = draft.look?.visualTags ?? [draft.role, ...(draft.traits ?? []).slice(0, 2)];
   return {
     id,
     name: draft.name,
-    locationId: LOCATION_SLOTS[index] ?? "square",
-    tier: index < 3 ? "quest" : index === CHARACTER_SLOTS.length - 1 ? "normal" : "normal",
+    locationId: LOCATION_SLOTS[index % LOCATION_SLOTS.length] ?? "square",
+    tier: index < 3 ? "quest" : "normal",
     role: draft.role,
     factionId,
     description: draft.description,
@@ -259,16 +281,16 @@ function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[nu
     },
     needs,
     mood: {
-      emotion: index === CHARACTER_SLOTS.length - 1 ? "calculating" : "focused",
-      stress: index === CHARACTER_SLOTS.length - 1 ? 44 : 28 + index * 7,
+      emotion: isAntagonist ? "calculating" : "focused",
+      stress: isAntagonist ? 44 : 28 + (index % 5) * 7,
       confidence: index === 0 ? 82 : 58 + index * 4,
-      suspicion: index === CHARACTER_SLOTS.length - 1 ? 62 : 22 + index * 5,
+      suspicion: isAntagonist ? 62 : 22 + (index % 5) * 5,
     },
     goals: draft.goals ?? [`resolve ${source.title}'s first local conflict`, "keep the playable slice stable"],
     ambitions: (draft.goals ?? [`resolve ${source.title}'s first local conflict`]).slice(0, 2).map((goal, goalIndex) => ({
       id: `${id}_anime_goal_${goalIndex + 1}`,
       title: goal,
-      kind: goalKindFor(goal, index),
+      kind: goalKindFor(goal, isAntagonist),
       priority: Math.max(52, 88 - goalIndex * 12 - index * 3),
       status: "active",
       targetId: LOCATION_SLOTS[Math.min(goalIndex + index, LOCATION_SLOTS.length - 1)],
@@ -276,18 +298,18 @@ function characterToNpc(source: AnimeIngestSource, id: typeof CHARACTER_SLOTS[nu
     secrets: (draft.secrets ?? []).map((secret, secretIndex) => ({
       id: `${id}_secret_${secretIndex + 1}`,
       text: secret,
-      risk: index === CHARACTER_SLOTS.length - 1 ? 82 : 48 + secretIndex * 8,
+      risk: isAntagonist ? 82 : 48 + secretIndex * 8,
       knownBy: [],
     })),
-    relationshipAxes: relationshipAxesFor(id),
-    relationships: relationshipsFor(id),
+    relationshipAxes: relationshipAxesFor(id, isAntagonist),
+    relationships: relationshipsFor(id, isAntagonist),
     memories: (draft.memories ?? [`${draft.name} remembers the first clue from ${source.title}.`]).map((memory) => ({
       tick: 0,
       text: memory,
       meta: {
         importance: /secret|proof|threat|danger|promise|duel|monster|curse/i.test(memory) ? 8 : 5,
         tags: tokenize(memory).slice(0, 6),
-        visibility: index === CHARACTER_SLOTS.length - 1 ? "private" : "shared",
+        visibility: isAntagonist ? "private" : "shared",
         emotionalWeight: /danger|fear|panic|promise|lost/i.test(memory) ? 6 : 3,
         sourceActorId: "world",
       },
@@ -466,36 +488,37 @@ function slotForName(value: string): string | null {
   return null;
 }
 
-function relationshipsFor(id: string): Record<string, number> {
+function relationshipsFor(id: string, isAntagonist: boolean): Record<string, number> {
   const peers = CHARACTER_SLOTS.filter((slot) => slot !== id);
-  return Object.fromEntries(peers.map((peer, index) => [peer, id === "pax" ? -1 : Math.max(-1, 2 - index)]));
+  return Object.fromEntries(peers.map((peer, index) => [peer, isAntagonist ? -1 : Math.max(-1, 2 - index)]));
 }
 
-function relationshipAxesFor(id: string) {
+function relationshipAxesFor(id: string, isAntagonist: boolean) {
   const result: Npc["relationshipAxes"] = {};
   for (const peer of CHARACTER_SLOTS) {
     if (peer === id) continue;
-    result[peer] = id === "pax" ? { suspicion: 2, respect: 1 } : { trust: 1, respect: 1 };
+    result[peer] = isAntagonist ? { suspicion: 2, respect: 1 } : { trust: 1, respect: 1 };
   }
   return result;
 }
 
-function needsFor(index: number): Partial<Record<AgentNeedKey, number>> {
+function needsFor(index: number, isAntagonist: boolean): Partial<Record<AgentNeedKey, number>> {
+  const slot = index % 5;
   return {
-    safety: index === CHARACTER_SLOTS.length - 1 ? 42 : 58,
-    trust: 50 + index * 3,
-    resources: 70 - index * 4,
-    status: 42 + index * 5,
-    curiosity: 48 + index * 6,
+    safety: isAntagonist ? 42 : 58,
+    trust: 50 + slot * 3,
+    resources: 70 - slot * 4,
+    status: 42 + slot * 5,
+    curiosity: 48 + slot * 6,
     duty: index < 3 ? 82 - index * 4 : 54,
   };
 }
 
-function goalKindFor(goal: string, index: number): "protect" | "investigate" | "repair" | "reveal" | "harm" {
+function goalKindFor(goal: string, isAntagonist: boolean): "protect" | "investigate" | "repair" | "reveal" | "harm" {
   if (/repair|recover|restore|component/i.test(goal)) return "repair";
   if (/proof|find|learn|investigate|report/i.test(goal)) return "investigate";
   if (/reveal|tell|confess/i.test(goal)) return "reveal";
-  if (index === CHARACTER_SLOTS.length - 1) return "harm";
+  if (isAntagonist) return "harm";
   return "protect";
 }
 

@@ -7,6 +7,7 @@ import { ensureAudio, uiBlip } from "../audio/sfx.ts";
 import { actorVisualFor, clothingColorsFor } from "../mapping/visuals.ts";
 import { useUiStore } from "../store/ui.ts";
 import { useWorldStore } from "../store/world.ts";
+import { CharacterPortrait } from "./CharacterPortrait.tsx";
 
 interface BundledWorld {
   id: string;
@@ -194,19 +195,25 @@ function CharacterDetail({
   const personality = [...(npc?.traits?.personality ?? []), ...(npc?.traits?.values ?? [])].slice(0, 5);
   const goal = npc?.goals?.[0] ?? npc?.ambitions?.[0]?.title;
 
+  const portraitVisual = visual ?? { color: WANDERER.color, accentColor: "#e8c95a", skinColor: "#e8c39e", bodyShape: "average" as const };
+
   return (
     <div className="char-detail">
-      <div className="char-detail-head">
-        <span className="start-swatch big" style={{ background: visual?.color ?? WANDERER.color }} />
-        <div>
-          <div className="char-detail-name">{npc?.name ?? WANDERER.name}</div>
-          <div className="char-detail-role">
-            {npc?.role ?? "outsider"}
-            {npc?.tier === "quest" ? <span className="char-badge">key figure</span> : null}
+      <div className="char-detail-main">
+        <CharacterPortrait visual={portraitVisual} npc={npc} />
+        <div className="char-detail-body">
+          <div className="char-detail-head">
+            <div>
+              <div className="char-detail-name">{npc?.name ?? WANDERER.name}</div>
+              <div className="char-detail-role">
+                {npc?.role ?? "outsider"}
+                {npc?.tier === "quest" ? <span className="char-badge">key figure</span> : null}
+              </div>
+            </div>
           </div>
+          <div className="char-detail-desc">{npc?.description ?? WANDERER.blurb}</div>
         </div>
       </div>
-      <div className="char-detail-desc">{npc?.description ?? WANDERER.blurb}</div>
       {personality.length > 0 ? (
         <div className="char-chips">
           {personality.map((trait) => (

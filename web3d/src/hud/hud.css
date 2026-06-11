@@ -324,6 +324,32 @@
   min-height: 320px;
 }
 
+.char-detail-main {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.char-portrait {
+  width: 150px;
+  height: 200px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 30%, #243049 0%, #131927 75%);
+  border: 1px solid rgba(130, 160, 220, 0.18);
+  overflow: hidden;
+}
+
+.char-portrait canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.char-detail-body {
+  flex: 1;
+  min-width: 0;
+}
+
 .char-detail-head {
   display: flex;
   align-items: center;
