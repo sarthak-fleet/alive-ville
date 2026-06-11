@@ -15,6 +15,7 @@ import { useWorldStore } from "../store/world.ts";
 import { cityModelFor } from "../worldgen/cache.ts";
 import { interiorForBuilding } from "../worldgen/interiors.ts";
 import { ArcPanel } from "./ArcPanel.tsx";
+import { Chronicle } from "./Chronicle.tsx";
 import { Dialogue } from "./Dialogue.tsx";
 import { ImportScreen } from "./ImportScreen.tsx";
 import { Letterbox } from "./Letterbox.tsx";
@@ -36,6 +37,7 @@ export function Hud() {
   const openDialogue = useUiStore((state) => state.openDialogue);
   const interiorBuildingId = useUiStore((state) => state.interiorBuildingId);
   const [importOpen, setImportOpen] = useState(false);
+  const [chronicleOpen, setChronicleOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSfxEnabled());
   const [pointerLocked, setPointerLocked] = useState(false);
 
@@ -71,6 +73,16 @@ export function Hud() {
     if (level > prevLevel.current) questChime();
     prevLevel.current = level;
   }, [world?.player.growth?.level]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.code !== "KeyJ" || isTypingTarget(event.target)) return;
+      event.preventDefault();
+      setChronicleOpen((open) => !open);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -143,6 +155,9 @@ export function Hud() {
               Import world
             </button>
           ) : null}
+          <button type="button" className={`chip ${chronicleOpen ? "on" : ""}`} onClick={() => setChronicleOpen((open) => !open)}>
+            Journal (J)
+          </button>
           <button type="button" className={`chip ${soundOn ? "on" : ""}`} onClick={() => { setSfxEnabled(!soundOn); setSoundOn(!soundOn); }}>
             {soundOn ? "🔊" : "🔇"}
           </button>
@@ -236,6 +251,8 @@ export function Hud() {
       <Dialogue />
 
       <Letterbox />
+
+      <Chronicle open={chronicleOpen} onClose={() => setChronicleOpen(false)} />
 
       {importOpen ? <ImportScreen onClose={() => setImportOpen(false)} /> : null}
 

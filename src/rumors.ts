@@ -1,3 +1,4 @@
+import { recordChronicle } from "./chronicle.ts";
 import type { Memory, Npc, World } from "./types.ts";
 
 /**
@@ -9,6 +10,12 @@ import type { Memory, Npc, World } from "./types.ts";
  *  1. diffusion — co-located NPCs share their juiciest shareable memory
  *  2. revelation — leaked secrets get recognized; knowers shift relationships,
  *     moods, and goals (values like duty/justice can turn them against the holder)
+ *
+ * Every step also extends the Chronicle (src/chronicle.ts): gossip chains
+ * carry the source's chronicleId hop-by-hop, secret_revealed cites the memory
+ * that triggered recognition, turned_against cites that revelation, and the
+ * resulting ambition is stamped so the eventual confrontation links back.
+ * This is what makes an offline-evolved beat legible as "your doing".
  */
 
 export interface RumorEvent {
@@ -51,6 +58,14 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
       const listeners = group.filter((other) => other.id !== teller.id && !knowsText(other, memory.text));
       if (listeners.length === 0) continue;
       const listener = listeners[world.tick % listeners.length]!;
+      const sourceChronicleId = memory.meta?.chronicleId;
+      const chronicle = recordChronicle(world, {
+        kind: "gossip",
+        text: `${teller.name} told ${listener.name} what they heard.`,
+        actorId: teller.id,
+        targetId: listener.id,
+        causeIds: sourceChronicleId ? [sourceChronicleId] : [],
+      });
       listener.memories.push({
         tick: world.tick,
         text: `${teller.name} told me: ${strip(memory.text)}`,
@@ -59,6 +74,7 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
           visibility: "shared",
           importance: Math.max(1, (memory.meta?.importance ?? 2) - 1),
           tags: ["rumor"],
+          chronicleId: chronicle.id,
         },
       });
       shares += 1;
@@ -107,33 +123,65 @@ function revealSecrets(world: World, events: RumorEvent[]): void {
       for (const other of world.npcs) {
         if (other.id === holder.id) continue;
         if (secret.knownBy?.includes(other.id)) continue;
-        if (!recognizesSecret(other, words)) continue;
+        const recognition = recognizesSecret(other, words);
+        if (!recognition) continue;
 
         secret.knownBy = [...(secret.knownBy ?? []), other.id];
+        const revealChronicle = recordChronicle(world, {
+          kind: "secret_revealed",
+          text: `${other.name} has learned ${holder.name}'s secret.`,
+          actorId: other.id,
+          targetId: holder.id,
+          causeIds: recognition.trigger?.meta?.chronicleId ? [recognition.trigger.meta.chronicleId] : [],
+        });
         events.push({
           kind: "secret_revealed",
           actorId: other.id,
           aboutId: holder.id,
           text: `${other.name} has learned ${holder.name}'s secret.`,
         });
-        applyRevelation(world, other, holder, secret.risk, events);
+        applyRevelation(world, other, holder, secret.risk, events, revealChronicle.id);
       }
     }
   }
 }
 
-/** enough of the secret's words appear in what this NPC has heard */
-function recognizesSecret(npc: Npc, secretWords: string[], threshold = 0.5): boolean {
-  const heard = npc.memories
-    .slice(-40)
-    .map((memory) => memory.text.toLowerCase())
-    .join(" ");
-  let hits = 0;
-  for (const word of secretWords) if (heard.includes(word)) hits += 1;
-  return hits >= Math.max(2, Math.ceil(secretWords.length * threshold));
+interface RecognitionResult {
+  trigger: Memory | null;
 }
 
-function applyRevelation(world: World, knower: Npc, holder: Npc, risk: number, events: RumorEvent[]): void {
+/**
+ * Enough of the secret's words appear in what this NPC has heard. The
+ * threshold is checked across the recent-memory blob (as before); the
+ * `trigger` field returns the newest memory that contributed at least one
+ * matching word — that's the chronicle ancestor we link the revelation to.
+ */
+function recognizesSecret(npc: Npc, secretWords: string[], threshold = 0.5): RecognitionResult | null {
+  const recent = npc.memories.slice(-40);
+  const heard = recent.map((memory) => memory.text.toLowerCase()).join(" ");
+  let hits = 0;
+  for (const word of secretWords) if (heard.includes(word)) hits += 1;
+  if (hits < Math.max(2, Math.ceil(secretWords.length * threshold))) return null;
+  let trigger: Memory | null = null;
+  for (let index = recent.length - 1; index >= 0; index -= 1) {
+    const memory = recent[index]!;
+    const lower = memory.text.toLowerCase();
+    if (secretWords.some((word) => lower.includes(word))) {
+      trigger = memory;
+      break;
+    }
+  }
+  return { trigger };
+}
+
+function applyRevelation(
+  world: World,
+  knower: Npc,
+  holder: Npc,
+  risk: number,
+  events: RumorEvent[],
+  revealChronicleId: string
+): void {
   const delta = risk >= 60 ? -3 : -1;
   knower.relationships = {
     ...knower.relationships,
@@ -155,13 +203,20 @@ function applyRevelation(world: World, knower: Npc, holder: Npc, risk: number, e
   knower.memories.push({
     tick: world.tick,
     text: `I have learned ${holder.name}'s secret. It changes things between us.`,
-    meta: { importance: 3, visibility: "shared", sourceActorId: holder.id, tags: ["secret"] },
+    meta: { importance: 3, visibility: "shared", sourceActorId: holder.id, tags: ["secret"], chronicleId: revealChronicleId },
   });
 
   // principled NPCs act on dangerous secrets instead of sitting on them
   const values = (knower.traits?.values ?? []).join(" ");
   if (risk >= 60 && CONFRONT_VALUES.test(values)) {
     knower.relationships[holder.id] = Math.min(knower.relationships[holder.id] ?? 0, -4);
+    const turnedChronicle = recordChronicle(world, {
+      kind: "turned_against",
+      text: `${knower.name} has turned against ${holder.name}.`,
+      actorId: knower.id,
+      targetId: holder.id,
+      causeIds: [revealChronicleId],
+    });
     knower.ambitions = [
       ...(knower.ambitions ?? []),
       {
@@ -171,6 +226,7 @@ function applyRevelation(world: World, knower: Npc, holder: Npc, risk: number, e
         priority: 84,
         status: "active",
         targetId: holder.locationId,
+        chronicleId: turnedChronicle.id,
       },
     ];
     events.push({

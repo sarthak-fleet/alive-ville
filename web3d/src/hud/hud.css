@@ -591,6 +591,145 @@
   cursor: pointer;
 }
 
+.chronicle-panel {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 380px;
+  max-height: calc(100vh - 28px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 14, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 14px 14px;
+  color: #e8ecf5;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+}
+
+.chronicle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.chronicle-title {
+  color: #f8d44e;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chronicle-close {
+  background: none;
+  border: none;
+  color: #9aa6bc;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.chronicle-close:hover {
+  color: #f1f5fb;
+}
+
+.chronicle-empty {
+  font-size: 13px;
+  color: #9aa6bc;
+  padding: 8px 4px;
+}
+
+.chronicle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chronicle-event {
+  border-left: 3px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 6px 6px 0;
+  padding: 6px 8px 6px 10px;
+}
+
+.chronicle-event.player-caused {
+  border-left-color: #f8d44e;
+  background: rgba(248, 212, 78, 0.07);
+}
+
+.chronicle-event-row {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: 8px;
+  align-items: baseline;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.chronicle-event-row:disabled {
+  cursor: default;
+}
+
+.chronicle-time {
+  font-size: 11px;
+  color: #9aa6bc;
+  font-variant-numeric: tabular-nums;
+}
+
+.chronicle-text {
+  line-height: 1.4;
+}
+
+.chronicle-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #f8d44e;
+  background: rgba(248, 212, 78, 0.16);
+  border-radius: 4px;
+  padding: 1px 5px;
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.chronicle-chevron {
+  color: #9aa6bc;
+  font-size: 11px;
+}
+
+.chronicle-causes {
+  list-style: none;
+  margin: 6px 0 2px;
+  padding: 0;
+  font-size: 12px;
+  color: #c6cede;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chronicle-cause-prefix {
+  color: #7fb8ff;
+  margin-right: 4px;
+}
+
 .crosshair {
   position: absolute;
   top: 50%;

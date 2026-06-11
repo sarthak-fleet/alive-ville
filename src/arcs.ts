@@ -1,3 +1,4 @@
+import { recordChronicle } from "./chronicle.ts";
 import type { ArcStage, Npc, World, WorldArc } from "./types.ts";
 
 /**
@@ -110,6 +111,8 @@ function advance(world: World, arc: WorldArc, next: ArcStage, focusId: string, t
   const fromStage = arc.stage as Exclude<ArcStage, "complete">;
   arc.stage = next;
   const award = awardXp(world, STAGE_XP[fromStage] ?? 0);
+  // arc advances are player-caused: the player drove the prerequisites
+  recordChronicle(world, { kind: "arc", text, actorId: focusId, playerCaused: true });
   return { stage: next, text, xpAwarded: STAGE_XP[fromStage] ?? 0, leveledUp: award.leveledUp, focusId };
 }
 

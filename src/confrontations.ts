@@ -1,3 +1,4 @@
+import { recordChronicle } from "./chronicle.ts";
 import type { AgentGoal, Npc, World } from "./types.ts";
 
 /**
@@ -52,15 +53,22 @@ export function executeConfrontations(world: World): ConfrontationEvent[] {
     // face to face: the confrontation happens
     ambition.status = "satisfied";
     const line = `${npc.name} confronts ${holder.name}: "I know what you've been hiding."`;
+    const confrontChronicle = recordChronicle(world, {
+      kind: "confrontation",
+      text: line,
+      actorId: npc.id,
+      targetId: holder.id,
+      causeIds: ambition.chronicleId ? [ambition.chronicleId] : [],
+    });
     npc.memories.push({
       tick: world.tick,
       text: `I confronted ${holder.name} about the secret. It is in the open between us now.`,
-      meta: { importance: 6, visibility: "shared", sourceActorId: holder.id, tags: ["confrontation"] },
+      meta: { importance: 6, visibility: "shared", sourceActorId: holder.id, tags: ["confrontation"], chronicleId: confrontChronicle.id },
     });
     holder.memories.push({
       tick: world.tick,
       text: `${npc.name} confronted me — they know my secret. I must decide what to do about them.`,
-      meta: { importance: 7, visibility: "private", sourceActorId: npc.id, tags: ["confrontation"] },
+      meta: { importance: 7, visibility: "private", sourceActorId: npc.id, tags: ["confrontation"], chronicleId: confrontChronicle.id },
     });
     // the accused resents being cornered
     holder.relationships = {

@@ -8,6 +8,7 @@ import {
   scheduledBlockFor,
 } from "./agents.ts";
 import { awardXp, reassignArcRoles, XP_FIGHT_WON, XP_QUEST_COMPLETE } from "./arcs.ts";
+import { recordChronicle } from "./chronicle.ts";
 import { combatMoveFor, combatMovesFor } from "./combat.ts";
 import { executeConfrontations } from "./confrontations.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
@@ -95,6 +96,7 @@ function ensureWorldDefaults(world: World): void {
   world.interactables ??= [];
   world.clock ??= { hoursPerTick: 1, hour: 8, day: 1 };
   world.eventLog ??= [];
+  world.chronicle ??= [];
   world.player.combat = normalizeCombatState(world.player.combat, 120);
   ensureAgentStateDefaults(world);
   ensureCombatDefaults(world);
@@ -194,6 +196,7 @@ export async function runTick(
 const EVENT_LOG_CAP = 60;
 const MEMORY_CAP = 120;
 const MEMORY_KEEP_RECENT = 90;
+const CHRONICLE_CAP = 100;
 
 /**
  * Long sessions hang the client without this: eventLog grows one summary per
@@ -203,6 +206,9 @@ const MEMORY_KEEP_RECENT = 90;
 export function trimWorldGrowth(world: World): void {
   if (world.eventLog.length > EVENT_LOG_CAP) {
     world.eventLog.splice(0, world.eventLog.length - EVENT_LOG_CAP);
+  }
+  if (world.chronicle && world.chronicle.length > CHRONICLE_CAP) {
+    world.chronicle.splice(0, world.chronicle.length - CHRONICLE_CAP);
   }
   for (const npc of world.npcs) {
     if (npc.memories.length <= MEMORY_CAP) continue;
@@ -368,6 +374,13 @@ export function applyAction(world: World, action: Action): ActionResult {
         adjustRelationshipAxes(world, quest.giverId, action.actorId, { trust: 1, respect: 1 });
       }
       if (action.actorId !== "player") remember(world, action.actorId, `Accepted "${quest.title}" from ${nameOf(world, quest.giverId ?? "")}.`);
+      recordChronicle(world, {
+        kind: "quest",
+        text: `${nameOf(world, action.actorId)} accepted "${quest.title}".`,
+        actorId: action.actorId,
+        targetId: quest.giverId,
+        playerCaused: action.actorId === "player",
+      });
       return applied(action, `${nameOf(world, action.actorId)} accepted "${quest.title}".`);
     }
     case "complete_quest": {
@@ -379,6 +392,13 @@ export function applyAction(world: World, action: Action): ActionResult {
       if (action.actorId !== "player" && quest.giverId) remember(world, action.actorId, `Completed "${quest.title}" for ${nameOf(world, quest.giverId)}.`);
       markAmbitionProgress(world, quest);
       syncStoryProgress(world);
+      recordChronicle(world, {
+        kind: "quest",
+        text: `${nameOf(world, action.actorId)} completed "${quest.title}".`,
+        actorId: action.actorId,
+        targetId: quest.giverId,
+        playerCaused: action.actorId === "player",
+      });
       return applied(action, `${nameOf(world, action.actorId)} completed "${quest.title}". ${questOutcomeText(world, quest, action.actorId)}`);
     }
     case "fail_quest": {

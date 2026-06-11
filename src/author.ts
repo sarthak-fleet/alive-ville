@@ -1,3 +1,4 @@
+import { recordChronicle } from "./chronicle.ts";
 import { completeText } from "./llm/router.ts";
 import type { Npc, World } from "./types.ts";
 
@@ -46,10 +47,19 @@ export async function authorBeat(world: World, complete: typeof completeText = c
   const beat = parseBeat(result.text);
   if (!beat) return null;
 
-  if (beat.kind === "quest" && beat.quest) return applyQuestBeat(world, beat.quest);
-  if (beat.kind === "arrival" && beat.arrival) return applyArrivalBeat(world, beat.arrival);
-  if (beat.kind === "incident" && beat.incident) return applyIncidentBeat(world, beat.incident);
-  return null;
+  const applied =
+    beat.kind === "quest" && beat.quest ? applyQuestBeat(world, beat.quest) :
+    beat.kind === "arrival" && beat.arrival ? applyArrivalBeat(world, beat.arrival) :
+    beat.kind === "incident" && beat.incident ? applyIncidentBeat(world, beat.incident) :
+    null;
+  if (applied) {
+    recordChronicle(world, {
+      kind: "authored",
+      text: applied.text,
+      actorId: applied.focusActorId,
+    });
+  }
+  return applied;
 }
 
 // ---------------------------------------------------------------------------

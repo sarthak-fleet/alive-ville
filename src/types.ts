@@ -72,6 +72,8 @@ export interface MemoryMeta {
   sourceActorId?: ActorId | "world" | "director";
   visibility?: MemoryVisibility;
   emotionalWeight?: number;
+  /** id of the chronicle event that minted this memory — used to chain causes */
+  chronicleId?: string;
 }
 
 export type AgentNeedKey = "safety" | "trust" | "resources" | "status" | "rest" | "curiosity" | "revenge" | "duty";
@@ -113,6 +115,8 @@ export interface AgentGoal {
   status?: AgentGoalStatus;
   targetId?: ActorId | LocationId | ItemId;
   blocker?: string;
+  /** the chronicle event that spawned this ambition (lets downstream beats chain back) */
+  chronicleId?: string;
 }
 
 export interface AgentSecret {
@@ -397,6 +401,32 @@ export interface World {
   /** what happened while the player was away (set by catch-up, shown once) */
   recap?: WorldRecap;
   eventLog: TickSummary[];
+  /** causal trace of legible world beats — capped, ordered oldest-first (see src/chronicle.ts) */
+  chronicle?: ChronicleEvent[];
+}
+
+export type ChronicleEventKind =
+  | "player_word"
+  | "gossip"
+  | "secret_revealed"
+  | "turned_against"
+  | "confrontation"
+  | "authored"
+  | "quest"
+  | "arc";
+
+export interface ChronicleEvent {
+  id: string;
+  tick: TickIndex;
+  day: number;
+  hour: number;
+  kind: ChronicleEventKind;
+  text: string;
+  actorId?: ActorId;
+  targetId?: ActorId;
+  causeIds: string[];
+  /** true when the player's choice is in this event's lineage */
+  playerCaused: boolean;
 }
 
 export interface WorldRecap {

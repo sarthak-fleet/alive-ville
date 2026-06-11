@@ -1,4 +1,5 @@
 import { memoryMetaFromText } from "./agents.ts";
+import { recordChronicle } from "./chronicle.ts";
 import { completeText, type CompleteTextResult, isLlmEnabled, streamText } from "./llm/router.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
 import { applyAction, locationName, retrieveMemories, validateAction } from "./simulation.ts";
@@ -134,11 +135,27 @@ export async function generateDialogueReply(
   // what you tell an NPC is no longer sealed: juicy lines become shareable
   // and travel the rumor network (see src/rumors.ts)
   const playerLineMeta = memoryMetaFromText(playerText);
+  const visibility = (playerLineMeta.importance ?? 0) >= 5 ? "shared" : "private";
+  // shared player lines become the root of a causal chain — stamp the
+  // chronicle id onto the seed memory so gossip + secret recognition can
+  // trace any later beat back to "the player said this"
+  let playerChronicleId: string | undefined;
+  if (visibility === "shared") {
+    const trimmed = playerText.length > 80 ? `${playerText.slice(0, 80)}…` : playerText;
+    const event = recordChronicle(world, {
+      kind: "player_word",
+      text: `You told ${npc.name}: "${trimmed}"`,
+      actorId: "player",
+      targetId: npc.id,
+      playerCaused: true,
+    });
+    playerChronicleId = event.id;
+  }
   npc.memories.push(
     {
       tick: world.tick,
       text: `${playerName} said to me: ${playerText}`,
-      meta: { ...playerLineMeta, sourceActorId: "player", visibility: (playerLineMeta.importance ?? 0) >= 5 ? "shared" : "private" },
+      meta: { ...playerLineMeta, sourceActorId: "player", visibility, ...(playerChronicleId ? { chronicleId: playerChronicleId } : {}) },
     },
     { tick: world.tick, text: `I replied to ${playerName}: ${parsed.reply}`, meta: { visibility: "private", importance: 2 } }
   );
