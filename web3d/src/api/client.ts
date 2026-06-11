@@ -26,9 +26,12 @@ export function sessionId(): string {
   return cachedSessionId;
 }
 
-/** append the session to an API path (EventSource cannot send headers) */
+// honor vite's base path ("/game/" in production) for same-origin API calls
+const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+/** append base path + session to an API path (EventSource cannot send headers) */
 export function api(path: string): string {
-  return `${path}${path.includes("?") ? "&" : "?"}session=${sessionId()}`;
+  return `${API_BASE}${path}${path.includes("?") ? "&" : "?"}session=${sessionId()}`;
 }
 
 export async function fetchState(): Promise<World> {

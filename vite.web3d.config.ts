@@ -5,6 +5,7 @@ const SERVER_PORT = Number(process.env["SERVER_PORT"] ?? 5174);
 
 export default defineConfig({
   root: "web3d",
+  base: "/game/",
   plugins: [react()],
   css: {
     transformer: "lightningcss",
@@ -12,11 +13,15 @@ export default defineConfig({
   server: {
     port: 5175,
     proxy: {
-      "/api": `http://localhost:${SERVER_PORT}`,
+      "/game/api": {
+        target: `http://localhost:${SERVER_PORT}`,
+        rewrite: (path) => path.replace(/^\/game/, ""),
+      },
     },
   },
   build: {
-    outDir: "../dist/web3d",
+    // nested under dist/site so Workers Assets serves the app at /game/*
+    outDir: "../dist/site/game",
     emptyOutDir: true,
     cssMinify: "lightningcss",
   },

@@ -9,7 +9,7 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./dist/web3d",
+    "directory": "./dist/site",
     "binding": "ASSETS"
   },
   "durable_objects": {
@@ -21,17 +21,16 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameSessionDO"] }],
   "vars": {
     "LLM_BASE_URL": "https://free-ai-gateway.sarthakagrawal927.workers.dev/v1",
-    // groq-llama-70b 404s upstream (deprecated); the gateway currently
-    // resolves these through its fallback chain
-    "LLM_MODEL_NORMAL": "groq-gpt-oss-120b",
-    "LLM_MODEL_QUEST": "groq-gpt-oss-120b",
+    // picked from the gateway's /v1/routing/status healthy set; pinned via
+    // x-gateway-force-model header (body.model is advisory at the gateway)
+    "LLM_MODEL_NORMAL": "mistral-large",
+    "LLM_MODEL_QUEST": "mistral-large",
+    "LLM_MODEL_PROPOSE": "cerebras-llama-8b",
+    "LLM_TIMEOUT_MS": "20000",
     "LLM_PROJECT_ID": "ai-game"
   },
   "workers_dev": true,
-  // re-enable once the aliveville.com zone is active in this account:
-  // "routes": [
-  //   { "pattern": "aliveville.com", "custom_domain": true },
-  //   { "pattern": "www.aliveville.com", "custom_domain": true }
-  // ],
+  // path route on the existing zone — the landing site keeps the root
+  "routes": [{ "pattern": "aliveville.com/game*", "zone_name": "aliveville.com" }],
   "observability": { "enabled": true }
 }

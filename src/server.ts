@@ -268,6 +268,8 @@ if (AGENT_LOOP_AUTOSTART) mainSession.agentLoop.start();
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+  // the client is built with base /game/ — accept its API calls here too
+  if (url.pathname.startsWith("/game/api/")) url.pathname = url.pathname.slice("/game".length);
   if (!url.pathname.startsWith("/api/")) return serveStatic(url.pathname, res);
   const session = sessionFor(req, url);
   const { engine, agentLoop } = session;

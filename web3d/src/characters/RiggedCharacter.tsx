@@ -11,7 +11,7 @@ import { toonGradientMap, toonMaterial } from "../scene/toon.ts";
 import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
 import { outfitColorsFor, paintOutfit } from "./clothing.ts";
 
-const MODEL_URL = "/assets/characters/ual.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/characters/ual.glb`;
 const TARGET_HEIGHT = 1.7;
 
 interface LocomotionEntry {

@@ -14,7 +14,7 @@
     "dev": "vite",
     "dev:3d": "vite --config vite.web3d.config.ts",
     "build:3d": "vite build --config vite.web3d.config.ts",
-    "serve:3d": "WEB_ROOT=./dist/web3d tsx --env-file-if-exists=.env src/server.ts",
+    "serve:3d": "WEB_ROOT=./dist/site tsx --env-file-if-exists=.env src/server.ts",
     "dev:server": "tsx watch --env-file-if-exists=.env src/server.ts",
     "eval:llm": "tsx --env-file-if-exists=.env src/eval.ts",
     "eval:lmstudio": "tsx --env-file-if-exists=.env src/lmstudio-eval.ts",
