@@ -188,4 +188,19 @@ describe("LLM dialogue", () => {
     expect(await generateDialogueReply(world, npc.id, "Hello", { complete: failing })).toEqual({ ok: false, reason: "timeout" });
     expect(npc.memories.length).toBe(before);
   });
+  it("lead: the NPC walks off toward the asked location and the event guides the player", async () => {
+    const world = loadWorld();
+    const npc = npcWithPlayer(world);
+    const exit = (world.exits ?? []).find((entry) => entry.from === npc.locationId) ?? (world.exits ?? [])[0]!;
+    const target = exit.from === npc.locationId ? exit.to : exit.from;
+    const { complete } = completerReturning(`Right this way.\n@@{"action":{"type":"lead","locationId":"${target}"},"disposition":0}`);
+    const result = await generateDialogueReply(world, npc.id, "can you take me there?", { complete });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.action?.type).toBe("lead");
+      expect(result.action?.text).toContain("follow them");
+    }
+    expect(npc.locationId).toBe(target);
+  });
+
 });

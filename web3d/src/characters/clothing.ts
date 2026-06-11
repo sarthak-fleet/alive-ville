@@ -53,7 +53,14 @@ export function outfitColorsFor(visual: ActorVisual, seedId: string): OutfitColo
  * accent belt band. Zones are normalized against the geometry's own bounds so
  * the same thresholds work for any humanoid bind pose (T or A).
  */
-export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors): void {
+export interface OutfitCut {
+  /** skin from the elbow out */
+  shortSleeves?: boolean;
+  /** skin from the knee down (shoes stay) */
+  shorts?: boolean;
+}
+
+export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors, cut: OutfitCut = {}): void {
   const position = geometry.getAttribute("position");
   if (!position) return;
   let minY = Number.POSITIVE_INFINITY;
@@ -81,9 +88,10 @@ export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors
     const ny = (position.getY(index) - minY) / height;
     const nx = Math.abs(position.getX(index)) / span;
     let color: THREE.Color;
-    if (nx > 0.82 && ny > 0.2) color = palette.skin; // hands (arm extremity in bind pose)
+    if (nx > (cut.shortSleeves ? 0.58 : 0.82) && ny > 0.2) color = palette.skin; // hands / bare forearms
     else if (ny > 0.84) color = palette.skin; // head + neck
     else if (ny < 0.075) color = palette.shoes;
+    else if (cut.shorts && ny < 0.3) color = palette.skin; // bare calves
     else if (ny < 0.53) color = palette.pants;
     else if (ny < 0.56) color = palette.belt;
     else color = palette.shirt;

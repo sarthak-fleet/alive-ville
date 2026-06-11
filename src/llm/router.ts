@@ -45,9 +45,11 @@ async function localCompleteAs(
 ): Promise<CompleteTextResult> {
   const started = Date.now();
   const viaServer = Boolean(localAiUrl());
-  const result = viaServer ? await localAiComplete(system, user, onToken) : await cliComplete(`${system}\n\n---\n\n${user}`);
+  // dialogue deserves the better model; the per-tick proposal firehose gets the fast one
+  const cliModel = process.env["LLM_LOCAL_AI_MODEL"] ?? (kind === "proposeAction" ? "haiku" : "sonnet");
+  const result = viaServer ? await localAiComplete(system, user, onToken, cliModel) : await cliComplete(`${system}\n\n---\n\n${user}`);
   if (!viaServer && result.text) onToken?.(result.text);
-  const model = viaServer ? `local-ai:${process.env["LLM_LOCAL_AI_PROVIDER"] ?? "claude"}` : `cli:${cliBackend()}`;
+  const model = viaServer ? `local-ai:${process.env["LLM_LOCAL_AI_PROVIDER"] ?? "claude"}:${cliModel}` : `cli:${cliBackend()}`;
   const meta: ProposeMeta = { tier, model, latencyMs: Date.now() - started, usage: null, error: result.error ?? null, jsonOk: false };
   logLlmCall({ kind, ...meta, raw: result.text });
   if (result.error || !result.text) return { error: result.error ?? "empty", meta };

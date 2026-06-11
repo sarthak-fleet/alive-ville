@@ -163,6 +163,18 @@ export async function generateDialogueReply(
     appliedAction = { type: parsed.action.type, text };
     history.push({ speaker: "event", text });
     npc.memories.push({ tick: world.tick, text, meta: { importance: 2, visibility: "private" } });
+  } else if (parsed.action?.type === "lead") {
+    const locationId = (parsed.action as { locationId?: unknown }).locationId;
+    if (typeof locationId === "string") {
+      const candidate = { type: "move", actorId: npcId, locationId } as Action;
+      if (validateAction(world, candidate).ok) {
+        applyAction(world, candidate);
+        const text = `${npc.name} sets off toward ${locationName(world, locationId)} — follow them!`;
+        appliedAction = { type: "lead", text };
+        history.push({ speaker: "event", text });
+        npc.memories.push({ tick: world.tick, text: `I led the player toward ${locationName(world, locationId)}.`, meta: { importance: 2, visibility: "private" } });
+      }
+    }
   } else if (parsed.action?.type === "create_quest") {
     const created = createDynamicQuest(world, npc, parsed.action);
     if (created) {
@@ -225,6 +237,8 @@ function buildDialogueSystem(world: World, npc: Npc): string {
     `{"type":"create_quest","title":"<short task name>","description":"<one sentence>"} —`,
     `  entrust the player with a NEW task when the conversation naturally produces one`,
     `{"type":"complete_quest","questId":"<id>"} — declare a quest fulfilled when the player has done it`,
+    `{"type":"lead","locationId":"<id>"} — guide the player somewhere: you set off, they follow`,
+    `  (use this whenever they ask you to take/show/escort them to a place)`,
     `{"type":"follow"} — start traveling WITH the player (when you agree to come along)`,
     `{"type":"unfollow"} — stop following the player`,
     `{"type":"spar"} — accept a friendly, non-lethal practice duel (training, testing each other)`,

@@ -11,7 +11,8 @@ export function localAiUrl(): string | null {
 export async function localAiComplete(
   system: string,
   user: string,
-  onToken?: (delta: string) => void
+  onToken?: (delta: string) => void,
+  model?: string
 ): Promise<{ text?: string; error?: string }> {
   const base = localAiUrl();
   if (!base) return { error: "LLM_LOCAL_AI_URL not configured" };
@@ -24,7 +25,7 @@ export async function localAiComplete(
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         provider: process.env["LLM_LOCAL_AI_PROVIDER"] ?? "claude",
-        ...(process.env["LLM_LOCAL_AI_MODEL"] ? { model: process.env["LLM_LOCAL_AI_MODEL"] } : {}),
+        ...(model ?? process.env["LLM_LOCAL_AI_MODEL"] ? { model: model ?? process.env["LLM_LOCAL_AI_MODEL"] } : {}),
         systemPrompt: system,
         messages: [{ role: "user", content: user }],
       }),
