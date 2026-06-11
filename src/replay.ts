@@ -47,7 +47,7 @@ function inspectFrame(summary: TickSummary, _previous?: TickSummary): ReplayFram
 
   for (const entry of summary.actions) {
     changedActors.add(entry.action.actorId);
-    if ("targetId" in entry.action) changedActors.add(entry.action.targetId);
+    if ("targetId" in entry.action && typeof entry.action.targetId === "string") changedActors.add(entry.action.targetId);
     if (entry.action.type === "gossip") changedActors.add(entry.action.aboutId);
     if (entry.action.type === "talk" || entry.action.type === "confront") {
       addMemory(memoryCounts, entry.action.actorId);

@@ -62,9 +62,11 @@ async function resetCombatForWorld(): Promise<void> {
   const { useCombatStore } = await import("../combat/store.ts");
   const { clearFollowers } = await import("../characters/followers.ts");
   const { useDirectorStore: directorStore } = await import("../director/store.ts");
+  const { useBanterStore: banterStore } = await import("../characters/banter.ts");
   useCombatStore.getState().resetForWorld();
   clearFollowers();
   directorStore.getState().reset();
+  banterStore.getState().clear();
   useUiStore.getState().closeDialogue();
   useUiStore.getState().setInteractionTarget(null);
 }

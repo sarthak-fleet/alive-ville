@@ -32,7 +32,7 @@ export interface TalkAction extends BaseAction { type: "talk"; targetId: ActorId
 export interface GossipAction extends BaseAction { type: "gossip"; targetId: ActorId; aboutId: ActorId; text: string; }
 export interface ConfrontAction extends BaseAction { type: "confront"; targetId: ActorId; text: string; }
 export interface FightAction extends BaseAction { type: "fight"; targetId: ActorId; moveId?: string; text?: string; }
-export interface ChooseCharacterAction extends BaseAction { type: "choose_character"; targetId: ActorId; }
+export interface ChooseCharacterAction extends BaseAction { type: "choose_character"; targetId?: ActorId; }
 export interface SetNameAction extends BaseAction { type: "set_name"; name: string; }
 export interface InspectAction extends BaseAction { type: "inspect"; propId: string; }
 export interface RememberAction extends BaseAction { type: "remember"; text: string; }

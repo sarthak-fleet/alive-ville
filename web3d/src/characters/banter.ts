@@ -12,6 +12,7 @@ interface BanterStore {
   byNpc: Record<string, BanterEntry>;
   show: (npcId: string, partnerId: string, text: string, confrontation: boolean) => void;
   prune: (now: number) => void;
+  clear: () => void;
 }
 
 export const useBanterStore = create<BanterStore>((set, get) => ({
@@ -35,6 +36,9 @@ export const useBanterStore = create<BanterStore>((set, get) => ({
       else changed = true;
     }
     if (changed) set({ byNpc: next });
+  },
+  clear() {
+    set({ byNpc: {} });
   },
 }));
 

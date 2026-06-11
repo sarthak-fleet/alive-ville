@@ -82,6 +82,9 @@ export function StartFlow() {
       setBusy("name");
       await send({ type: "set_name", name: heroName });
       setBusy(null);
+    } else {
+      await send({ type: "choose_character" });
+
     }
     setPhase("playing");
   };

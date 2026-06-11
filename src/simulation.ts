@@ -347,6 +347,16 @@ export function applyAction(world: World, action: Action): ActionResult {
       return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId, counterText));
     }
     case "choose_character": {
+      if (!action.targetId) {
+        world.player = {
+          ...world.player,
+          characterId: undefined,
+          name: "Wanderer",
+          appearance: undefined,
+        };
+        reassignArcRoles(world);
+        return applied(action, `${nameOf(world, action.actorId)} returned to being the Wanderer.`);
+      }
       const chosen = mustNpc(world, action.targetId);
       const playerLocation = world.player?.locationId ?? chosen.locationId;
       chosen.locationId = playerLocation;
@@ -853,7 +863,7 @@ export function validateAction(world: World, action: Action | unknown): Validati
   if (a.type === "choose_character") {
     const targetId = (a as { targetId?: string }).targetId;
     if (a.actorId !== "player") return invalid("Only the player can choose a character.");
-    if (!targetId || !getNpc(world, targetId)) return invalid("Unknown character.");
+    if (targetId !== undefined && !getNpc(world, targetId)) return invalid("Unknown character.");
   }
   if (a.type === "set_name") {
     if (a.actorId !== "player") return invalid("Only the player can set their name.");
