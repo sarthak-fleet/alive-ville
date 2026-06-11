@@ -7,6 +7,7 @@ import { createDirector } from "../../src/director.ts";
 import { fandomToWorldSource } from "../../src/fandom-import.ts";
 import { createLlmProposer } from "../../src/llm/proposer.ts";
 import { isLlmEnabled, proposeAction, setLlmFetch } from "../../src/llm/router.ts";
+import { reflectionDue, reflectNpc } from "../../src/reflection.ts";
 import { applyWorldPacing, createEngine } from "../../src/simulation.ts";
 import { storyDialogueOptions, storyDialogueRespond } from "../../src/story-dialogue.ts";
 import type { PlayerAction, World } from "../../src/types.ts";
@@ -49,6 +50,7 @@ export class GameSessionDO {
   private persistTimer: ReturnType<typeof setTimeout> | null = null;
   private lastTouchedAt = 0;
   private authoring = false;
+  private reflecting = false;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
   private readonly encoder = new TextEncoder();
 
@@ -96,6 +98,7 @@ export class GameSessionDO {
         this.broadcast("tick", { summary });
         this.checkArc();
         this.maybeAuthor();
+        this.maybeReflect();
       },
     });
     return { engine: this.engine, agentLoop: this.agentLoop };
@@ -154,6 +157,27 @@ export class GameSessionDO {
           // authored beats are a bonus; failures must never break the DO
         } finally {
           this.authoring = false;
+        }
+      })()
+    );
+  }
+
+  /** synthesises one NPC's recent experiences into a private belief (no broadcast) */
+  private maybeReflect(): void {
+    const engine = this.engine;
+    if (!engine || this.reflecting || !isLlmEnabled()) return;
+    const npc = engine.state.npcs.find((n) => reflectionDue(n, engine.state.tick));
+    if (!npc) return;
+    this.reflecting = true;
+    this.ctx.waitUntil(
+      (async () => {
+        try {
+          const insight = await reflectNpc(engine.state, npc);
+          if (insight) this.schedulePersist();
+        } catch {
+          // reflections are non-critical; failures are silently dropped
+        } finally {
+          this.reflecting = false;
         }
       })()
     );

@@ -151,6 +151,7 @@ export interface AgentPlan {
   currentIntent?: AgentIntent;
   nextActionHint?: string;
   schedule?: ScheduleBlock[];
+  lastReflectionTick?: number;
 }
 
 export interface CharacterAppearance {

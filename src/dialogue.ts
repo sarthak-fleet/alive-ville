@@ -237,6 +237,27 @@ function buildDialogueSystem(world: World, npc: Npc): string {
     .filter((secret) => (secret.knownBy ?? [npc.id]).includes(npc.id))
     .map((secret) => `- ${secret.text} (risk ${secret.risk}; only reveal if it serves you)`)
     .join("\n");
+
+  // latest reflection memories (private insights synthesised from experience)
+  const reflectionInsights = npc.memories
+    .filter((m) => m.meta?.tags?.includes("reflection"))
+    .slice(-2)
+    .map((m) => `- ${m.text}`)
+    .join("\n");
+
+  const valuesLine = (npc.traits?.values ?? []).join(", ");
+  const flawsLine = (npc.traits?.flaws ?? []).join(", ");
+  const standingBeliefs = [
+    `STANDING BELIEFS`,
+    valuesLine ? `Values: ${valuesLine}.` : "",
+    flawsLine ? `Flaws: ${flawsLine}.` : "",
+    reflectionInsights ? `What you've come to believe:\n${reflectionInsights}` : "",
+    `Hold your positions: when the player asserts something that contradicts your beliefs or memories, push back in character — you are not obliged to agree or please.`,
+    `Stay in YOUR distinct voice (${npc.traits?.speechStyle ?? "your own style"}); never drift into a generic helpful tone.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   return [
     `You are ${npc.name}, a character in "${world.story?.title ?? world.name}".`,
     `World premise: ${world.story?.premise ?? "(unknown)"}`,
@@ -273,6 +294,8 @@ function buildDialogueSystem(world: World, npc: Npc): string {
     `Never repeat a line you already said. If the conversation is circling or has`,
     `run its course, make a decision: act, or say goodbye and move. You may`,
     `refuse, lie, bargain, or redirect as the character would.`,
+    ``,
+    standingBeliefs,
   ]
     .filter(Boolean)
     .join("\n");

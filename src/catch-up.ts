@@ -1,4 +1,5 @@
 import { evaluateArc } from "./arcs.ts";
+import { reflectionDue, reflectNpcScripted } from "./reflection.ts";
 import { runTick } from "./simulation.ts";
 import type { ChronicleEvent, World, WorldRecap } from "./types.ts";
 
@@ -38,6 +39,12 @@ export async function catchUpWorld(world: World, elapsedMs: number): Promise<Wor
   }
   const arcBeat = evaluateArc(world);
   if (arcBeat) highlights.push(arcBeat.text);
+
+  // consolidate memories for NPCs that crossed the reflection threshold during
+  // the catch-up window; deterministic (no LLM) so it always runs
+  for (const npc of world.npcs) {
+    if (reflectionDue(npc, world.tick)) reflectNpcScripted(world, npc);
+  }
 
   const lines = buildRecapLines(world, startTick, highlights);
 

@@ -13,6 +13,7 @@ import { createDirector } from "./director.ts";
 import { fandomToWorldSource } from "./fandom-import.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, isLocalLlmBackend, proposeAction } from "./llm/router.ts";
+import { reflectionDue, reflectNpc } from "./reflection.ts";
 import { applyWorldPacing, createEngine } from "./simulation.ts";
 import { storyDialogueOptions, storyDialogueRespond } from "./story-dialogue.ts";
 import type { CutsceneManifestEntry } from "./story-package.ts";
@@ -73,6 +74,7 @@ interface GameSession {
   sseClients: Set<ServerResponse>;
   dirty: boolean;
   authoring: boolean;
+  reflecting: boolean;
   lastActiveAt: number;
   /** when this session's autosave was written (catch-up baseline on restore) */
   restoredSavedAt: number | null;
@@ -141,6 +143,7 @@ function createSession(id: string): GameSession {
     sseClients: new Set(),
     dirty: false,
     authoring: false,
+    reflecting: false,
     lastActiveAt: Date.now(),
     restoredSavedAt: restored?.savedAt ?? null,
     hits: new Map(),
@@ -157,6 +160,7 @@ function createSession(id: string): GameSession {
       broadcastSse(session, "tick", { summary });
       checkArc(session);
       maybeAuthor(session);
+      maybeReflect(session);
     },
   });
   return session;
@@ -266,6 +270,25 @@ function maybeAuthor(session: GameSession): void {
       // authored beats are a bonus; failures must never break the loop
     } finally {
       session.authoring = false;
+    }
+  })();
+}
+
+/** synthesises one NPC's recent experiences into a private belief (no SSE broadcast) */
+function maybeReflect(session: GameSession): void {
+  if (session.reflecting || !isLlmEnabled()) return;
+  const world = session.engine.state;
+  const npc = world.npcs.find((n) => reflectionDue(n, world.tick));
+  if (!npc) return;
+  session.reflecting = true;
+  void (async () => {
+    try {
+      const insight = await reflectNpc(world, npc);
+      if (insight) session.dirty = true;
+    } catch {
+      // reflections are non-critical; failures are silently dropped
+    } finally {
+      session.reflecting = false;
     }
   })();
 }

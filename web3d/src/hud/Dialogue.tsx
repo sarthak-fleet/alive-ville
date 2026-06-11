@@ -32,9 +32,16 @@ export function Dialogue() {
 
   const npc = npcById(world, dialogueNpcId);
 
+  // draft is per-conversation: clear it when the conversation changes,
+  // via render-time state adjustment (no setState-in-effect cascade)
+  const [draftNpcId, setDraftNpcId] = useState(dialogueNpcId);
+  if (draftNpcId !== dialogueNpcId) {
+    setDraftNpcId(dialogueNpcId);
+    setDraft("");
+  }
+
   // load the shared past: previous conversations + current relationship
   useEffect(() => {
-    setDraft("");
     if (!dialogueNpcId) return;
     inputRef.current?.focus();
     let cancelled = false;
