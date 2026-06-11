@@ -13,7 +13,9 @@ export interface Cutscene {
   durationMs: number;
 }
 
-const CUTSCENE_MS = 4200;
+const CUTSCENE_MIN_MS = 6_000;
+const CUTSCENE_MAX_MS = 12_000;
+const CUTSCENE_MS_PER_CHAR = 55;
 const COOLDOWN_MS = 25_000;
 
 interface DirectorStore {
@@ -40,7 +42,8 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
         text: beat.text,
         kind: beat.kind,
         startedAt: performance.now(),
-        durationMs: CUTSCENE_MS,
+        // long enough to actually read the beat
+        durationMs: Math.min(CUTSCENE_MAX_MS, Math.max(CUTSCENE_MIN_MS, beat.text.length * CUTSCENE_MS_PER_CHAR)),
       },
     });
   },

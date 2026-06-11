@@ -99,6 +99,15 @@ function ensureWorldDefaults(world: World): void {
   ensureStoryProgress(world);
 }
 
+/**
+ * Real-time pacing for interactive clients: 1h/tick burns a full day in ~96s
+ * of wall clock. Quarter-hour ticks make a day ~6.5 minutes. Sim tests keep
+ * their own explicit clocks, so this is applied at the server boundary.
+ */
+export function applyWorldPacing(world: World): void {
+  if ((world.clock?.hoursPerTick ?? 1) > 0.25) world.clock.hoursPerTick = 0.25;
+}
+
 export async function runTick(
   world: World,
   playerAction?: PlayerAction,

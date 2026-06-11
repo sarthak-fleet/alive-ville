@@ -280,7 +280,7 @@ function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], play
     .join("\n");
   const relationship = relationshipFor(npc);
   return [
-    `Location: ${locationName(world, npc.locationId)}. Time: day ${world.clock.day}, ${world.clock.hour}:00.`,
+    `Location: ${locationName(world, npc.locationId)}. Time: day ${world.clock.day}, ${Math.floor(world.clock.hour)}:00.`,
     here ? `Also present: ${here}.` : "You are alone with the player.",
     `Your feelings toward the player: ${relationship.label} (${relationship.score}).`,
     `CAPABILITIES you may use in "action":`,

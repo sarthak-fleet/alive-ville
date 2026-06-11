@@ -1,4 +1,4 @@
-import { Outlines, Text } from "@react-three/drei";
+import { Billboard, Outlines, Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { memo, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -43,17 +43,12 @@ export const District = memo(function District({ district, night }: { district: 
       {district.props.map((prop) => (
         <Prop key={prop.id} prop={prop} night={night} />
       ))}
-      <Text
-        position={[cx, 11, cz]}
-        fontSize={1.1}
-        color="#ffffff"
-        outlineWidth={0.06}
-        outlineColor={OUTLINE}
-        anchorX="center"
-        fillOpacity={0.85}
-      >
-        {district.name}
-      </Text>
+      {/* billboard: a flat Text reads mirrored from behind */}
+      <Billboard position={[cx, 11, cz]}>
+        <Text fontSize={1.1} color="#ffffff" outlineWidth={0.06} outlineColor={OUTLINE} anchorX="center" fillOpacity={0.85}>
+          {district.name}
+        </Text>
+      </Billboard>
     </group>
   );
 });

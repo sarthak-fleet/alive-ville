@@ -4,7 +4,7 @@ import { clearDialogueHistories, dialogueAvailable, dialogueContext, generateDia
 import { createDirector } from "../../src/director.ts";
 import { createLlmProposer } from "../../src/llm/proposer.ts";
 import { isLlmEnabled, proposeAction, setLlmFetch } from "../../src/llm/router.ts";
-import { createEngine } from "../../src/simulation.ts";
+import { applyWorldPacing, createEngine } from "../../src/simulation.ts";
 import type { PlayerAction, World } from "../../src/types.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "../../src/world-ingest.ts";
 import { BUNDLED_WORLDS, defaultWorld, worldForEntry } from "./catalog.ts";
@@ -81,6 +81,7 @@ export class GameSessionDO {
     const director = createDirector({ propose: isLlmEnabled() ? proposeAction : undefined });
     this.engine = createEngine(world, { propose, director });
     createArcForWorld(this.engine.state);
+    applyWorldPacing(this.engine.state);
     this.agentLoop = createAgentLoop(this.engine, {
       intervalMs: AGENT_LOOP_INTERVAL_MS,
       maxTicks: null,
@@ -168,6 +169,7 @@ export class GameSessionDO {
     await agentLoop.waitForIdle();
     engine.setState(nextWorld);
     createArcForWorld(engine.state);
+    applyWorldPacing(engine.state);
     const status = agentLoop.clearCheckpoints();
     clearDialogueHistories(this.ctx.id.toString());
     await this.ctx.storage.put("world", JSON.stringify(engine.state));

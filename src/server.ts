@@ -10,7 +10,7 @@ import { clearDialogueHistories, dialogueAvailable, dialogueContext, generateDia
 import { createDirector } from "./director.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, proposeAction } from "./llm/router.ts";
-import { createEngine } from "./simulation.ts";
+import { applyWorldPacing, createEngine } from "./simulation.ts";
 import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
 import type { PlayerAction, World } from "./types.ts";
@@ -119,6 +119,7 @@ function createSession(id: string): GameSession {
   const director = createDirector({ propose: isLlmEnabled() ? proposeAction : undefined });
   const engine = createEngine(world, { propose, director });
   createArcForWorld(engine.state);
+  applyWorldPacing(engine.state);
   // checkpoints persist to disk only for the main session — visitors keep theirs in memory
   const initialCheckpoints =
     id === "main" ? readAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH).filter((checkpoint) => checkpoint.world.id === world.id) : [];
@@ -574,6 +575,7 @@ async function replaceEngineState(session: GameSession, nextWorld: World) {
   await agentLoop.waitForIdle();
   engine.setState(nextWorld);
   createArcForWorld(engine.state);
+  applyWorldPacing(engine.state);
   session.dirty = true;
   const status = agentLoop.clearCheckpoints();
   if (session.id === "main") writeAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH, []);

@@ -1,4 +1,4 @@
-import { Text } from "@react-three/drei";
+import { Billboard, Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { memo, useMemo } from "react";
 import * as THREE from "three";
@@ -113,9 +113,11 @@ export const Interior = memo(function Interior({ interior }: { interior: Interio
       {/* warm room light */}
       <pointLight position={[cx, wallHeight - 0.4, cz]} color="#ffd9a8" intensity={30} distance={Math.max(width, depth) * 1.4} decay={1.7} />
 
-      <Text position={[cx, wallHeight + 1.2, cz]} fontSize={0.7} color="#ffffff" outlineWidth={0.04} outlineColor="#101421" anchorX="center">
-        {interior.label}
-      </Text>
+      <Billboard position={[cx, wallHeight + 1.2, cz]}>
+        <Text fontSize={0.7} color="#ffffff" outlineWidth={0.04} outlineColor="#101421" anchorX="center">
+          {interior.label}
+        </Text>
+      </Billboard>
     </group>
   );
 });

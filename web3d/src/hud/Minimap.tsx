@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { activeObjectives } from "../../../src/objectives.ts";
 import { followersStore } from "../characters/followers.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { cameraState, npcRegistry, playerHeading, playerPosition } from "../controls/runtime.ts";
@@ -143,6 +144,46 @@ export function Minimap() {
       ctx.fill();
       ctx.stroke();
       ctx.restore();
+
+      // quest direction: dotted line + pulsing marker on the active objective
+      const objective = activeObjectives(world)[0];
+      if (objective) {
+        let ox: number | null = null;
+        let oy: number | null = null;
+        if (objective.targetType === "npc") {
+          const actor = npcRegistry.get(objective.targetId);
+          if (actor) {
+            ox = toX(actor.position.x);
+            oy = toY(actor.position.z);
+          }
+        }
+        if (ox === null || oy === null) {
+          const district = model.districts.find((entry) => entry.locationId === objective.locationId);
+          if (district) {
+            ox = toX(district.courtyard.x);
+            oy = toY(district.courtyard.z);
+          }
+        }
+        if (ox !== null && oy !== null) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(255, 216, 77, 0.55)";
+          ctx.lineWidth = 1.4;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(ox, oy);
+          ctx.stroke();
+          ctx.restore();
+          const pulse = 4 + Math.sin(now / 280) * 1.6;
+          ctx.strokeStyle = "rgba(255, 216, 77, 0.95)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(ox, oy, pulse, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "#ffd84d";
+          diamond(ctx, ox, oy, 2.6);
+        }
+      }
 
       // compass north
       ctx.fillStyle = "rgba(232, 237, 245, 0.8)";

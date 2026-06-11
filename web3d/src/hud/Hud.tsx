@@ -35,6 +35,13 @@ export function Hud() {
   const interiorBuildingId = useUiStore((state) => state.interiorBuildingId);
   const [importOpen, setImportOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSfxEnabled());
+  const [pointerLocked, setPointerLocked] = useState(false);
+
+  useEffect(() => {
+    const onLockChange = () => setPointerLocked(Boolean(document.pointerLockElement));
+    document.addEventListener("pointerlockchange", onLockChange);
+    return () => document.removeEventListener("pointerlockchange", onLockChange);
+  }, []);
   const playerHp = useCombatStore((state) => state.playerHp);
   const playerMaxHp = useCombatStore((state) => state.playerMaxHp);
   const playerDown = useCombatStore((state) => state.playerDown);
@@ -116,17 +123,16 @@ export function Hud() {
         <div className="topbar-title">{world.story?.title ?? world.name}</div>
         <div className="topbar-meta">
           {interiorLabel ? `Inside ${interiorLabel}` : location?.name ?? "Unknown"} · Day {world.clock.day} ·{" "}
-          {String(world.clock.hour).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
+          {String(Math.floor(world.clock.hour)).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
         </div>
         <div className="topbar-actions">
-          <button
-            type="button"
-            className={`chip ${agentLoopRunning ? "on" : ""}`}
-            onClick={() => void toggleAgentLoop()}
-            title="Let the world's agents act on their own"
-          >
-            {agentLoopRunning ? "■ World: alive" : "▶ World: paused"}
-          </button>
+          {/* the world is alive by default; the old pause chip read as a media
+              stop button and players hit it by accident */}
+          {!agentLoopRunning ? (
+            <button type="button" className="chip" onClick={() => void toggleAgentLoop()}>
+              ▶ Resume world
+            </button>
+          ) : null}
           <button type="button" className="chip" onClick={() => setImportOpen(true)}>
             Import world
           </button>
@@ -135,6 +141,8 @@ export function Hud() {
           </button>
         </div>
       </div>
+
+      {pointerLocked && !dialogueNpcId ? <div className="crosshair" /> : null}
 
       <QuestTracker />
 
