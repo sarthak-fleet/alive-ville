@@ -79,8 +79,9 @@ state (`interiorBuildingId`) resets on world replace.
 
 ## LLM dialogue with real agency (`src/dialogue.ts`, `POST /api/dialogue`)
 
-With `LLM_API_KEY` + `LLM_BASE_URL` set (see `.env.example` — OpenAI-compatible
-gateway), conversations become free-flowing and in-character:
+With `LLM_BASE_URL` set (any OpenAI-compatible endpoint) or `LLM_CLI=claude|codex`,
+conversations become free-flowing and in-character — backend options and all
+knobs live in [local-llm.md](./local-llm.md):
 
 - The endpoint builds a persona prompt from the NPC's traits, speech style,
   mood, goals, secrets, relevant memories (RAG via `retrieveMemories`), nearby

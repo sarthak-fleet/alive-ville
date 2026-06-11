@@ -1,4 +1,5 @@
 import type { ProposeMeta, ProposeRequest, ProposeResult, Tier } from "../types.ts";
+import { cliBackend, cliComplete } from "./cli.ts";
 import { logLlmCall } from "./log.ts";
 import { ACTION_SCHEMA_PROMPT, parseActionJson } from "./schema.ts";
 
@@ -23,7 +24,28 @@ const TIER_MODEL: Record<Tier, () => string | null> = {
 };
 
 export function isLlmEnabled(): boolean {
-  return Boolean(process.env["LLM_API_KEY"]) && Boolean(process.env["LLM_BASE_URL"]);
+  // CLI backend (claude/codex), or any OpenAI-compatible endpoint.
+  // Local servers like Ollama/LM Studio need no API key.
+  if (cliBackend()) return true;
+  return Boolean(process.env["LLM_BASE_URL"]);
+}
+
+function authHeaders(): Record<string, string> {
+  const key = process.env["LLM_API_KEY"];
+  return key ? { authorization: `Bearer ${key}` } : {};
+}
+
+async function cliCompleteAs(kind: string, tier: Tier, system: string, user: string): Promise<CompleteTextResult> {
+  const started = Date.now();
+  const result = await cliComplete(`${system}
+
+---
+
+${user}`);
+  const meta: ProposeMeta = { tier, model: `cli:${cliBackend()}`, latencyMs: Date.now() - started, usage: null, error: result.error ?? null, jsonOk: false };
+  logLlmCall({ kind, ...meta, raw: result.text });
+  if (result.error || !result.text) return { error: result.error ?? "empty", meta };
+  return { text: result.text, raw: result.text, meta };
 }
 
 export interface CompleteTextRequest {
@@ -41,6 +63,15 @@ export type CompleteTextResult =
 export async function proposeAction({ tier = "normal", system, user, signal }: ProposeRequest): Promise<ProposeResult> {
   if (tier === "background") return { skipped: true, reason: "background tier" };
   if (!isLlmEnabled()) return { skipped: true, reason: "no LLM_API_KEY" };
+
+  if (cliBackend()) {
+    const result = await cliCompleteAs("proposeAction", tier, `${system}\n\n${ACTION_SCHEMA_PROMPT}`, user);
+    if ("error" in result && result.error) return { error: result.error, meta: result.meta };
+    if (!("text" in result)) return { skipped: true, reason: "cli_unavailable" };
+    const parsedCli = parseActionJson(result.text);
+    if (!parsedCli.ok) return { error: parsedCli.reason ?? "Empty response.", raw: result.text, meta: result.meta };
+    return { action: parsedCli.action as ProposeResult extends { action: infer A } ? A : never, raw: result.text, meta: result.meta };
+  }
 
   const model = proposeModelFor(tier);
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
@@ -85,7 +116,7 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${process.env["LLM_API_KEY"]}`,
+        ...authHeaders(),
         // free-ai gateway treats body.model as advisory; this header pins it.
         // Other OpenAI-compatible backends ignore the extra header.
         "x-gateway-force-model": model,
@@ -125,6 +156,12 @@ export async function streamText({ tier = "quest", system, user, signal, onToken
   if (tier === "background") return { skipped: true, reason: "background tier" };
   if (!isLlmEnabled()) return { skipped: true, reason: "no LLM_API_KEY" };
 
+  if (cliBackend()) {
+    const result = await cliCompleteAs("streamText", tier, system, user);
+    if ("text" in result && result.text) onToken?.(result.text);
+    return result;
+  }
+
   const model = TIER_MODEL[tier]?.();
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
 
@@ -143,7 +180,7 @@ export async function streamText({ tier = "quest", system, user, signal, onToken
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${process.env["LLM_API_KEY"]}`,
+        ...authHeaders(),
         // free-ai gateway treats body.model as advisory; this header pins it.
         // Other OpenAI-compatible backends ignore the extra header.
         "x-gateway-force-model": model,
@@ -207,6 +244,8 @@ export async function completeText({ tier = "quest", system, user, signal }: Com
   if (tier === "background") return { skipped: true, reason: "background tier" };
   if (!isLlmEnabled()) return { skipped: true, reason: "no LLM_API_KEY" };
 
+  if (cliBackend()) return cliCompleteAs("completeText", tier, system, user);
+
   const model = TIER_MODEL[tier]?.();
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
 
@@ -226,7 +265,7 @@ export async function completeText({ tier = "quest", system, user, signal }: Com
       method: "POST",
       headers: {
         "content-type": "application/json",
-        authorization: `Bearer ${process.env["LLM_API_KEY"]}`,
+        ...authHeaders(),
         // free-ai gateway treats body.model as advisory; this header pins it.
         // Other OpenAI-compatible backends ignore the extra header.
         "x-gateway-force-model": model,
