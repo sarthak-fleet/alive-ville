@@ -63,10 +63,32 @@ export interface DialogueResponse {
   relationship?: DialogueRelationship;
 }
 
+export interface StoryOption {
+  id: string;
+  label: string;
+}
+
 export interface DialogueHistoryResponse {
   llm: boolean;
+  story?: boolean;
+  options?: StoryOption[];
   turns?: Array<{ speaker: "player" | "npc" | "event"; text: string }>;
   relationship?: DialogueRelationship;
+}
+
+export interface StoryChooseResponse {
+  reply: string;
+  action?: { type: string; text: string } | null;
+  options: StoryOption[];
+}
+
+export async function postDialogueChoose(npcId: string, optionId: string): Promise<StoryChooseResponse> {
+  const res = await fetch(api("/api/dialogue/choose"), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ npcId, optionId }),
+  });
+  return readApiJson<StoryChooseResponse>(res, "postDialogueChoose");
 }
 
 export async function postDialogue(npcId: string, text: string): Promise<DialogueResponse> {

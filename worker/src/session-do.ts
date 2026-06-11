@@ -8,6 +8,7 @@ import { fandomToWorldSource } from "../../src/fandom-import.ts";
 import { createLlmProposer } from "../../src/llm/proposer.ts";
 import { isLlmEnabled, proposeAction, setLlmFetch } from "../../src/llm/router.ts";
 import { applyWorldPacing, createEngine } from "../../src/simulation.ts";
+import { storyDialogueOptions, storyDialogueRespond } from "../../src/story-dialogue.ts";
 import type { PlayerAction, World } from "../../src/types.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "../../src/world-ingest.ts";
 import { BUNDLED_WORLDS, defaultWorld, worldForEntry } from "./catalog.ts";
@@ -331,11 +332,33 @@ export class GameSessionDO {
       }
     }
     if (path === "/api/dialogue/history" && request.method === "GET") {
-      if (!dialogueAvailable()) return json(200, { llm: false });
       const npcId = url.searchParams.get("npcId") ?? "";
+      if (!dialogueAvailable()) {
+        const options = storyDialogueOptions(engine.state, npcId);
+        return json(200, { llm: false, story: Boolean(options), options: options ?? [] });
+      }
       const context = dialogueContext(engine.state, npcId, historyKey);
       if (!context) return json(404, { error: "unknown_npc" });
       return json(200, { llm: true, ...context });
+    }
+    if (path === "/api/dialogue/choose" && request.method === "POST") {
+      const body = (await request.json().catch(() => null)) as { npcId?: unknown; optionId?: unknown } | null;
+      if (typeof body?.npcId !== "string" || typeof body?.optionId !== "string") return json(400, { error: "npcId and optionId required" });
+      const reply = storyDialogueRespond(engine.state, body.npcId, body.optionId);
+      if (!reply) return json(404, { error: "unknown_option" });
+      if (reply.action) {
+        this.broadcast("tick", {
+          summary: {
+            tick: engine.state.tick,
+            actions: [{ action: { type: reply.action.type, actorId: body.npcId, targetId: "player" }, text: reply.action.text }],
+            rejected: [],
+            checksum: "story-action",
+            clock: engine.state.clock,
+          },
+        });
+      }
+      this.checkArc();
+      return json(200, { ...reply });
     }
     if (path === "/api/dialogue" && request.method === "POST") {
       if (!dialogueAvailable()) return json(200, { llm: false });

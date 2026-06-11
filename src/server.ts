@@ -14,6 +14,7 @@ import { fandomToWorldSource } from "./fandom-import.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, isLocalLlmBackend, proposeAction } from "./llm/router.ts";
 import { applyWorldPacing, createEngine } from "./simulation.ts";
+import { storyDialogueOptions, storyDialogueRespond } from "./story-dialogue.ts";
 import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
 import type { PlayerAction, World } from "./types.ts";
@@ -500,11 +501,35 @@ const server = createServer(async (req, res) => {
     }
   }
   if (url.pathname === "/api/dialogue/history" && req.method === "GET") {
-    if (!dialogueAvailable()) return json(res, 200, { llm: false });
     const npcId = url.searchParams.get("npcId") ?? "";
+    if (!dialogueAvailable()) {
+      const options = storyDialogueOptions(engine.state, npcId);
+      return json(res, 200, { llm: false, story: Boolean(options), options: options ?? [] });
+    }
     const context = dialogueContext(engine.state, npcId, session.id);
     if (!context) return json(res, 404, { error: "unknown_npc" });
     return json(res, 200, { llm: true, ...context });
+  }
+  if (url.pathname === "/api/dialogue/choose" && req.method === "POST") {
+    const body = await readJson(req).catch(() => null);
+    const npcId = body && typeof body === "object" ? (body as { npcId?: unknown }).npcId : undefined;
+    const optionId = body && typeof body === "object" ? (body as { optionId?: unknown }).optionId : undefined;
+    if (typeof npcId !== "string" || typeof optionId !== "string") return json(res, 400, { error: "npcId and optionId required" });
+    const reply = storyDialogueRespond(engine.state, npcId, optionId);
+    if (!reply) return json(res, 404, { error: "unknown_option" });
+    if (reply.action) {
+      broadcastSse(session, "tick", {
+        summary: {
+          tick: engine.state.tick,
+          actions: [{ action: { type: reply.action.type, actorId: npcId, targetId: "player" }, text: reply.action.text }],
+          rejected: [],
+          checksum: "story-action",
+          clock: engine.state.clock,
+        },
+      });
+    }
+    checkArc(session);
+    return json(res, 200, { ...reply });
   }
   if (url.pathname === "/api/dialogue" && req.method === "POST") {
     if (!dialogueAvailable()) return json(res, 200, { llm: false });

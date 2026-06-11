@@ -233,6 +233,33 @@
   cursor: default;
 }
 
+.dialogue-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dialogue-choices button {
+  background: rgba(127, 208, 255, 0.12);
+  border: 1px solid rgba(127, 208, 255, 0.35);
+  border-radius: 999px;
+  color: #cfe6ff;
+  padding: 6px 13px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dialogue-choices button:hover {
+  background: rgba(127, 208, 255, 0.22);
+}
+
+.dialogue-choices button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .error-banner {
   position: absolute;
   top: 70px;

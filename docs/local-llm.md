@@ -63,6 +63,14 @@ active: ambient proposals cover 10 NPCs per tick instead of 5
 (`LLM_MAX_NPCS` overrides). Worth pairing with `LLM_MEMORY_LIMIT=8` for
 deeper conversational recall.
 
+## Story mode (zero-AI public tier)
+
+`GAME_MODE=story` disables LLM dialogue entirely: conversations become
+choice chips DERIVED from live sim state (freshest rumor, real goals,
+objective-gated quest verbs, escort), executing the same engine actions.
+The world underneath (rumors, confrontations, catch-up, authoring-off)
+keeps moving, so the script stays fresh at $0 per visitor.
+
 ## Knobs
 
 | env | default | meaning |

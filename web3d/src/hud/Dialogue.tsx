@@ -1,14 +1,11 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
-import { type DialogueResponse, fetchDialogueHistory, postDialogue, postDialogueStream } from "../api/client.ts";
+import { type DialogueResponse, fetchDialogueHistory, postDialogue, postDialogueChoose, postDialogueStream, type StoryOption } from "../api/client.ts";
 import { followChime, questChime, talkBlip, uiBlip } from "../audio/sfx.ts";
 import { setFollowing } from "../characters/followers.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { useUiStore } from "../store/ui.ts";
 import { npcById, useWorldStore } from "../store/world.ts";
-
-// remembered per session so the scripted fallback skips a wasted round-trip
-let llmDialogueAvailable: boolean | null = null;
 
 interface Relationship {
   score: number;
@@ -27,6 +24,9 @@ export function Dialogue() {
   const send = useWorldStore((state) => state.send);
   const [draft, setDraft] = useState("");
   const [relationship, setRelationship] = useState<Relationship | null>(null);
+  // keyed by npc so switching conversations resets without a sync setState in the effect
+  const [story, setStory] = useState<{ npcId: string; options: StoryOption[] } | null>(null);
+  const storyOptions = story && story.npcId === dialogueNpcId ? story.options : null;
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -36,13 +36,16 @@ export function Dialogue() {
   useEffect(() => {
     if (!dialogueNpcId) return;
     inputRef.current?.focus();
-    if (llmDialogueAvailable === false) return;
     let cancelled = false;
     void (async () => {
       try {
         const response = await fetchDialogueHistory(dialogueNpcId);
-        if (cancelled || !response.llm) return;
-        llmDialogueAvailable = true;
+        if (cancelled) return;
+        if (!response.llm) {
+          // story mode: choice-driven dialogue served from live sim state
+          if (response.story && response.options) setStory({ npcId: dialogueNpcId, options: response.options });
+          return;
+        }
         if (response.relationship) setRelationship(response.relationship);
         const currentNpc = npcById(useWorldStore.getState().world, dialogueNpcId);
         if (response.turns?.length && currentNpc) {
@@ -88,7 +91,6 @@ export function Dialogue() {
 
   const handleLlmResponse = (response: DialogueResponse): boolean => {
     if (!response.llm) return false;
-    llmDialogueAvailable = true;
     if (response.relationship) setRelationship(response.relationship);
     if (response.reply) {
       pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
@@ -111,6 +113,36 @@ export function Dialogue() {
     return true;
   };
 
+  const choose = async (option: StoryOption) => {
+    if (busy) return;
+    pushLine({ speaker: "player", speakerName: world?.player.name ?? "You", text: option.label });
+    setBusy(true);
+    try {
+      const response = await postDialogueChoose(npc.id, option.id);
+      talkBlip();
+      pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
+      if (response.action) {
+        pushLine({ speaker: "event", speakerName: "", text: response.action.text });
+        if (response.action.type === "accept_quest" || response.action.type === "complete_quest") questChime();
+        if (response.action.type === "follow") { setFollowing(npc.id, true); followChime(); }
+        if (response.action.type === "spar") {
+          uiBlip();
+          useCombatStore.getState().engageSpar(npc.id);
+          window.setTimeout(() => useUiStore.getState().closeDialogue(), 900);
+        }
+        if (response.action.type === "lead" || response.action.type === "move") {
+          window.setTimeout(() => useUiStore.getState().closeDialogue(), 1400);
+        }
+      }
+      setStory({ npcId: npc.id, options: response.options });
+      if (option.id === "bye") window.setTimeout(() => useUiStore.getState().closeDialogue(), 700);
+    } catch {
+      pushLine({ speaker: "event", speakerName: "", text: `${npc.name} didn't catch that.` });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
@@ -120,7 +152,7 @@ export function Dialogue() {
     setBusy(true);
 
     // LLM conversation first: streamed in-character reply, no sim tick consumed
-    if (llmDialogueAvailable !== false) {
+    {
       try {
         let streamedAny = false;
         let streamedText = "";
@@ -135,7 +167,6 @@ export function Dialogue() {
           ui.updateLastDialogueLine(streamedText.trimStart());
         });
         if (response.llm) {
-          llmDialogueAvailable = true;
           setBusy(false);
           if (response.relationship) setRelationship(response.relationship);
           if (response.reply) {
@@ -163,7 +194,6 @@ export function Dialogue() {
           inputRef.current?.focus();
           return;
         }
-        llmDialogueAvailable = false;
       } catch {
         // streaming/network failure: try non-streaming once, else scripted path
         try {
@@ -173,7 +203,6 @@ export function Dialogue() {
             inputRef.current?.focus();
             return;
           }
-          llmDialogueAvailable = false;
         } catch {
           // fall through to scripted
         }
@@ -220,7 +249,7 @@ export function Dialogue() {
         </button>
       </div>
       <div className="dialogue-log" ref={logRef}>
-        {lines.length === 0 ? <div className="dialogue-hint">Say something to {npc.name}…</div> : null}
+        {lines.length === 0 ? <div className="dialogue-hint">{storyOptions ? `Choose what to say to ${npc.name}…` : `Say something to ${npc.name}…`}</div> : null}
         {lines.map((line, index) =>
           line.speaker === "event" ? (
             <div key={index} className="dialogue-line event">
@@ -234,18 +263,28 @@ export function Dialogue() {
         )}
         {busy ? <div className="dialogue-line npc thinking">…</div> : null}
       </div>
-      <form className="dialogue-input" onSubmit={submit}>
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={`Talk to ${npc.name}`}
-          maxLength={240}
-        />
-        <button type="submit" disabled={busy || !draft.trim()}>
-          Send
-        </button>
-      </form>
+      {storyOptions ? (
+        <div className="dialogue-choices">
+          {storyOptions.map((option) => (
+            <button key={option.id} type="button" disabled={busy} onClick={() => void choose(option)}>
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <form className="dialogue-input" onSubmit={submit}>
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={`Talk to ${npc.name}`}
+            maxLength={240}
+          />
+          <button type="submit" disabled={busy || !draft.trim()}>
+            Send
+          </button>
+        </form>
+      )}
     </div>
   );
 }

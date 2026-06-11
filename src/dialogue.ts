@@ -70,6 +70,8 @@ export function clearDialogueHistories(historyKey?: string): void {
 }
 
 export function dialogueAvailable(): boolean {
+  // story mode: zero-AI public tier — choice dialogue served from sim state
+  if (process.env["GAME_MODE"] === "story") return false;
   return isLlmEnabled();
 }
 
