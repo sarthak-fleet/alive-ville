@@ -277,10 +277,12 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
   const overlayUntil = useRef(0);
   const talkingRef = useRef(false);
 
-  // prime the idle pose immediately — without this the first frames render
-  // the bind pose (arms straight out, parallel to the ground)
+  // prime the idle pose immediately on every (re)mount of the mixer — the
+  // appearance memo upstream can rebuild scene+mixer+actions mid-session,
+  // which strands the previously-scheduled action on the dead mixer. without
+  // an unconditional re-play here, a stationary actor (the player at spawn)
+  // would render the bind pose forever
   useEffect(() => {
-    if (currentLocomotion.current) return;
     const idle = actions.get("Idle_Loop");
     if (!idle) return;
     idle.play();
