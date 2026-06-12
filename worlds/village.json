@@ -29,7 +29,21 @@
   "tick": 0,
   "player": {
     "locationId": "square",
-    "name": "Wanderer"
+    "name": "Wanderer",
+    "appearance": {
+      "hair": "windswept dark hair",
+      "outfit": "traveler's jacket with a red scarf",
+      "palette": [
+        "#1c2540",
+        "#e8c39e",
+        "#c8382a"
+      ],
+      "silhouette": "average",
+      "visualTags": [
+        "scarf",
+        "jacket"
+      ]
+    }
   },
   "clock": {
     "hoursPerTick": 2,

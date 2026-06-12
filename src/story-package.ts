@@ -1,3 +1,4 @@
+import { DEFAULT_HERO_APPEARANCE, DEFAULT_HERO_NAME } from "./player-defaults.ts";
 import type {
   DirectorState,
   Faction,
@@ -92,7 +93,7 @@ export function worldFromStoryPackage(pkg: StoryPackage): World {
     story: pkg.world.story,
     storyProgress: { phase: "starter", unlockedCutsceneIds: [], playedCutsceneIds: [] },
     tick: 0,
-    player: { locationId: startLocationId, name: "Player" },
+    player: { locationId: startLocationId, name: DEFAULT_HERO_NAME, appearance: DEFAULT_HERO_APPEARANCE },
     clock: { hoursPerTick: 2, hour: 8, day: 1 },
     rules: pkg.world.rules,
     factions: pkg.world.factions,

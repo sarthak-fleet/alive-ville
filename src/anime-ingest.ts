@@ -1,3 +1,4 @@
+import { DEFAULT_HERO_APPEARANCE, DEFAULT_HERO_NAME } from "./player-defaults.ts";
 import type { AgentNeedKey, CharacterAppearance, Item, ItemVisualDesign, Npc, World } from "./types.ts";
 
 export interface AnimeIngestSource {
@@ -143,7 +144,7 @@ export function animeSourceToWorld(source: AnimeIngestSource): World {
     },
     storyProgress: { phase: "starter", unlockedCutsceneIds: [], playedCutsceneIds: [] },
     tick: 0,
-    player: { locationId: "square", name: "New Hero" },
+    player: { locationId: "square", name: DEFAULT_HERO_NAME, appearance: DEFAULT_HERO_APPEARANCE },
     clock: { hoursPerTick: 2, hour: 8, day: 1 },
     rules: [
       { id: "canon_review", kind: "story", text: "Anime ingest creates a reviewed playable draft; canon fidelity requires human approval before release." },

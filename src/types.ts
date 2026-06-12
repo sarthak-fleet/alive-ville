@@ -12,6 +12,7 @@ export type ActionType =
   | "confront"
   | "fight"
   | "choose_character"
+  | "set_name"
   | "inspect"
   | "remember"
   | "pickup"
@@ -32,6 +33,7 @@ export interface GossipAction extends BaseAction { type: "gossip"; targetId: Act
 export interface ConfrontAction extends BaseAction { type: "confront"; targetId: ActorId; text: string; }
 export interface FightAction extends BaseAction { type: "fight"; targetId: ActorId; moveId?: string; text?: string; }
 export interface ChooseCharacterAction extends BaseAction { type: "choose_character"; targetId: ActorId; }
+export interface SetNameAction extends BaseAction { type: "set_name"; name: string; }
 export interface InspectAction extends BaseAction { type: "inspect"; propId: string; }
 export interface RememberAction extends BaseAction { type: "remember"; text: string; }
 export interface PickupAction extends BaseAction { type: "pickup"; itemId: ItemId; }
@@ -43,7 +45,7 @@ export interface CompleteQuestAction extends BaseAction { type: "complete_quest"
 export interface FailQuestAction extends BaseAction { type: "fail_quest"; questId: QuestId; }
 
 export type Action =
-  | MoveAction | TalkAction | GossipAction | ConfrontAction | FightAction | ChooseCharacterAction | InspectAction | RememberAction
+  | MoveAction | TalkAction | GossipAction | ConfrontAction | FightAction | ChooseCharacterAction | SetNameAction | InspectAction | RememberAction
   | PickupAction | DropAction | GiveAction
   | OfferQuestAction | AcceptQuestAction | CompleteQuestAction | FailQuestAction;
 
@@ -55,6 +57,7 @@ export type PlayerAction =
   | WithoutActor<ConfrontAction>
   | WithoutActor<FightAction>
   | WithoutActor<ChooseCharacterAction>
+  | WithoutActor<SetNameAction>
   | WithoutActor<InspectAction>
   | WithoutActor<RememberAction>
   | WithoutActor<PickupAction>

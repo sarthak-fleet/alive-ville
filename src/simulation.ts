@@ -11,6 +11,7 @@ import { awardXp, reassignArcRoles, XP_FIGHT_WON, XP_QUEST_COMPLETE } from "./ar
 import { recordChronicle } from "./chronicle.ts";
 import { combatMoveFor, combatMovesFor } from "./combat.ts";
 import { executeConfrontations } from "./confrontations.ts";
+import { sanitizePlayerName } from "./player-defaults.ts";
 import { recordPlayerWitnessed, tagBestedThePlayer } from "./player-rumors.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
 import { questItemTargetsFor } from "./quest-targets.ts";
@@ -43,7 +44,7 @@ import type {
 import { HOURS_PER_DAY } from "./types.ts";
 
 const ACTION_TYPES: Set<ActionType> = new Set([
-  "move", "talk", "gossip", "confront", "fight", "choose_character", "remember",
+  "move", "talk", "gossip", "confront", "fight", "choose_character", "set_name", "remember",
   "inspect", "pickup", "drop", "give",
   "offer_quest", "accept_quest", "complete_quest", "fail_quest",
 ]);
@@ -363,6 +364,12 @@ export function applyAction(world: World, action: Action): ActionResult {
       remember(world, chosen.id, `${nameOf(world, action.actorId)} chose to play as ${chosen.name}.`);
       reassignArcRoles(world);
       return applied(action, `${nameOf(world, action.actorId)} is now playing as ${chosen.name}.`);
+    }
+    case "set_name": {
+      const cleaned = sanitizePlayerName(action.name);
+      if (!cleaned) return { applied: false, action: action as Action, reason: "Invalid name." };
+      world.player.name = cleaned;
+      return applied(action, `Player renamed to ${cleaned}.`);
     }
     case "inspect": {
       const prop = mustProp(world, action.propId);
@@ -847,6 +854,11 @@ export function validateAction(world: World, action: Action | unknown): Validati
     const targetId = (a as { targetId?: string }).targetId;
     if (a.actorId !== "player") return invalid("Only the player can choose a character.");
     if (!targetId || !getNpc(world, targetId)) return invalid("Unknown character.");
+  }
+  if (a.type === "set_name") {
+    if (a.actorId !== "player") return invalid("Only the player can set their name.");
+    const name = (a as { name?: unknown }).name;
+    if (typeof name !== "string" || !sanitizePlayerName(name)) return invalid("Name must be a non-empty string up to 20 characters.");
   }
   if (a.type === "inspect") {
     const propId = (a as { propId?: string }).propId;

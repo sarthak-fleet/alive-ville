@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { combatMovesFor } from "../../../src/combat.ts";
+import { DEFAULT_HERO_NAME, sanitizePlayerName } from "../../../src/player-defaults.ts";
 import type { Npc, World } from "../../../src/types.ts";
 import { api } from "../api/client.ts";
 import { ensureAudio, uiBlip } from "../audio/sfx.ts";
@@ -70,12 +71,16 @@ export function StartFlow() {
     }
   };
 
-  const selectCharacter = async (npcId: string | null) => {
+  const selectCharacter = async (npcId: string | null, heroName?: string) => {
     ensureAudio();
     uiBlip();
     if (npcId) {
       setBusy(npcId);
       await send({ type: "choose_character", targetId: npcId });
+      setBusy(null);
+    } else if (heroName) {
+      setBusy("name");
+      await send({ type: "set_name", name: heroName });
       setBusy(null);
     }
     setPhase("playing");
@@ -121,7 +126,7 @@ export function StartFlow() {
             ) : null}
           </>
         ) : (
-          <CharacterSelect world={world} busy={busy} onPick={(id) => void selectCharacter(id)} onBack={() => setPhase("title")} />
+          <CharacterSelect world={world} busy={busy} onPick={(id, name) => void selectCharacter(id, name)} onBack={() => setPhase("title")} />
         )}
         {error ? <div className="start-error">{error}</div> : null}
       </div>
@@ -183,7 +188,7 @@ const WANDERER = {
   id: null,
   name: "The Wanderer",
   blurb: "An outsider with no past here — write your own story.",
-  color: "#58a6ff",
+  color: "#c8382a",
 };
 
 function CharacterSelect({
@@ -194,10 +199,11 @@ function CharacterSelect({
 }: {
   world: World | null;
   busy: string | null;
-  onPick: (npcId: string | null) => void;
+  onPick: (npcId: string | null, heroName?: string) => void;
   onBack: () => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [heroName, setHeroName] = useState(DEFAULT_HERO_NAME);
   const npcs = (world?.npcs ?? []).filter((npc) => !npc.combat?.defeated);
   const selected = selectedId ? npcs.find((npc) => npc.id === selectedId) ?? null : null;
 
@@ -231,7 +237,7 @@ function CharacterSelect({
             );
           })}
         </div>
-        {world ? <CharacterDetail world={world} npc={selected} busy={busy} onPick={onPick} /> : null}
+        {world ? <CharacterDetail world={world} npc={selected} busy={busy} heroName={heroName} onHeroNameChange={setHeroName} onPick={onPick} /> : null}
       </div>
       <button type="button" className="start-back" onClick={onBack}>
         ← Back to worlds
@@ -244,12 +250,16 @@ function CharacterDetail({
   world,
   npc,
   busy,
+  heroName,
+  onHeroNameChange,
   onPick,
 }: {
   world: World;
   npc: Npc | null;
   busy: string | null;
-  onPick: (npcId: string | null) => void;
+  heroName: string;
+  onHeroNameChange: (name: string) => void;
+  onPick: (npcId: string | null, heroName?: string) => void;
 }) {
   const visual = npc ? actorVisualFor(npc.appearance, clothingColorsFor(npc.id).color) : null;
   const hp = npc?.combat?.maxHp ?? 120;
@@ -258,7 +268,7 @@ function CharacterDetail({
   const personality = [...(npc?.traits?.personality ?? []), ...(npc?.traits?.values ?? [])].slice(0, 5);
   const goal = npc?.goals?.[0] ?? npc?.ambitions?.[0]?.title;
 
-  const portraitVisual = visual ?? { color: WANDERER.color, accentColor: "#e8c95a", skinColor: "#e8c39e", bodyShape: "average" as const };
+  const portraitVisual = visual ?? { color: "#1c2540", accentColor: "#c8382a", skinColor: "#e8c39e", bodyShape: "average" as const };
 
   return (
     <div className="char-detail">
@@ -308,7 +318,23 @@ function CharacterDetail({
           </div>
         ))}
       </div>
-      <button type="button" className="char-pick" disabled={busy !== null} onClick={() => onPick(npc?.id ?? null)}>
+      {!npc ? (
+        <div className="hero-name-row">
+          <label className="hero-name-label" htmlFor="hero-name-input">Your name</label>
+          <input
+            id="hero-name-input"
+            className="hero-name-input"
+            type="text"
+            value={heroName}
+            maxLength={20}
+            onChange={(event) => {
+              const cleaned = sanitizePlayerName(event.target.value);
+              onHeroNameChange(cleaned ?? DEFAULT_HERO_NAME);
+            }}
+          />
+        </div>
+      ) : null}
+      <button type="button" className="char-pick" disabled={busy !== null} onClick={() => onPick(npc?.id ?? null, npc ? undefined : heroName)}>
         {busy ? "Becoming…" : npc ? `Become ${npc.name}` : "Begin as the Wanderer"}
       </button>
     </div>
