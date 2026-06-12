@@ -11,6 +11,7 @@ import { awardXp, reassignArcRoles, XP_FIGHT_WON, XP_QUEST_COMPLETE } from "./ar
 import { recordChronicle } from "./chronicle.ts";
 import { combatMoveFor, combatMovesFor } from "./combat.ts";
 import { executeConfrontations } from "./confrontations.ts";
+import { recordPlayerWitnessed, tagBestedThePlayer } from "./player-rumors.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
 import { questItemTargetsFor } from "./quest-targets.ts";
 import { propagateInformation } from "./rumors.ts";
@@ -278,6 +279,7 @@ export function applyAction(world: World, action: Action): ActionResult {
       return applied(action, `${nameOf(world, action.actorId)} confronted ${nameOf(world, action.targetId)}.`);
     case "fight": {
       let counterText: string | null = null;
+      const playerInvolved = action.actorId === "player" || action.targetId === "player";
       if (action.targetId === "player") {
         applyPlayerFightDamage(world, action.actorId, action.moveId);
       } else {
@@ -290,9 +292,38 @@ export function applyAction(world: World, action: Action): ActionResult {
       adjustRelationship(world, action.targetId, action.actorId, -2, { trust: -2, fear: 2, respect: 1, suspicion: 3 });
       nudgeMood(world, action.actorId, { confidence: 8, stress: 3 });
       nudgeMood(world, action.targetId, { stress: 12, confidence: -8, suspicion: 5 });
+      // record a combat chronicle event when the player is involved
+      let combatChronicleId: string | undefined;
+      if (playerInvolved) {
+        const targetName = nameOf(world, action.targetId);
+        const actorName = nameOf(world, action.actorId);
+        const chronicle = recordChronicle(world, {
+          kind: "player_witnessed",
+          text: `${actorName} fought ${targetName}.`,
+          actorId: action.actorId,
+          targetId: action.targetId,
+          playerCaused: true,
+        });
+        combatChronicleId = chronicle.id;
+      }
       if (getNpc(world, action.targetId)?.combat?.defeated) {
         resolveFightConsequences(world, action.actorId, action.targetId);
-        if (action.actorId === "player") awardXp(world, XP_FIGHT_WON);
+        if (action.actorId === "player") {
+          awardXp(world, XP_FIGHT_WON);
+          // player defeated an NPC — record a witness rumor for bystanders
+          const deed = `${nameOf(world, "player")} defeated ${nameOf(world, action.targetId)} in combat.`;
+          recordPlayerWitnessed(world, {
+            deed,
+            importance: 7,
+            causeId: combatChronicleId,
+            actorId: action.actorId,
+            targetId: action.targetId,
+          });
+        }
+      }
+      // player was defeated by an NPC — tag the victor and enter rumor pipeline
+      if (action.targetId === "player" && world.player.combat?.defeated) {
+        tagBestedThePlayer(world, action.actorId, combatChronicleId);
       }
       return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId, counterText));
     }

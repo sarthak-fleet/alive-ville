@@ -1,5 +1,6 @@
 import { recordChronicle } from "./chronicle.ts";
 import { completeText } from "./llm/router.ts";
+import { findBestedThePlayerNpc } from "./player-rumors.ts";
 import type { Npc, World } from "./types.ts";
 
 /**
@@ -102,9 +103,14 @@ function describeWorldForAuthor(world: World): string {
     .map((npc) => `${npc.name} (${npc.role ?? "resident"}) at ${locationNameOf(world, npc.locationId)} — wants: ${npc.goals?.[0] ?? "?"}`);
   const tensions = (world.tensions ?? []).map((tension) => `${tension.title} (pressure ${tension.pressure ?? "?"})`);
   const villain = world.villainPlans?.[0];
+  const bestedNpc = findBestedThePlayerNpc(world);
+  const risingFigure = bestedNpc
+    ? `Rising figure: ${bestedNpc.name} recently bested the outsider in combat — give them a bigger role, new ambitions, or rising influence.`
+    : "";
   return [
     `World: ${world.story?.title ?? world.name}. ${world.story?.premise ?? ""}`,
     `Day ${world.clock.day}, arc stage: ${world.arc?.stage ?? "none"}.`,
+    risingFigure,
     `Cast:\n${cast.join("\n")}`,
     `Locations: ${world.locations.map((location) => location.name).join(", ")}`,
     tensions.length ? `Tensions: ${tensions.join("; ")}` : "",

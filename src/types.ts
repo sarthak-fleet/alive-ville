@@ -74,6 +74,8 @@ export interface MemoryMeta {
   emotionalWeight?: number;
   /** id of the chronicle event that minted this memory — used to chain causes */
   chronicleId?: string;
+  /** who this memory is primarily about (used for rumors-about-the-player injection) */
+  subject?: ActorId | "player";
 }
 
 export type AgentNeedKey = "safety" | "trust" | "resources" | "status" | "rest" | "curiosity" | "revenge" | "duty";
@@ -414,7 +416,10 @@ export type ChronicleEventKind =
   | "confrontation"
   | "authored"
   | "quest"
-  | "arc";
+  | "arc"
+  | "coherence_caught"
+  | "player_witnessed"
+  | "defeat_promotion";
 
 export interface ChronicleEvent {
   id: string;

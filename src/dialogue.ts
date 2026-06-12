@@ -1,5 +1,6 @@
 import { memoryMetaFromText } from "./agents.ts";
 import { recordChronicle } from "./chronicle.ts";
+import { checkCoherence } from "./coherence.ts";
 import { completeText, type CompleteTextResult, isLlmEnabled, streamText } from "./llm/router.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
 import { applyAction, locationName, retrieveMemories, validateAction } from "./simulation.ts";
@@ -8,6 +9,7 @@ import type { Action, Npc, World } from "./types.ts";
 const HISTORY_LIMIT = 24;
 const MEMORY_LIMIT = Number(process.env["LLM_MEMORY_LIMIT"] ?? 5);
 const REPLY_MAX_CHARS = 420;
+const DEFLECTION_LINE = "I'd rather not talk about that right now.";
 
 export interface DialogueTurn {
   speaker: "player" | "npc" | "event";
@@ -126,8 +128,32 @@ export async function generateDialogueReply(
   if ("error" in result && result.error) return { ok: false, reason: result.error };
   if (!("text" in result) || !result.text) return { ok: false, reason: "empty_reply" };
 
-  const parsed = parseDialogueJson(result.text, npc.name);
+  let parsed = parseDialogueJson(result.text, npc.name);
   if (!parsed.reply) return { ok: false, reason: "empty_reply" };
+
+  // Coherence pre-flight: skip on streaming paths (tokens already emitted).
+  let coherenceRetried = false;
+  if (!options.onToken) {
+    const coherence = checkCoherence(world, npc, parsed.reply, { playerText });
+    if (!coherence.ok) {
+      // One retry with the violation hint appended to the system prompt.
+      const correctedSystem = `${system}\n\n${coherence.hint}`;
+      const retry = await complete({ tier: npc.tier === "quest" ? "quest" : "normal", system: correctedSystem, user });
+      const retryParsed = "text" in retry && retry.text ? parseDialogueJson(retry.text, npc.name) : null;
+      const retryCoherence = retryParsed?.reply
+        ? checkCoherence(world, npc, retryParsed.reply, { playerText })
+        : null;
+
+      if (retryParsed?.reply && retryCoherence?.ok !== false) {
+        // Retry succeeded — use the corrected reply.
+        parsed = retryParsed;
+      } else {
+        // Both attempts failed — fall back to scripted deflection.
+        parsed = { reply: DEFLECTION_LINE, action: null, disposition: 0 };
+      }
+      coherenceRetried = true;
+    }
+  }
 
   history.push({ speaker: "player", text: playerText }, { speaker: "npc", text: parsed.reply });
 
@@ -155,10 +181,30 @@ export async function generateDialogueReply(
     {
       tick: world.tick,
       text: `${playerName} said to me: ${playerText}`,
-      meta: { ...playerLineMeta, sourceActorId: "player", visibility, ...(playerChronicleId ? { chronicleId: playerChronicleId } : {}) },
+      meta: {
+        ...playerLineMeta,
+        sourceActorId: "player",
+        visibility,
+        ...(visibility === "shared" ? { subject: "player" as const } : {}),
+        ...(playerChronicleId ? { chronicleId: playerChronicleId } : {}),
+      },
     },
     { tick: world.tick, text: `I replied to ${playerName}: ${parsed.reply}`, meta: { visibility: "private", importance: 2 } }
   );
+
+  if (coherenceRetried) {
+    recordChronicle(world, {
+      kind: "coherence_caught",
+      text: `${npc.name}'s reply was incoherent; retried and corrected.`,
+      actorId: npc.id,
+      playerCaused: false,
+    });
+    npc.memories.push({
+      tick: world.tick,
+      text: `(system) My previous reply was flagged as incoherent and was corrected.`,
+      meta: { importance: 1, visibility: "private", tags: ["coherence-caught"] },
+    });
+  }
 
   // relationship development from the model's read of the exchange
   if (parsed.disposition !== 0) {
@@ -258,6 +304,17 @@ function buildDialogueSystem(world: World, npc: Npc): string {
     .filter(Boolean)
     .join("\n");
 
+  // rumors about what the player has done — sorted by importance, top 2
+  const playerRumors = npc.memories
+    .filter((m) => m.meta?.subject === "player")
+    .sort((a, b) => (b.meta?.importance ?? 0) - (a.meta?.importance ?? 0))
+    .slice(0, 2)
+    .map((m) => `- ${m.text}`)
+    .join("\n");
+  const rumorBlock = playerRumors
+    ? [`RUMORS ABOUT YOU`, playerRumors].join("\n")
+    : "";
+
   return [
     `You are ${npc.name}, a character in "${world.story?.title ?? world.name}".`,
     `World premise: ${world.story?.premise ?? "(unknown)"}`,
@@ -294,6 +351,8 @@ function buildDialogueSystem(world: World, npc: Npc): string {
     `Never repeat a line you already said. If the conversation is circling or has`,
     `run its course, make a decision: act, or say goodbye and move. You may`,
     `refuse, lie, bargain, or redirect as the character would.`,
+    ``,
+    rumorBlock,
     ``,
     standingBeliefs,
   ]
