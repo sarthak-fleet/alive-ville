@@ -16,13 +16,18 @@ async function main(): Promise<void> {
 
   console.info("Running lifelikeness QA harness...\n");
 
-  // wrap completeText to match DialogueCompleter signature
+  // NPC dialogue: routes by tier (NORMAL for in-character turns, QUEST for
+  // quest-givers) so the probe measures the same model players actually hit.
   const complete = (req: {
     tier: "normal" | "quest";
     system: string;
     user: string;
     onToken?: (delta: string) => void;
   }) =>
+    completeText({ tier: req.tier, system: req.system, user: req.user });
+
+  // Judge calls: pinned to the cheap proposal model to keep costs low.
+  const judge = (req: { tier: "normal" | "quest"; system: string; user: string }) =>
     completeText({
       tier: req.tier,
       system: req.system,
@@ -30,7 +35,7 @@ async function main(): Promise<void> {
       model: process.env["LLM_MODEL_PROPOSE"],
     });
 
-  const report = await runAllProbes({ complete });
+  const report = await runAllProbes({ complete, judge });
 
   console.info(formatReportCard(report));
   console.info("");
