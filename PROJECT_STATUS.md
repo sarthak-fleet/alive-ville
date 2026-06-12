@@ -25,9 +25,17 @@ Aliveville is a browser-playable AI world simulator deployed at **aliveville.com
 
 ## Planned Next
 
+See the living north-star document: `docs/future-prd.md` (2026–2028 vision covering asset fidelity pipeline, lifelikeness upgrades (Chronicle + reflection + coherence), combat/interior polish, creator tools, and phased roadmap).
+
+Immediate next (pre-PRD execution):
 1. Combat polish: rigged CC0 characters, posture/stagger, character-specific movesets.
 2. Interior depth: quest NPC inside anchor building, interior interactables/clues.
 3. Enable LLM mode: add `LLM_API_KEY` to `.env`.
+
+## Durable References
+- `docs/future-prd.md` — Future PRD (asset strategy from Poly Haven/Kenney/Meshy/Tripo/Rodin/3D AI Studio research, lifelikeness from research-lifelikeness.md).
+- `docs/research-lifelikeness.md` — Evidence-ranked mechanisms and gap analysis (the 5 highest-leverage builds).
+- `docs/web3d-architecture.md` + `docs/ai-dungeon-differentiation.md` — Current shape and positioning.
 
 ## Retired (archived docs)
 

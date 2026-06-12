@@ -20,6 +20,7 @@
     "probe:lifelikeness": "tsx --env-file-if-exists=.env src/probes/cli.ts",
     "playtest:astro-landing": "tsx tests/playtests/astro-landing.ts",
     "playtest:all": "pnpm playtest:astro-landing",
+    "portraits:pregen": "tsx scripts/pregen-portraits.ts",
     "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build:3d",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"

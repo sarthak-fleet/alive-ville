@@ -40,6 +40,10 @@ pnpm verify:readiness
 Runs typecheck, lint, unit tests, and the 3D build.
 
 <!-- ACTIVE-AI-TASK-LOG:START -->
+## Future Vision
+
+Living north-star: `docs/future-prd.md` (detailed 2026–2028 PRD). Covers professional hybrid 3D asset pipeline (curated CC0 from Poly Haven/Kenney + AI auto-gen from Meshy/Tripo/Rodin/3D AI Studio + procedural), lifelikeness upgrades (Chronicle/causal traces + reflection + coherence from the research doc), combat/interior/creator depth, and phased roadmap while preserving the compiled-world + autonomous agents + spatial 3D + browser DNA.
+
 ## Active AI Task Log
 
 This section is maintained by the SaaS Maker Active-AI product/design loop so future agents do not reopen duplicate UI tasks.

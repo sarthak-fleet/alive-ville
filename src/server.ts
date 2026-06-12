@@ -13,6 +13,7 @@ import { createDirector } from "./director.ts";
 import { fandomToWorldSource } from "./fandom-import.ts";
 import { createLlmProposer } from "./llm/proposer.ts";
 import { isLlmEnabled, isLocalLlmBackend, proposeAction } from "./llm/router.ts";
+import { portraitPath, queueHeroPortrait, queueNpcPortrait } from "./portraits.ts";
 import { reflectionDue, reflectNpc } from "./reflection.ts";
 import { applyWorldPacing, createEngine } from "./simulation.ts";
 import { storyDialogueOptions, storyDialogueRespond } from "./story-dialogue.ts";
@@ -20,7 +21,6 @@ import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
 import type { PlayerAction, World } from "./types.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "./world-ingest.ts";
-import { portraitPath, queueNpcPortrait, queueHeroPortrait } from "./portraits.ts";
 
 const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;

@@ -6,6 +6,7 @@ import { setFollowing } from "../characters/followers.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { useUiStore } from "../store/ui.ts";
 import { npcById, useWorldStore } from "../store/world.ts";
+import { portraitApiUrl, portraitStaticUrl } from "./portrait.ts";
 
 interface Relationship {
   score: number;
@@ -95,7 +96,19 @@ export function Dialogue() {
     return () => window.removeEventListener("keydown", onKey);
   }, [closeDialogue]);
 
+  // Portrait state: "static" → "api" → "letter"
+  // Must be before any early-return to satisfy rules of hooks.
+  const [portraitStage, setPortraitStage] = useState<"static" | "api" | "letter">("static");
+  // Reset portrait stage when the NPC changes
+  const [portraitNpcId, setPortraitNpcId] = useState(dialogueNpcId);
+  if (portraitNpcId !== dialogueNpcId) {
+    setPortraitNpcId(dialogueNpcId);
+    setPortraitStage("static");
+  }
+
   if (!npc) return null;
+
+  const worldId = world?.id ?? "";
 
   const handleLlmResponse = (response: DialogueResponse): boolean => {
     if (!response.llm) return false;
@@ -241,7 +254,23 @@ export function Dialogue() {
   return (
     <div className="dialogue">
       <div className="dialogue-header">
-        {npc.appearance?.portrait ? <img className="dialogue-portrait" src={npc.appearance.portrait} alt="" /> : null}
+        {portraitStage === "letter" ? (
+          <div className="dialogue-avatar">{npc.name.charAt(0).toUpperCase()}</div>
+        ) : portraitStage === "api" ? (
+          <img
+            className="dialogue-portrait"
+            src={portraitApiUrl(npc.id)}
+            alt=""
+            onError={() => setPortraitStage("letter")}
+          />
+        ) : (
+          <img
+            className="dialogue-portrait"
+            src={portraitStaticUrl(npc.id, worldId)}
+            alt=""
+            onError={() => setPortraitStage("api")}
+          />
+        )}
         <div>
           <div className="dialogue-name">{npc.name}</div>
           {npc.role ? <div className="dialogue-role">{npc.role}</div> : null}
