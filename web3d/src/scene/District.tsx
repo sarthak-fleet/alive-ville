@@ -85,13 +85,13 @@ function Ground({ district, cx, cz }: { district: DistrictModel; cx: number; cz:
 function Building({ building, night, courtyard }: { building: BuildingModel; night: boolean; courtyard: { x: number; z: number } }) {
   const roofMat = toonMaterial(building.roofColor);
   const facade = facadeMaterial(building.bodyColor, building.accentColor, building.floors, building.id, night, toonGradientMap());
-  const facadeRef = useRef<THREE.Mesh>(null);
+  const buildingRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
-    const mesh = facadeRef.current;
-    if (!mesh) return;
-    registerOccluder(mesh);
-    return () => unregisterOccluder(mesh);
+    const group = buildingRef.current;
+    if (!group) return;
+    registerOccluder(group);
+    return () => unregisterOccluder(group);
   }, []);
 
   const extras = useMemo(() => {
@@ -127,8 +127,8 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
 
   return (
     <RigidBody type="fixed" colliders={false}>
-      <group position={[building.x, 0, building.z]}>
-        <mesh ref={facadeRef} position={[0, building.height / 2, 0]} castShadow receiveShadow material={facade}>
+      <group ref={buildingRef} position={[building.x, 0, building.z]}>
+        <mesh position={[0, building.height / 2, 0]} castShadow receiveShadow material={facade}>
           <boxGeometry args={[building.width, building.height, building.depth]} />
           <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
         </mesh>

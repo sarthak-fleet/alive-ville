@@ -6,7 +6,7 @@ import * as THREE from "three";
  * frame. Materials are cloned per-mesh on first fade so the shared toon
  * material cache stays untouched.
  */
-const occluders = new Set<THREE.Mesh>();
+const occluders = new Set<THREE.Object3D>();
 
 interface FadeState {
   original: THREE.Material | THREE.Material[];
@@ -18,15 +18,18 @@ const fading = new Map<THREE.Mesh, FadeState>();
 const raycaster = new THREE.Raycaster();
 let lastScan = 0;
 
-export function registerOccluder(mesh: THREE.Mesh): void {
-  occluders.add(mesh);
+export function registerOccluder(object: THREE.Object3D): void {
+  occluders.add(object);
 }
 
-export function unregisterOccluder(mesh: THREE.Mesh): void {
-  occluders.delete(mesh);
-  const state = fading.get(mesh);
-  if (state) {
+export function unregisterOccluder(object: THREE.Object3D): void {
+  occluders.delete(object);
+  // any mesh under this object that was mid-fade has to be restored — otherwise
+  // the cloned ghost material persists past unmount and leaks GPU resources
+  for (const [mesh, state] of fading) {
+    if (!object.getObjectById(mesh.id)) continue;
     mesh.material = state.original;
+    state.ghost.dispose();
     fading.delete(mesh);
   }
 }
@@ -40,9 +43,13 @@ export function updateOcclusion(camera: THREE.Camera, target: THREE.Vector3, ela
     raycaster.set(origin, direction.normalize());
     raycaster.far = Math.max(0.1, distance - 0.6);
 
+    // recursive: registered occluders may be groups whose child meshes (pilasters,
+    // cornice, awning) jut past the facade and can be the only thing blocking the ray
     const hits = new Set<THREE.Mesh>();
-    for (const hit of raycaster.intersectObjects([...occluders], false)) {
-      hits.add(hit.object as THREE.Mesh);
+    for (const hit of raycaster.intersectObjects([...occluders], true)) {
+      const mesh = hit.object as THREE.Mesh;
+      if (!(mesh.material as THREE.Material | undefined)) continue;
+      hits.add(mesh);
     }
 
     for (const mesh of hits) {
