@@ -20,6 +20,7 @@ import type { CutsceneManifestEntry } from "./story-package.ts";
 import { storyPackageFromWorld, validateStoryPackage, worldFromStoryPackage } from "./story-package.ts";
 import type { PlayerAction, World } from "./types.ts";
 import { validateWorldIngestSource, worldSourceToWorld } from "./world-ingest.ts";
+import { portraitPath, queueNpcPortrait, queueHeroPortrait } from "./portraits.ts";
 
 const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;
@@ -34,6 +35,8 @@ const AGENT_LOOP_MAX_TICKS = process.env["AGENT_LOOP_MAX_TICKS"] ? Number(proces
 const AGENT_LOOP_MAX_CHECKPOINTS = Number(process.env["AGENT_LOOP_MAX_CHECKPOINTS"] ?? 24);
 const AGENT_LOOP_CHECKPOINT_PATH = new URL(process.env["AGENT_LOOP_CHECKPOINT_FILE"] ?? "./tmp/agent-loop-checkpoints.json", CWD);
 const AGENT_LOOP_AUTOSTART = process.env["AGENT_LOOP_AUTOSTART"] === "1";
+
+const PORTRAITS_ENABLED = process.env["PORTRAITS_ENABLED"] === "1";
 
 const AUTOSAVE_PATH = new URL(process.env["AUTOSAVE_FILE"] ?? "./tmp/autosave-world.json", CWD);
 const SESSION_SAVE_DIR = new URL(process.env["SESSION_SAVE_DIR"] ?? "./tmp/sessions/", CWD);
@@ -132,6 +135,7 @@ function createSession(id: string): GameSession {
   const engine = createEngine(world, { propose, director });
   createArcForWorld(engine.state);
   applyWorldPacing(engine.state);
+  if (PORTRAITS_ENABLED) enqueueWorldPortraits(engine.state);
   // checkpoints persist to disk only for the main session — visitors keep theirs in memory
   const initialCheckpoints =
     id === "main" ? readAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH).filter((checkpoint) => checkpoint.world.id === world.id) : [];
@@ -551,14 +555,19 @@ const server = createServer(async (req, res) => {
         "cache-control": "no-cache",
         connection: "keep-alive",
       });
+      const abortController = new AbortController();
+      req.on("close", () => {
+        // close fires on both disconnect and natural end; only abort if still writing
+        if (!res.writableEnded) abortController.abort();
+      });
       let tokensSent = false;
       const onToken = (delta: string) => {
         tokensSent = true;
         res.write(`event: token\ndata: ${JSON.stringify({ t: delta })}\n\n`);
       };
-      let streamResult = await generateDialogueReply(engine.state, npcId, text.trim().slice(0, 500), { onToken, historyKey });
-      if (!streamResult.ok && !tokensSent && !["unknown_npc", "npc_defeated", "npc_not_here"].includes(streamResult.reason)) {
-        streamResult = await generateDialogueReply(engine.state, npcId, text.trim().slice(0, 500), { onToken, historyKey });
+      let streamResult = await generateDialogueReply(engine.state, npcId, text.trim().slice(0, 500), { onToken, historyKey, signal: abortController.signal });
+      if (!streamResult.ok && !tokensSent && !["unknown_npc", "npc_defeated", "npc_not_here", "cancelled"].includes(streamResult.reason)) {
+        streamResult = await generateDialogueReply(engine.state, npcId, text.trim().slice(0, 500), { onToken, historyKey, signal: abortController.signal });
       }
       if (streamResult.ok && streamResult.action) {
         broadcastSse(session, "tick", {
@@ -640,6 +649,33 @@ const server = createServer(async (req, res) => {
     }
   }
 
+  // Portrait: GET /api/portrait/:npcId
+  const portraitMatch = url.pathname.match(/^\/api\/portrait\/([^/]+)$/);
+  if (portraitMatch && req.method === "GET") {
+    const npcId = decodeURIComponent(portraitMatch[1]!);
+    const worldId = engine.state.id;
+    const file = portraitPath(npcId, worldId);
+    if (existsSync(file)) {
+      res.writeHead(200, {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=86400, immutable",
+      });
+      res.end(readFileSync(file));
+      return;
+    }
+    // Not ready yet — enqueue if portraits are enabled
+    if (PORTRAITS_ENABLED) {
+      const isPlayer = npcId === "player";
+      if (isPlayer) {
+        void queueHeroPortrait(engine.state, engine.state.player.name);
+      } else {
+        const npc = engine.state.npcs.find((n) => n.id === npcId);
+        if (npc) void queueNpcPortrait(npc, engine.state);
+      }
+    }
+    return notFound(res);
+  }
+
   return notFound(res);
 });
 
@@ -668,6 +704,14 @@ function json(res: ServerResponse, status: number, payload: unknown): void {
   res.end(JSON.stringify(payload));
 }
 
+/** Fire-and-forget: enqueue portraits for all NPCs + the player hero. */
+function enqueueWorldPortraits(world: World): void {
+  void queueHeroPortrait(world, world.player.name);
+  for (const npc of world.npcs) {
+    void queueNpcPortrait(npc, world);
+  }
+}
+
 async function replaceEngineState(session: GameSession, nextWorld: World) {
   const { agentLoop, engine } = session;
   if (agentLoop.status().state === "running") agentLoop.stop("world_replaced");
@@ -675,6 +719,7 @@ async function replaceEngineState(session: GameSession, nextWorld: World) {
   engine.setState(nextWorld);
   createArcForWorld(engine.state);
   applyWorldPacing(engine.state);
+  if (PORTRAITS_ENABLED) enqueueWorldPortraits(engine.state);
   session.dirty = true;
   const status = agentLoop.clearCheckpoints();
   if (session.id === "main") writeAgentLoopCheckpoints(AGENT_LOOP_CHECKPOINT_PATH, []);

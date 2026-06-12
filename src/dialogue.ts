@@ -16,8 +16,9 @@ const DEFLECTION_LINE = "I'd rather not talk about that right now.";
 const PACED_FLUSH_CHUNK_CHARS = 24;
 const PACED_FLUSH_DELAY_MS = 14;
 
-async function pacedFlush(emit: (delta: string) => void, text: string): Promise<void> {
+async function pacedFlush(emit: (delta: string) => void, text: string, signal?: AbortSignal): Promise<void> {
   for (let i = 0; i < text.length; i += PACED_FLUSH_CHUNK_CHARS) {
+    if (signal?.aborted) return;
     emit(text.slice(i, i + PACED_FLUSH_CHUNK_CHARS));
     if (i + PACED_FLUSH_CHUNK_CHARS < text.length) {
       await new Promise((resolve) => setTimeout(resolve, PACED_FLUSH_DELAY_MS));
@@ -43,6 +44,8 @@ export interface DialogueOptions {
   onToken?: (delta: string) => void;
   /** namespace for conversation history (per-session servers pass the session id) */
   historyKey?: string;
+  /** when aborted, skips pending LLM retries and stops emitting tokens */
+  signal?: AbortSignal;
 }
 
 export interface DialogueRelationship {
@@ -122,6 +125,7 @@ export async function generateDialogueReply(
   playerText: string,
   options: DialogueOptions = {}
 ): Promise<DialogueResult | DialogueFailure> {
+  const { signal } = options;
   const complete: DialogueCompleter = options.complete ?? (options.onToken ? streamText : completeText);
   const npc = world.npcs.find((entry) => entry.id === npcId);
   if (!npc) return { ok: false, reason: "unknown_npc" };
@@ -159,9 +163,10 @@ export async function generateDialogueReply(
 
   // Coherence pre-flight — runs on both streaming and non-streaming paths.
   // Streaming tokens are buffered above and only flushed after this check.
-  let coherenceRetried = false;
   const coherence = checkCoherence(world, npc, parsed.reply, { playerText });
   if (!coherence.ok) {
+    // Check abort before burning a retry LLM call.
+    if (signal?.aborted) return { ok: false, reason: "cancelled" };
     // One retry with the violation hint appended to the system prompt.
     streamBuffer = "";
     const correctedSystem = `${system}\n\n${coherence.hint}`;
@@ -182,7 +187,19 @@ export async function generateDialogueReply(
       parsed = { reply: DEFLECTION_LINE, action: null, disposition: 0 };
       streamBuffer = DEFLECTION_LINE;
     }
-    coherenceRetried = true;
+    // Record coherence catch immediately after retry resolves, before any flush,
+    // so it survives even if the client disconnects during the paced flush.
+    recordChronicle(world, {
+      kind: "coherence_caught",
+      text: `${npc.name}'s reply was incoherent; retried and corrected.`,
+      actorId: npc.id,
+      playerCaused: false,
+    });
+    npc.memories.push({
+      tick: world.tick,
+      text: `(system) My previous reply was flagged as incoherent and was corrected.`,
+      meta: { importance: 1, visibility: "private", tags: ["coherence-caught"] },
+    });
   }
 
   // Flush buffered tokens to the client now that coherence has passed.
@@ -190,7 +207,9 @@ export async function generateDialogueReply(
   // rather than the whole reply popping in at once — costs ~300-500ms of
   // extra wall time but restores the streaming feel that coherence buffering
   // would otherwise destroy.
-  if (userOnToken && streamBuffer) await pacedFlush(userOnToken, streamBuffer);
+  if (signal?.aborted) return { ok: false, reason: "cancelled" };
+  if (userOnToken && streamBuffer) await pacedFlush(userOnToken, streamBuffer, signal);
+  if (signal?.aborted) return { ok: false, reason: "cancelled" };
 
   history.push({ speaker: "player", text: playerText }, { speaker: "npc", text: parsed.reply });
 
@@ -228,20 +247,6 @@ export async function generateDialogueReply(
     },
     { tick: world.tick, text: `I replied to ${playerName}: ${parsed.reply}`, meta: { visibility: "private", importance: 2 } }
   );
-
-  if (coherenceRetried) {
-    recordChronicle(world, {
-      kind: "coherence_caught",
-      text: `${npc.name}'s reply was incoherent; retried and corrected.`,
-      actorId: npc.id,
-      playerCaused: false,
-    });
-    npc.memories.push({
-      tick: world.tick,
-      text: `(system) My previous reply was flagged as incoherent and was corrected.`,
-      meta: { importance: 1, visibility: "private", tags: ["coherence-caught"] },
-    });
-  }
 
   // relationship development from the model's read of the exchange
   if (parsed.disposition !== 0) {

@@ -278,6 +278,24 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
     };
   }, [scene]);
 
+  // Decor groups (head/chest/hips) are rebuilt independently from the skeleton
+  // and their geometries leak if not freed on decor change or unmount.
+  // Geometries are always per-instance (new THREE.XxxGeometry per builder call).
+  // Materials come from toonMaterial()/faceTextureCache caches — never dispose them.
+  useEffect(() => {
+    const disposeDecorGeometry = (group: THREE.Object3D) => {
+      group.traverse((object: THREE.Object3D) => {
+        const mesh = object as THREE.Mesh;
+        if (mesh.isMesh) mesh.geometry?.dispose();
+      });
+    };
+    return () => {
+      disposeDecorGeometry(decor.head);
+      if (decor.chest) disposeDecorGeometry(decor.chest);
+      if (decor.hips) disposeDecorGeometry(decor.hips);
+    };
+  }, [decor]);
+
   useEffect(() => {
     // bind-pose correction: rotate bone orientation into model axes
     scene.updateWorldMatrix(true, true);
