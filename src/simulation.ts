@@ -964,6 +964,7 @@ export function proposeNpcActions(world: World): Action[] {
     }
     actions.push(...followingPlayerMoveActions(world, actions));
     actions.push(...hostileCombatActions(world, actions));
+    actions.push(...followerCombatActions(world, actions));
     actions.push(...scheduledNpcMoveActions(world, actions));
     return actions;
   }
@@ -989,9 +990,13 @@ export function proposeNpcActions(world: World): Action[] {
   }
   actions.push(...followingPlayerMoveActions(world, actions));
   actions.push(...hostileCombatActions(world, actions));
+  actions.push(...followerCombatActions(world, actions));
   actions.push(...scheduledNpcMoveActions(world, actions));
   return actions;
 }
+
+/** Per-follower tick of last emitted cross-district move, to throttle redundant move spam. */
+const followerLastMoveTick = new Map<string, number>();
 
 /** NPCs that agreed to follow the player walk toward the player's location. */
 function followingPlayerMoveActions(world: World, existingActions: Action[]): Action[] {
@@ -1005,12 +1010,64 @@ function followingPlayerMoveActions(world: World, existingActions: Action[]): Ac
     // still locked mid-conversation — they are standing right here, no move needed
     if (npc.talkingToPlayerUntilTick && npc.talkingToPlayerUntilTick > world.tick) continue;
     if (npc.locationId === playerLoc) continue;
+    // throttle: only emit if we haven't moved this follower in the last 2 ticks
+    const lastEmit = followerLastMoveTick.get(npc.id) ?? -999;
+    if (world.tick - lastEmit < 2) continue;
     const nextStep = nextLocationStep(world, npc.locationId, playerLoc);
     if (!nextStep || nextStep === npc.locationId) continue;
     moves.push({ type: "move", actorId: npc.id, locationId: nextStep });
+    followerLastMoveTick.set(npc.id, world.tick);
     busyActors.add(npc.id);
   }
   return moves;
+}
+
+/** Followers join the player's fight by targeting any hostile currently attacking the player. */
+function followerCombatActions(world: World, existingActions: Action[], limit = 1): Action[] {
+  const busyActors = new Set(existingActions.map((action) => action.actorId));
+  const playerLoc = world.player.locationId;
+  if (!playerLoc) return [];
+
+  // collect hostile NPC ids that are actively attacking the player this tick
+  const hostileIds = new Set<string>(
+    existingActions
+      .filter((a): a is Extract<Action, { type: "fight" }> => a.type === "fight" && (a as { targetId?: string }).targetId === "player")
+      .map((a) => a.actorId)
+  );
+  if (hostileIds.size === 0) return [];
+
+  const playerCombat = normalizeCombatState(world.player.combat, 120);
+  if (playerCombat.defeated) return [];
+
+  const actions: Action[] = [];
+  for (const npc of world.npcs) {
+    if (actions.length >= limit) break;
+    if (!npc.followingPlayer) continue;
+    if (npc.id === world.player.characterId || busyActors.has(npc.id)) continue;
+    if (npc.talkingToPlayerUntilTick && npc.talkingToPlayerUntilTick > world.tick) continue;
+    if (npc.combat?.defeated) continue;
+    if (npc.locationId !== playerLoc) continue;
+
+    // pick the first hostile in the same location as the player
+    const targetId = [...hostileIds].find((hId) => {
+      const hostile = world.npcs.find((entry) => entry.id === hId);
+      return hostile && hostile.locationId === playerLoc && !hostile.combat?.defeated;
+    });
+    if (!targetId) continue;
+
+    const moves = combatMovesFor(world);
+    const moveId = moves.find((m) => m.style === "rush")?.id ?? moves[0]!.id;
+    const move = combatMoveFor(world, moveId);
+    actions.push({
+      type: "fight",
+      actorId: npc.id,
+      targetId,
+      moveId,
+      text: `${npc.name} steps in to protect the player with ${move.label}: ${move.description}`,
+    });
+    busyActors.add(npc.id);
+  }
+  return actions;
 }
 
 function hostileCombatActions(world: World, existingActions: Action[], limit = 1): Action[] {

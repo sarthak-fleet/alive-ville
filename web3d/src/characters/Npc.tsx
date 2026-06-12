@@ -198,8 +198,10 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
       return;
     }
 
-    // companion mode: trail the player everywhere
-    if (followersStore.has(npc.id)) {
+    // companion mode: trail the player everywhere.
+    // Keyed on either the dialogue-initiated client store OR the authoritative sim flag so
+    // that reloads / world imports don't drop the follower.
+    if (followersStore.has(npc.id) || npc.followingPlayer) {
       const toPlayer = playerPosition.clone().sub(node.position);
       toPlayer.y = 0;
       const distance = toPlayer.length();
