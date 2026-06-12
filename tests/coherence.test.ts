@@ -321,9 +321,8 @@ describe("generateDialogueReply coherence integration", () => {
     if (result.ok) expect(result.reply).toBe("I'd rather not talk about that right now.");
     // Two LLM calls: attempt 1 + retry
     expect(llmCalls).toBe(2);
-    // Deflection sent as a single chunk
-    expect(tokens).toHaveLength(1);
-    expect(tokens[0]).toBe("I'd rather not talk about that right now.");
+    // Deflection is paced into chunks for typewriter effect; total joins to full line
+    expect(tokens.join("")).toBe("I'd rather not talk about that right now.");
     const caught = (world.chronicle ?? []).filter((e) => e.kind === "coherence_caught");
     expect(caught).toHaveLength(1);
   });

@@ -12,6 +12,17 @@ const MEMORY_LIMIT = Number(process.env["LLM_MEMORY_LIMIT"] ?? 5);
 const LOCK_TICKS = 6;
 const REPLY_MAX_CHARS = 420;
 const DEFLECTION_LINE = "I'd rather not talk about that right now.";
+const PACED_FLUSH_CHUNK_CHARS = 6;
+const PACED_FLUSH_DELAY_MS = 18;
+
+async function pacedFlush(emit: (delta: string) => void, text: string): Promise<void> {
+  for (let i = 0; i < text.length; i += PACED_FLUSH_CHUNK_CHARS) {
+    emit(text.slice(i, i + PACED_FLUSH_CHUNK_CHARS));
+    if (i + PACED_FLUSH_CHUNK_CHARS < text.length) {
+      await new Promise((resolve) => setTimeout(resolve, PACED_FLUSH_DELAY_MS));
+    }
+  }
+}
 
 export interface DialogueTurn {
   speaker: "player" | "npc" | "event";
@@ -174,7 +185,11 @@ export async function generateDialogueReply(
   }
 
   // Flush buffered tokens to the client now that coherence has passed.
-  if (userOnToken && streamBuffer) userOnToken(streamBuffer);
+  // Paced into ~6-char chunks so the player still sees a typewriter cascade
+  // rather than the whole reply popping in at once — costs ~300-500ms of
+  // extra wall time but restores the streaming feel that coherence buffering
+  // would otherwise destroy.
+  if (userOnToken && streamBuffer) await pacedFlush(userOnToken, streamBuffer);
 
   history.push({ speaker: "player", text: playerText }, { speaker: "npc", text: parsed.reply });
 
