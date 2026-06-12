@@ -15,9 +15,56 @@
         background: #07111d;
         font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
       }
+
+      /* Inline splash — visible before any JS parses */
+      #splash {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: radial-gradient(ellipse at 50% 35%, #1b2335 0%, #0c111d 70%);
+        color: #f1f5fb;
+        font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+        font-size: 15px;
+        letter-spacing: 0.04em;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+
+      #splash.splash-hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #splash-wordmark {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0.34em;
+        color: #e8ecf5;
+        text-shadow: 0 0 24px rgba(120, 170, 255, 0.45);
+        animation: splash-pulse 1.8s ease-in-out infinite;
+      }
+
+      @keyframes splash-pulse {
+        0%,
+        100% {
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
     </style>
   </head>
   <body>
+    <!-- Pre-JS splash: removed by React once the app mounts -->
+    <div id="splash">
+      <div id="splash-wordmark">ALIVEVILLE</div>
+      <div id="splash-status">loading…</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
