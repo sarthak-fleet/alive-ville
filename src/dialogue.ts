@@ -13,8 +13,8 @@ const MEMORY_LIMIT = Number(process.env["LLM_MEMORY_LIMIT"] ?? 5);
 const LOCK_TICKS = 6;
 const REPLY_MAX_CHARS = 420;
 const DEFLECTION_LINE = "I'd rather not talk about that right now.";
-const PACED_FLUSH_CHUNK_CHARS = 6;
-const PACED_FLUSH_DELAY_MS = 18;
+const PACED_FLUSH_CHUNK_CHARS = 24;
+const PACED_FLUSH_DELAY_MS = 14;
 
 async function pacedFlush(emit: (delta: string) => void, text: string): Promise<void> {
   for (let i = 0; i < text.length; i += PACED_FLUSH_CHUNK_CHARS) {
