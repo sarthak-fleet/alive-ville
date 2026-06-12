@@ -14,7 +14,7 @@ top of the same `World` types and `/api/*` endpoints.
   (built-in physics/navmesh) but loses on flexibility for schema-generated worlds.
 - **@react-three/rapier** — physics: kinematic character controller, building
   colliders, future combat hitboxes (sensor colliders).
-- **zustand** — same store pattern as `web/`.
+- **zustand** — lightweight state store (same pattern previously used in the retired 2D client).
 - NPC navigation uses a **street waypoint graph** (courtyards → gates → street
   polylines, Dijkstra) instead of a recast navmesh — the approved fallback; the
   belt layout keeps paths clear, and it is deterministic with zero WASM risk.
@@ -26,10 +26,10 @@ Build: `pnpm build:3d`. Tests: `tests/web3d-worldgen.test.ts`.
 
 | Module | Purpose |
 | --- | --- |
-| `api/client.ts` | `fetchState` / `postTick` subset of `web/src/api/client.ts` |
+| `api/client.ts` | `fetchState` / `postTick` — typed wrappers around the sim server API |
 | `store/world.ts` | sim mirror: world state, send(action) → tick, event toasts |
 | `store/ui.ts` | dialogue session, interaction prompt target |
-| `mapping/` | pure schema→visual fns copied from the parked diorama renderer (`web/src/three/world-scene.ts`): palettes, body shapes, item visuals, time-of-day mood |
+| `mapping/` | pure schema→visual fns: palettes, body shapes, item visuals, time-of-day mood |
 | `worldgen/` | deterministic 2D-schema → 3D-town generator (pure, unit-tested) |
 | `scene/` | R3F components: toon materials, lighting/sky/fog, district renderer |
 | `characters/` | procedural toon character + NPC wander/face-player behavior |

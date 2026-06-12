@@ -77,9 +77,9 @@ To claim readiness against this boundary, the repo must keep all of these eviden
 
 ## Current Evidence In Repo
 
-- 3D runtime: `web/src/three/world-scene.ts`, `web/src/organisms/ThreeWorld.tsx`.
+- 3D runtime: `web3d/src/` (walkable town, combat, cutscenes, minimap).
 - World compiler: `src/world-ingest.ts`, `src/anime-ingest.ts`.
 - Non-anime world fixtures: `fixtures/worlds/skyfront-source.json`, `fixtures/worlds/conservatory-source.json`, `fixtures/worlds/abyssal-source.json`, `fixtures/worlds/noir-source.json`.
-- Long-running agents: `src/agent-loop.ts`, `src/agent-checkpoint-store.ts`, `web/src/organisms/AgentLoopPanel.tsx`.
-- Browser playability gates: `tests/playtests/alive-village.ts`, `tests/playtests/world-ingest.ts`.
-- Readiness gates: `src/completion-benchmarks.ts`, `src/expanded-completion-benchmarks.ts`.
+- Long-running agents: `src/agent-loop.ts`, `src/agent-checkpoint-store.ts`, `web3d/src/hud/` (live HUD panels).
+- Browser playability gates: `pnpm probe:lifelikeness` (`src/probes/`), `tests/web3d-*.test.ts`.
+- Verification: `pnpm verify:readiness` (typecheck + lint + test + build:3d).

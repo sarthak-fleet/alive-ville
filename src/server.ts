@@ -24,9 +24,9 @@ import { validateWorldIngestSource, worldSourceToWorld } from "./world-ingest.ts
 const PORT = Number(process.env["PORT"] ?? 5174);
 const CWD = `file://${process.cwd()}/`;
 // trailing slash matters: URL resolution drops the last path segment without it
-const WEB_ROOT = new URL(`${(process.env["WEB_ROOT"] ?? "./web/").replace(/\/$/, "")}/`, CWD);
+const WEB_ROOT = new URL(`${(process.env["WEB_ROOT"] ?? "./dist/site/").replace(/\/$/, "")}/`, CWD);
 const WORLD_PATH = new URL(process.env["WORLD_FILE"] ?? "./worlds/village.json", CWD);
-const CUTSCENE_MANIFEST_PATH = new URL("./web/assets/cutscenes/manifest.json", CWD);
+const CUTSCENE_MANIFEST_PATH = new URL("./fixtures/cutscenes-manifest.json", CWD);
 // free local backends can afford much broader ambient intelligence
 const LLM_MAX_NPCS = Number(process.env["LLM_MAX_NPCS"] ?? (isLocalLlmBackend() ? 10 : 5));
 const AGENT_LOOP_INTERVAL_MS = Number(process.env["AGENT_LOOP_INTERVAL_MS"] ?? 4_000);
