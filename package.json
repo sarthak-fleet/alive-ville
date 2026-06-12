@@ -28,6 +28,7 @@
     "bench:expanded": "tsx src/expanded-completion-benchmarks.ts",
     "bench:differentiation": "tsx src/competitive-differentiation.ts",
     "bench:commercial": "tsx src/commercial-readiness.ts",
+    "probe:lifelikeness": "tsx --env-file-if-exists=.env src/probes/cli.ts",
     "playtest:first-loop": "tsx tests/playtests/first-loop.ts",
     "playtest:basic-v0": "tsx tests/playtests/basic-v0.ts",
     "playtest:alive": "tsx tests/playtests/alive-village.ts",
