@@ -6,7 +6,11 @@ import * as THREE from "three";
  */
 export const playerPosition = new THREE.Vector3(0, 0, 0);
 export const playerHeading = { value: 0 };
-export const cameraState = { yaw: 0 };
+export const cameraState = {
+  yaw: 0,
+  /** When set, PlayerController defers camera placement to this override each frame. */
+  override: null as { eye: THREE.Vector3; lookAt: THREE.Vector3 } | null,
+};
 /** decaying impulse applied as positional camera noise (combat hits, big events) */
 export const cameraShake = { value: 0 };
 

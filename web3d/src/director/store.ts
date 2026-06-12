@@ -18,6 +18,12 @@ const CUTSCENE_MAX_MS = 12_000;
 const CUTSCENE_MS_PER_CHAR = 55;
 const COOLDOWN_MS = 25_000;
 
+export interface IntroCinema {
+  worldId: string;
+  startedAt: number;
+  durationMs: number;
+}
+
 interface DirectorStore {
   cutscene: Cutscene | null;
   lastEndedAt: number;
@@ -25,15 +31,31 @@ interface DirectorStore {
   endCutscene: () => void;
   reset: () => void;
   maybeTriggerFromSummary: (summary: TickSummary, prevWorld: World | null, world: World) => void;
+  /** Opening cinematic — separate from director cutscenes; no actor focus, different camera path */
+  introCinema: IntroCinema | null;
+  beginIntroCinema: (worldId: string) => void;
+  endIntroCinema: () => void;
 }
 
 let cutsceneSeq = 0;
+
+const INTRO_DURATION_MS = 7_500;
 
 export const useDirectorStore = create<DirectorStore>((set, get) => ({
   cutscene: null,
   // -Infinity: performance.now() starts near 0 on page load, so a 0 default
   // would silently swallow every beat in the first cooldown window
   lastEndedAt: Number.NEGATIVE_INFINITY,
+  introCinema: null,
+
+  beginIntroCinema(worldId) {
+    set({ introCinema: { worldId, startedAt: performance.now(), durationMs: INTRO_DURATION_MS } });
+  },
+
+  endIntroCinema() {
+    if (!get().introCinema) return;
+    set({ introCinema: null });
+  },
 
   beginCutscene(beat) {
     set({
@@ -55,7 +77,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
   },
 
   reset() {
-    set({ cutscene: null, lastEndedAt: Number.NEGATIVE_INFINITY });
+    set({ cutscene: null, lastEndedAt: Number.NEGATIVE_INFINITY, introCinema: null });
   },
 
   maybeTriggerFromSummary(summary, prevWorld, world) {

@@ -1,4 +1,4 @@
-import { useGLTF } from "@react-three/drei";
+import { Outlines, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -10,6 +10,17 @@ import { type ActorVisual, stableHash } from "../mapping/visuals.ts";
 import { toonGradientMap, toonMaterial } from "../scene/toon.ts";
 import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
 import { outfitColorsFor, paintOutfit } from "./clothing.ts";
+import {
+  buildFaceMesh,
+  buildHairV2Extra,
+  buildRoleSilhouetteMeshes,
+  buildVariation,
+  type FaceVariant,
+  faceVariantFor,
+  type HairStyleV2,
+  hairStyleV2For,
+  roleSilhouetteFor,
+} from "./identity.ts";
 
 const MODEL_URL = `${import.meta.env.BASE_URL}assets/characters/ual.glb`;
 const TARGET_HEIGHT = 1.7;
@@ -47,9 +58,9 @@ interface RiggedCharacterProps {
   seedId: string;
   /** name + role + description — drives gender presentation cues */
   personaText?: string;
+  /** renders a stronger outline so the player reads as protagonist at a glance */
+  protagonist?: boolean;
 }
-
-type HairStyle = "bald" | "flat" | "spiky" | "ponytail" | "bob" | "buns";
 
 export function isFemalePresenting(appearance: CharacterAppearance | undefined, personaText: string): boolean {
   const text = `${personaText} ${appearance?.sourceLook ?? ""} ${appearance?.outfit ?? ""} ${(appearance?.visualTags ?? []).join(" ")}`.toLowerCase();
@@ -57,15 +68,9 @@ export function isFemalePresenting(appearance: CharacterAppearance | undefined, 
   return /\bshe\b|\bher\b|\bhers\b|\bwoman\b|\bgirl\b|\blady\b|female|feminine|\bdress\b|\bskirt\b/.test(text);
 }
 
-function hairStyleFor(appearance: CharacterAppearance | undefined, seedId: string, female: boolean): HairStyle {
-  const text = `${appearance?.hair ?? ""} ${appearance?.sourceLook ?? ""} ${(appearance?.visualTags ?? []).join(" ")}`.toLowerCase();
-  if (/bald|shaved|hairless/.test(text)) return "bald";
-  if (/spik|wild|messy|flame|shonen/.test(text)) return "spiky";
-  if (/ponytail|tied|braid|long/.test(text)) return "ponytail";
-  if (/bun|space/.test(text)) return "buns";
-  if (/bob|short|neat|trim/.test(text)) return "bob";
-  const styles: HairStyle[] = female ? ["ponytail", "bob", "buns", "ponytail"] : ["flat", "spiky", "bob", "flat"];
-  return styles[stableHash(`${seedId}:hair`) % styles.length]!;
+function hairStyleFor(appearance: CharacterAppearance | undefined, seedId: string, female: boolean): HairStyleV2 {
+  const text = `${appearance?.hair ?? ""} ${appearance?.sourceLook ?? ""} ${(appearance?.visualTags ?? []).join(" ")}`;
+  return hairStyleV2For(text, seedId, female);
 }
 
 const NATURAL_HAIR = ["#23252e", "#3a2e24", "#6e4a32", "#8a6a3c", "#e8c95a", "#b8bcc8", "#742f20"];
@@ -127,7 +132,7 @@ function hairColorFor(appearance: CharacterAppearance | undefined, seedId: strin
  * to the Head/spine bones so schema identity survives the rig swap.
  */
 export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharacterProps>(function RiggedCharacter(
-  { visual, appearance, seedId, personaText = "" },
+  { visual, appearance, seedId, personaText = "", protagonist = false },
   ref
 ) {
   const gltf = useGLTF(MODEL_URL);
@@ -194,10 +199,16 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
     const accessories = accessoriesFor(lookText);
     const hairStyle = visual.bodyShape === "mechanical" ? "bald" : accessories.hat ? "flat" : hairStyleFor(appearance, seedId, female);
     const head = new THREE.Group();
-    buildHeadDecor(head, hairStyle, hairColorFor(appearance, seedId), visual, accessories);
+    buildHeadDecor(head, hairStyle, hairColorFor(appearance, seedId), visual, accessories, faceVariantFor(seedId, personaText));
 
+    // Role silhouette — one per character, first match
+    const role = roleSilhouetteFor(lookText);
+    const roleDecor = buildRoleSilhouetteMeshes(role, visual.accentColor);
+
+    // Chest group: cape / scarf / role chest piece
     let chest: THREE.Group | null = null;
-    if (visual.bodyShape === "caped" || accessories.scarf) {
+    const needsChest = visual.bodyShape === "caped" || accessories.scarf || roleDecor.chest !== null;
+    if (needsChest) {
       chest = new THREE.Group();
       if (visual.bodyShape === "caped") {
         const cape = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.85, 0.03), toonMaterial(visual.accentColor));
@@ -215,10 +226,15 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
         tail.rotation.x = 0.2;
         chest.add(tail);
       }
+      if (roleDecor.chest) {
+        chest.add(...roleDecor.chest.children.map((c) => c.clone()));
+      }
     }
 
+    // Hips group: skirt / sword / role hips piece
     let hips: THREE.Group | null = null;
-    if (female || accessories.sword) {
+    const needsHips = female || accessories.sword || roleDecor.hips !== null;
+    if (needsHips) {
       hips = new THREE.Group();
       if (female) {
         const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.34, 0.42, 12, 1, true), toonMaterial(visual.accentColor));
@@ -240,10 +256,13 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
         hilt.rotation.x = 0.22;
         hips.add(hilt);
       }
+      if (roleDecor.hips) {
+        hips.add(...roleDecor.hips.children.map((c) => c.clone()));
+      }
     }
     return { head, chest, hips };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- appearance identity churns per tick; lookText captures it
-  }, [lookText, seedId, visual.bodyShape, visual.color, visual.accentColor, female]);
+  }, [lookText, seedId, personaText, visual.bodyShape, visual.color, visual.accentColor, female]);
 
   // per-clone GPU resources (painted geometry + body material) must be freed
   // or long sessions with world switches leak VRAM
@@ -411,22 +430,34 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
   });
 
   const baseScale = visual.bodyShape === "broad" ? 1.08 : visual.bodyShape === "small" ? 0.8 : visual.bodyShape === "slim" ? 0.98 : 1;
-  // every character gets slightly different proportions
-  const heightJitter = 0.94 + ((stableHash(`${seedId}:height`) % 13) / 100);
-  const bodyScale = baseScale * (female ? 0.95 : 1) * heightJitter;
-  const widthScale = visual.bodyShape === "broad" ? 1.12 : visual.bodyShape === "slim" ? 0.92 : 1;
+  const variation = buildVariation(seedId, personaText);
+  // bodyShape skews width on the skeleton only; decor groups stay uniform via root scale
+  const bodyShapeWidthScale = visual.bodyShape === "broad" ? 1.12 : visual.bodyShape === "slim" ? 0.92 : 1;
+  const bodyScale = baseScale * (female ? 0.95 : 1) * variation.heightScale;
+  // skeleton-level width scale: apply bodyShape + seeded variation; kept within ±12% of bodyScale
+  const skeletonWidthScale = bodyShapeWidthScale * variation.widthScale;
 
   return (
-    <group ref={rootRef} scale={[bodyScale * widthScale, bodyScale, bodyScale * widthScale]}>
-      <primitive object={scene} scale={normalizeScale} />
+    // Root group: uniform bodyScale — decor bone-follow inherits this and stays round
+    <group ref={rootRef} scale={bodyScale}>
+      {/* Non-uniform width only on the skeleton primitive so decor groups stay unsquished */}
+      <primitive object={scene} scale={[normalizeScale * skeletonWidthScale, normalizeScale, normalizeScale * skeletonWidthScale]} />
       <primitive ref={headDecor} object={decor.head} />
       {decor.chest ? <primitive ref={chestDecor} object={decor.chest} /> : null}
       {decor.hips ? <primitive ref={hipsDecor} object={decor.hips} /> : null}
+      {protagonist ? <Outlines thickness={0.055} color="#c8382a" screenspace={false} /> : null}
     </group>
   );
 });
 
-function buildHeadDecor(outer: THREE.Group, style: HairStyle, hairColor: string, visual: ActorVisual, accessories: AccessorySet): void {
+function buildHeadDecor(
+  outer: THREE.Group,
+  style: HairStyleV2,
+  hairColor: string,
+  visual: ActorVisual,
+  accessories: AccessorySet,
+  faceVariant: FaceVariant,
+): void {
   const radius = 0.14;
   const hair = toonMaterial(hairColor);
   // head bone sits at the neck; head center is a bit above it
@@ -434,25 +465,10 @@ function buildHeadDecor(outer: THREE.Group, style: HairStyle, hairColor: string,
   group.position.set(0, 0.12, 0);
   outer.add(group);
 
-  // anime eyes — sit at mid-face, not the hairline
-  for (const side of [-1, 1]) {
-    const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), toonMaterial("#f6f7fb"));
-    eyeWhite.scale.set(1, 1.4, 0.5);
-    eyeWhite.position.set(side * radius * 0.4, -0.015, radius * 0.92);
-    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), toonMaterial("#1d2330"));
-    iris.scale.set(1, 1.4, 0.5);
-    iris.position.set(side * radius * 0.4, -0.017, radius * 0.97);
-    group.add(eyeWhite, iris);
-    // brow — reads as an actual face instead of floating eyes
-    const brow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.012, 0.012), hair);
-    brow.position.set(side * radius * 0.4, 0.045, radius * 0.95);
-    brow.rotation.z = side * -0.12;
-    group.add(brow);
-  }
-  // mouth line
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.01, 0.01), toonMaterial("#7a4a44"));
-  mouth.position.set(0, -0.085, radius * 0.95);
-  group.add(mouth);
+  // Canvas face plane — replaces inline eyes/brows/mouth geometry
+  const faceMesh = buildFaceMesh(faceVariant);
+  faceMesh.position.set(0, -0.02, radius * 0.97);
+  group.add(faceMesh);
 
   // headwear & face gear from the character's look
   if (accessories.hat) {
@@ -538,8 +554,13 @@ function buildHeadDecor(outer: THREE.Group, style: HairStyle, hairColor: string,
       bun.position.set(side * radius * 0.68, radius * 0.66, -radius * 0.25);
       group.add(bun);
     }
+  } else if (style === "long" || style === "mohawk" || style === "sidecut" || style === "curly") {
+    // Delegate to identity.ts builders for the four new styles
+    buildHairV2Extra(group, style, hair, radius);
   }
-  if (style !== "spiky") {
+  // fringe suppressed for spiky and the new directional styles
+  const noFringe: HairStyleV2[] = ["spiky", "mohawk", "sidecut", "long"];
+  if (!noFringe.includes(style)) {
     const fringe = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.58, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), hair);
     fringe.position.set(0, radius * 0.55, radius * 0.6);
     fringe.rotation.x = 0.5;

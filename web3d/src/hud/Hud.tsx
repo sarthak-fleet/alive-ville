@@ -8,6 +8,7 @@ import { useBanterStore } from "../characters/banter.ts";
 import { useCombatStore } from "../combat/store.ts";
 import { isTypingTarget } from "../controls/input.ts";
 import { combatToastHook, playerGesture, requestTeleport } from "../controls/runtime.ts";
+import { IntroCinematic } from "../director/IntroCinematic.tsx";
 import { useDirectorStore } from "../director/store.ts";
 import { worldPressure } from "../mapping/mood.ts";
 import { useUiStore } from "../store/ui.ts";
@@ -106,7 +107,7 @@ export function Hud() {
       const ui = useUiStore.getState();
       const current = ui.interactionTarget;
       if (!current || ui.dialogueNpcId) return;
-      if (useDirectorStore.getState().cutscene) return;
+      if (useDirectorStore.getState().cutscene || useDirectorStore.getState().introCinema) return;
       // stop the same keystroke from typing "e" into the dialogue input it opens
       event.preventDefault();
       if (current.kind === "npc") openDialogue(current.id);
@@ -154,6 +155,7 @@ export function Hud() {
     <div className="hud">
       <div className="topbar">
         <div className="topbar-title">{world.story?.title ?? world.name}</div>
+        <div className="topbar-player">{world.player.name ?? "Wanderer"}</div>
         <div className="topbar-meta">
           {interiorLabel ? `Inside ${interiorLabel}` : location?.name ?? "Unknown"} · Day {world.clock.day} ·{" "}
           {String(Math.floor(world.clock.hour)).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
@@ -277,6 +279,8 @@ export function Hud() {
       ) : null}
 
       <Dialogue />
+
+      <IntroCinematic />
 
       <Letterbox />
 

@@ -191,6 +191,14 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     if (!rigidBody || !controller) return;
     const s = state.current;
 
+    // intro cinematic: camera override set by IntroCinematic, player frozen
+    if (cameraState.override) {
+      frame.camera.position.lerp(cameraState.override.eye, 1 - Math.exp(-4 * delta));
+      frame.camera.lookAt(cameraState.override.lookAt);
+      animation.current?.setSpeed(0);
+      return;
+    }
+
     // door transitions request a one-shot teleport
     if (teleportRequest.target) {
       doorCreak();
@@ -415,7 +423,7 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     >
       <CapsuleCollider args={[CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS]} />
       <group ref={modelGroup} position={[0, -CAPSULE_CENTER_Y, 0]}>
-        <RiggedCharacter ref={animation} visual={visual} appearance={world.player.appearance} seedId="player" personaText={world.player.name ?? ""} />
+        <RiggedCharacter ref={animation} visual={visual} appearance={world.player.appearance} seedId="player" personaText={world.player.name ?? ""} protagonist={!world.player.characterId} />
       </group>
     </RigidBody>
   );
