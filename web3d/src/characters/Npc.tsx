@@ -315,6 +315,20 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
   const defeated = Boolean(enemy?.defeated) || Boolean(npc.combat?.defeated);
   const hostile = Boolean(enemy?.hostile) && !defeated;
 
+  // Corpse despawn: keep the death animation visible for a beat, then hide
+  // the NPC client-side so the world stops feeling like a morgue. The sim
+  // still tracks them as defeated — coming back later they stay gone.
+  const [corpseHidden, setCorpseHidden] = useState(false);
+  useEffect(() => {
+    if (!defeated) {
+      setCorpseHidden(false);
+      return;
+    }
+    const t = window.setTimeout(() => setCorpseHidden(true), 6000);
+    return () => window.clearTimeout(t);
+  }, [defeated]);
+  if (corpseHidden) return null;
+
   return (
     <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
       {vrmKey ? (

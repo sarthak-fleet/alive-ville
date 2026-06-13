@@ -422,9 +422,26 @@ function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], play
     .slice(-12)
     .map((turn) => (turn.speaker === "event" ? `[${turn.text}]` : `${turn.speaker === "player" ? "Player" : npc.name}: ${turn.text}`))
     .join("\n");
+  // Don't offer fetch-quests across faction lines. If the player picked
+  // Muzan (faction "demons") and walked up to Tanjiro (faction "demon-slayers"),
+  // Tanjiro would never proactively ask the demon king to recover his sister's
+  // wisteria charm. Active quests stay visible so any already-accepted task
+  // can still be progressed.
+  const playerCharForQuest = world.player.characterId
+    ? world.npcs.find((n) => n.id === world.player.characterId)
+    : null;
+  const playerFaction = playerCharForQuest?.factionId;
+  const npcFaction = npc.factionId;
+  const hostileFaction = !!(playerFaction && npcFaction && playerFaction !== npcFaction);
   const quests = (world.quests ?? [])
     .filter((quest) => quest.giverId === npc.id)
-    .filter((quest) => (quest.status ?? "open") === "open" || quest.status === "active")
+    .filter((quest) => {
+      const status = quest.status ?? "open";
+      if (status === "active") return true;
+      if (status !== "open") return false;
+      // suppress fresh offers across hostile faction lines
+      return !hostileFaction;
+    })
     .map((quest) => {
       let state = " — offerable";
       if (quest.status === "active") {
