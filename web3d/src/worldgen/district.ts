@@ -281,6 +281,7 @@ function generateScatter(
  * Place 1-2 fence runs along plot edges. Each run is a short line of fence
  * segments rotated to align with its edge.
  */
+// @ts-expect-error -- preserved for rollback once gate/road clearance is wired
 function generateFences(
   worldId: string,
   locationId: string,
@@ -338,6 +339,7 @@ function generateFences(
  * Add a planter at 1-2 building entrances per district (entrance ~ side
  * facing the courtyard).
  */
+// @ts-expect-error -- preserved for rollback once door clearance is wired
 function generateEntrancePlanters(
   worldId: string,
   locationId: string,

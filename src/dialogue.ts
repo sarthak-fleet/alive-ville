@@ -452,18 +452,71 @@ function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], play
     .map((id) => `location ${id}: ${locationName(world, id)}`)
     .join("\n");
   const relationship = relationshipFor(npc);
+
+  // Who the player IS in this world — not just "the player". When the player
+  // has picked a canonical character (e.g. Muzan), NPCs must react to that
+  // identity. Without this block the LLM treats every player as a polite
+  // stranger and Tanjiro greets Muzan as a "kind soul".
+  const playerName = world.player.name ?? "Wanderer";
+  const playerCharId = world.player.characterId;
+  const playerChar = playerCharId ? world.npcs.find((n) => n.id === playerCharId) : null;
+  const identityLines: string[] = [`The player's character in this world: ${playerName}`];
+  if (playerChar) {
+    if (playerChar.role) identityLines.push(`  Role: ${playerChar.role}`);
+    if (playerChar.factionId) identityLines.push(`  Faction: ${playerChar.factionId}`);
+    if (playerChar.description) identityLines.push(`  About: ${playerChar.description}`);
+  } else if (world.player.appearance?.sourceLook) {
+    identityLines.push(`  Look: ${world.player.appearance.sourceLook}`);
+  }
+
+  // NPC's known stance toward THIS specific character — pulled from the world
+  // data the ingest pipeline produced. Generic numeric "relationships toward
+  // the player" is the fallback; canonical character relationships from the
+  // source material take priority.
+  const stanceLines: string[] = [];
+  if (playerCharId) {
+    const charRel = npc.relationships?.[playerCharId];
+    const charAxes = npc.relationshipAxes?.[playerCharId];
+    if (typeof charRel === "number") stanceLines.push(`  Disposition toward ${playerName}: ${charRel}`);
+    if (charAxes && Object.keys(charAxes).length > 0) {
+      const formatted = Object.entries(charAxes)
+        .map(([axis, value]) => `${axis}=${value}`)
+        .join(", ");
+      stanceLines.push(`  Axes: ${formatted}`);
+    }
+  }
+  if (stanceLines.length === 0) {
+    stanceLines.push(`  Generic disposition toward player: ${relationship.label} (${relationship.score})`);
+  }
+
+  // NPC memories that reference the player character by name — surface them
+  // here because retrieveMemories above keys on the player's UTTERANCE, not
+  // their identity. Without this, prior canon (e.g. "Muzan killed my family")
+  // never enters the prompt.
+  const charMemoryHits = playerCharId || playerName
+    ? (npc.memories ?? []).filter((m) => {
+        const text = m.text ?? "";
+        const hitId = playerCharId ? text.toLowerCase().includes(playerCharId.toLowerCase()) : false;
+        const hitName = playerName ? text.toLowerCase().includes(playerName.toLowerCase()) : false;
+        return hitId || hitName;
+      }).slice(0, 4)
+    : [];
+  const charMemories = charMemoryHits.map((m) => `- (t${m.tick}) ${m.text}`).join("\n");
+
   return [
     `Location: ${locationName(world, npc.locationId)}. Time: day ${world.clock.day}, ${Math.floor(world.clock.hour)}:00.`,
-    here ? `Also present: ${here}.` : "You are alone with the player.",
-    `Your feelings toward the player: ${relationship.label} (${relationship.score}).`,
+    here ? `Also present: ${here}.` : `You are alone with ${playerName}.`,
+    identityLines.join("\n"),
+    `Your stance toward this character:\n${stanceLines.join("\n")}`,
+    charMemories ? `What you specifically remember about ${playerName}:\n${charMemories}` : "",
     `CAPABILITIES you may use in "action":`,
     exits ? `Places you can walk to:\n${exits}` : "",
     held ? `Items you hold:\n${held}` : "",
     quests ? `Quests you can offer:\n${quests}` : "",
-    memories ? `Your relevant memories:\n${memories}` : "",
+    memories ? `Your other relevant memories:\n${memories}` : "",
     conversation ? `Conversation so far:\n${conversation}` : "",
     ``,
-    `Player says: "${playerText}"`,
+    `${playerName} says: "${playerText}"`,
     `Your spoken reply (then the @@ control line):`,
   ]
     .filter(Boolean)
