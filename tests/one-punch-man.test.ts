@@ -73,6 +73,17 @@ describe("One Punch Man local test world", () => {
     expect(world.npcs.find((npc) => npc.id === "tomas")?.locationId).toBe("square");
   });
 
+  test("lets the player return to the Wanderer from a selected avatar", () => {
+    const world = fixture();
+    applyAction(world, { type: "choose_character", actorId: "player", targetId: "tomas" });
+
+    const result = applyAction(world, { type: "choose_character", actorId: "player" });
+    expect(result.applied).toBe(true);
+    expect(world.player.characterId).toBeUndefined();
+    expect(world.player.name).toBe("Wanderer");
+    expect(world.player.appearance).toBeUndefined();
+  });
+
   test("keeps selected avatar location synchronized with player movement", () => {
     const world = fixture();
     applyAction(world, { type: "choose_character", actorId: "player", targetId: "orrin" });
