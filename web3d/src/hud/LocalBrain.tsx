@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { type ComputeResult, runMatmulBenchmark } from "../ai/gpu-compute.ts";
 import { useLocalBrain } from "../ai/local-llm.ts";
 
 /** Default persona so the user can prove local generation in one click. */
@@ -15,11 +16,24 @@ function Pill({ on, label }: { on: boolean; label: string }): React.ReactElement
 export function LocalBrain(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [compute, setCompute] = useState<ComputeResult | null>(null);
+  const [computing, setComputing] = useState(false);
   const { caps, status, progress, progressText, modelId, error, lastReply, detect, load, generate } = useLocalBrain();
 
   useEffect(() => {
     void detect();
   }, [detect]);
+
+  const runCompute = async (): Promise<void> => {
+    setComputing(true);
+    try {
+      setCompute(await runMatmulBenchmark());
+    } catch {
+      setCompute(null);
+    } finally {
+      setComputing(false);
+    }
+  };
 
   const chipLabel =
     status === "ready" || status === "generating" ? "🧠 Local AI ●" : status === "loading" ? "🧠 Local AI…" : "🧠 Local AI";
@@ -50,6 +64,20 @@ export function LocalBrain(): React.ReactElement {
 
           {status === "unsupported" ? (
             <div className="local-brain-msg warn">No WebGPU adapter here — the game falls back to the cloud LLM.</div>
+          ) : null}
+
+          {caps?.webgpu ? (
+            <div className="local-brain-compute">
+              <button type="button" className="local-brain-action" disabled={computing} onClick={() => void runCompute()}>
+                {computing ? "Running on GPU…" : "Run WebGPU compute (384² matmul)"}
+              </button>
+              {compute ? (
+                <div className="local-brain-msg ok">
+                  {compute.gflops.toFixed(1)} GFLOP/s · {compute.ms.toFixed(1)} ms · check{" "}
+                  {compute.checkValue === compute.checkExpected ? "✓" : `✗ (${compute.checkValue}≠${compute.checkExpected})`}
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {status === "idle" ? (

@@ -82,10 +82,19 @@ The instrumentation that makes the whole project read as a flex.
 - `hud/FrontierHud.tsx` — Phase-0 legibility overlay: FPS, NPC count, active backend pill, "no server" badge.
 - `platform/opfs-save.ts` + `platform/clip.ts` + `hud/PlatformControls.tsx` — OPFS local save (Phase 0) and canvas clip recording (Phase 4).
 
+- `web3d/src/ai/gpu-compute.ts` — **first-party WebGPU compute**: a WGSL square-matmul benchmark (GFLOP/s readout in the Local AI panel), isolated from the game's render path. Phase-2 compute capability proven directly, not just via web-llm.
+
 Verified: typecheck + 3D build green; my files lint clean. **In-browser behavior
-(model load, generation, capability pills, clip download) still needs a real-device
-check** — can't be verified headlessly. Remaining Phase 2 (WebGPU renderer/compute),
-Phase 3 (WebTransport/WebRTC) not started.
+(model load, generation, capability pills, GPU-compute benchmark, clip download)
+still needs a real-device check** — can't be verified headlessly.
+
+**Deliberately deferred** (each needs a real device and/or risks the live game —
+do with the user present, not autonomously):
+- Phase 2 **WebGPU *render* swap** (`WebGPURenderer` + TSL) — `@react-three/postprocessing`
+  is WebGL-only; swapping the live renderer blind could break the whole scene.
+- Phase 3 **WebTransport / WebRTC** — needs HTTP/3 / signalling infra; can't verify headlessly.
+- **WebXR**, **Whisper/TTS voice**, **Gaussian splatting**, **PWA service worker**
+  (SW caching materially changes prod behavior — ask first).
 
 ### Phase 2 — WebGPU render + compute *(visual flex; higher effort, mostly fresh)*
 - Swap Three.js `WebGLRenderer` → **`WebGPURenderer` + TSL** node materials.

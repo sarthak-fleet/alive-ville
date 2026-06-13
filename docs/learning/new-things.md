@@ -87,7 +87,8 @@ ai-game.
 - What: General-purpose parallel compute on the GPU from the browser via compute pipelines written in WGSL.
 - Why here: TBD
 - Gotcha (from code): naive matmul is memory-bound — tinygpt ships many variants (tiled / blocked / vec4 / cooperative-matrix) because the kernel shape, not the math, sets the speed.
-- Source: https://www.w3.org/TR/webgpu/ | ../../tinygpt/webgpu/matmul_*.wgsl, ops.ts, tensor.ts
+- Gotcha (ai-game): the `GPUBufferUsage` / `GPUMapMode` flag enums are not declared as *values* in our TS lib (only the types are) — read them off `globalThis` to compile. See `web3d/src/ai/gpu-compute.ts`.
+- Source: https://www.w3.org/TR/webgpu/ | ../../tinygpt/webgpu/matmul_*.wgsl | web3d/src/ai/gpu-compute.ts (first-party WGSL matmul)
 
 ## WebGPU rendering — Three.js WebGPURenderer + TSL
 - What: Three.js renderer backed by WebGPU; materials authored as TSL (a node/shader graph) instead of GLSL strings.
