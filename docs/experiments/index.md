@@ -7,6 +7,11 @@ artifact — code may be discarded; the learnings stay.
 
 ## Index
 
+- [Game mechanics audit (2026-06-13)](../research/game-mechanics-audit.md) —
+  basic AAA-RPG mechanics scorecard, the OSS libraries / asset packs /
+  reference implementations that close each gap, and the recommended 1-day
+  sprint. Verdict: stay on R3F + adopt `ecctrl`, `@react-three/uikit`,
+  `@pixiv/three-vrm-animation`, `yuka`, and the remaining Kenney CC0 kits.
 - [Image-to-3D bake-off](./image-to-3d-bakeoff.md) — TRELLIS vs. Hunyuan3D-2
   on Modal for unique-per-NPC character meshes. Compares cold-start, warm-gen,
   GPU cost, output size, and rigging-gap effort vs. sticking with VRM.
