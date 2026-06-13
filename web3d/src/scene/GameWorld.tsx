@@ -2,6 +2,7 @@ import { Stars } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer, FXAA, ToneMapping, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
+import { XR } from "@react-three/xr";
 import { ToneMappingMode } from "postprocessing";
 import { Suspense, useEffect, useMemo } from "react";
 
@@ -12,6 +13,7 @@ import { useCombatStore } from "../combat/store.ts";
 import { CombatVfx } from "../combat/Vfx.tsx";
 import { PlayerController } from "../controls/PlayerController.tsx";
 import { setCaptureCanvas } from "../platform/clip.ts";
+import { xrStore } from "../platform/xr.ts";
 import { useUiStore } from "../store/ui.ts";
 import { cityModelFor } from "../worldgen/cache.ts";
 import { interiorForBuilding } from "../worldgen/interiors.ts";
@@ -85,6 +87,7 @@ export function GameWorld({ world }: { world: World }) {
       style={{ position: "absolute", inset: 0 }}
     >
       <CaptureRegistrar />
+      <XR store={xrStore}>
       <Suspense fallback={null}>
         <Physics gravity={[0, -22, 0]}>
           <Lighting world={world} target={{ x: activeDistrict.courtyard.x, z: activeDistrict.courtyard.z }} />
@@ -125,6 +128,7 @@ export function GameWorld({ world }: { world: World }) {
           </EffectComposer>
         ) : null}
       </Suspense>
+      </XR>
     </Canvas>
   );
 }
