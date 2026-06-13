@@ -22,6 +22,8 @@ import { cameraShake, cameraState, npcRegistry, playerFlashHook, playerGestureHo
 
 const WALK_SPEED = 4.2;
 const RUN_SPEED = 7.8;
+/** Reused up-axis — avoids allocating a Vector3 every frame during movement. */
+const UP_AXIS = new THREE.Vector3(0, 1, 0);
 const INTERACT_RANGE = 2.6;
 const DOOR_RANGE = 3.4;
 const CAPSULE_HALF_HEIGHT = 0.55;
@@ -287,7 +289,7 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
 
     const direction = new THREE.Vector3(moveX, 0, moveZ);
     if (moving) {
-      direction.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), s.yaw);
+      direction.normalize().applyAxisAngle(UP_AXIS, s.yaw);
     }
 
     // combat FSM (attacks, dodge, hitstun, death) can take over movement
