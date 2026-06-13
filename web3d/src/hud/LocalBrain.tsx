@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { type ComputeResult, runMatmulBenchmark } from "../ai/gpu-compute.ts";
+import { startRenderDemo } from "../ai/gpu-render.ts";
 import { useLocalBrain } from "../ai/local-llm.ts";
 
 /** Default persona so the user can prove local generation in one click. */
@@ -18,11 +19,37 @@ export function LocalBrain(): React.ReactElement {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [compute, setCompute] = useState<ComputeResult | null>(null);
   const [computing, setComputing] = useState(false);
+  const [renderOn, setRenderOn] = useState(false);
+  const renderCanvasRef = useRef<HTMLCanvasElement>(null);
+  const renderStopRef = useRef<(() => void) | null>(null);
   const { caps, status, progress, progressText, modelId, error, lastReply, detect, load, generate } = useLocalBrain();
 
   useEffect(() => {
     void detect();
   }, [detect]);
+
+  // start/stop the isolated WebGPU render demo when toggled
+  useEffect(() => {
+    if (!renderOn) return;
+    const canvas = renderCanvasRef.current;
+    if (!canvas) return;
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void (async () => {
+      const fn = await startRenderDemo(canvas).catch(() => null);
+      if (!fn) return;
+      if (cancelled) fn();
+      else {
+        stop = fn;
+        renderStopRef.current = fn;
+      }
+    })();
+    return () => {
+      cancelled = true;
+      stop?.();
+      renderStopRef.current = null;
+    };
+  }, [renderOn]);
 
   const runCompute = async (): Promise<void> => {
     setComputing(true);
@@ -77,6 +104,10 @@ export function LocalBrain(): React.ReactElement {
                   {compute.checkValue === compute.checkExpected ? "✓" : `✗ (${compute.checkValue}≠${compute.checkExpected})`}
                 </div>
               ) : null}
+              <button type="button" className="local-brain-action" onClick={() => setRenderOn((value) => !value)}>
+                {renderOn ? "Stop WebGPU render" : "Run WebGPU render demo"}
+              </button>
+              {renderOn ? <canvas ref={renderCanvasRef} className="local-brain-canvas" width={280} height={120} /> : null}
             </div>
           ) : null}
 

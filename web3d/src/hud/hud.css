@@ -1726,6 +1726,15 @@
   font-style: italic;
 }
 
+.local-brain-canvas {
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: block;
+}
+
 /* ── Frontier legibility HUD ─────────────────────────────────────────────── */
 .frontier-hud {
   position: absolute;
