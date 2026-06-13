@@ -24,8 +24,10 @@ export function Dialogue() {
   const world = useWorldStore((state) => state.world);
   const send = useWorldStore((state) => state.send);
   const [draft, setDraft] = useState("");
-  const [relationship, setRelationship] = useState<Relationship | null>(null);
-  // keyed by npc so switching conversations resets without a sync setState in the effect
+  // relationship + story are keyed by npc so switching conversations resets via
+  // render-time derivation, without a sync setState in the effect (cascading renders)
+  const [relationshipState, setRelationshipState] = useState<{ npcId: string; value: Relationship } | null>(null);
+  const relationship = relationshipState && relationshipState.npcId === dialogueNpcId ? relationshipState.value : null;
   const [story, setStory] = useState<{ npcId: string; options: StoryOption[] } | null>(null);
   const storyOptions = story && story.npcId === dialogueNpcId ? story.options : null;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,10 +45,8 @@ export function Dialogue() {
 
   // load the shared past: previous conversations + current relationship
   useEffect(() => {
-    setRelationship(null);
-    setStory(null);
-    setLines([]);
-    setBusy(false);
+    // lines/busy are reset by openDialogue on npc-switch; relationship/story
+    // are keyed by npc above, so stale data is never shown during the load.
     if (!dialogueNpcId) return;
     inputRef.current?.focus();
     let cancelled = false;
@@ -59,7 +59,7 @@ export function Dialogue() {
           if (response.story && response.options) setStory({ npcId: dialogueNpcId, options: response.options });
           return;
         }
-        if (response.relationship) setRelationship(response.relationship);
+        if (response.relationship) setRelationshipState({ npcId: dialogueNpcId, value: response.relationship });
         const currentNpc = npcById(useWorldStore.getState().world, dialogueNpcId);
         if (response.turns?.length && currentNpc) {
           setLines(
@@ -116,7 +116,7 @@ export function Dialogue() {
 
   const handleLlmResponse = (response: DialogueResponse): boolean => {
     if (!response.llm) return false;
-    if (response.relationship) setRelationship(response.relationship);
+    if (response.relationship) setRelationshipState({ npcId: npc.id, value: response.relationship });
     if (response.reply) {
       pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
       if (response.action) {
@@ -193,7 +193,7 @@ export function Dialogue() {
         });
         if (response.llm) {
           setBusy(false);
-          if (response.relationship) setRelationship(response.relationship);
+          if (response.relationship) setRelationshipState({ npcId: npc.id, value: response.relationship });
           if (response.reply) {
             if (streamedAny) ui.updateLastDialogueLine(response.reply);
             else ui.pushDialogueLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
