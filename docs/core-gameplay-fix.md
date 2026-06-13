@@ -125,4 +125,24 @@ Ship-the-slice criteria (extend `src/probes/` + `tests/` to enforce what's testa
   session (rumor/mood/relationship the player can point to).
 - Verdict is a **playtest call**, not a green test suite. "Tests pass" ≠ "fun."
 
+## 6. Closure status (2026-06-14)
+
+What's **built + tested** (the safely-buildable spine):
+- **Stakes / progression** (dim C) — coin economy + lose 25% of coins on defeat.
+  `src/simulation.ts`, `tests/currency.test.ts`.
+- **Objective spine** (dim A) — `nextObjective()` (`src/outcome.ts`) guarantees the
+  HUD always answers "what do I do next"; wired into `Hud.tsx`. Tested.
+- **Win / lose** (dim A/C) — `sessionOutcome()` derives won (arc complete / dawn
+  phase) / lost (director pressure maxes) and shows a HUD banner. Tested.
+- **Combat feel** — confirmed already complete; not touched (see §3B).
+
+What's **NOT done — needs a playtest (your verdict, per §5), not more code**:
+- The "Rival" scenario (§4) as an authored, tuned experience.
+- Game-feel *tuning* (combat balance, animation polish, enemy density).
+- Onboarding redesign (the guided first 60s, dim D).
+- The "is it fun" sign-off itself — only a human can give it.
+
+**This PRD is closed as "spine built, fun-tuning playtest-gated."** It is NOT
+"the game is now good" — that judgment is the next session's, with you driving.
+
 Only after this bar is met does `docs/web-frontier-prd.md` Phase 0 begin.

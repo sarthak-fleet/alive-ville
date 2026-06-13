@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { xpForNextLevel } from "../../../src/arcs.ts";
+import { nextObjective, sessionOutcome } from "../../../src/outcome.ts";
 import { timeOfDay } from "../../../src/types.ts";
 import { isMusicMuted, setMusicMuted, subscribeMusicMute } from "../audio/music.ts";
 import { isSfxEnabled, pickupChime, questChime, setSfxEnabled } from "../audio/sfx.ts";
@@ -196,11 +197,20 @@ export function Hud() {
 
       <FrontierHud />
 
-      {world.story?.currentObjective ? (
-        <div className="objective">
-          <span className="objective-label">Objective</span> {world.story.currentObjective}
-        </div>
-      ) : null}
+      <div className="objective">
+        <span className="objective-label">Objective</span> {nextObjective(world)}
+      </div>
+
+      {(() => {
+        const outcome = sessionOutcome(world);
+        if (outcome === "ongoing") return null;
+        return (
+          <div className={`outcome-banner ${outcome}`}>
+            <div className="outcome-title">{outcome === "won" ? "The town is safe" : "The town has fallen"}</div>
+            <div className="outcome-sub">{outcome === "won" ? "You changed the ending." : "Pressure boiled over."}</div>
+          </div>
+        );
+      })()}
 
       <div className="toasts">
         {events.slice(-5).map((event) => (

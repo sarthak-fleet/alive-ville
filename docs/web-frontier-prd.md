@@ -88,16 +88,33 @@ The instrumentation that makes the whole project read as a flex.
 - `web3d/src/platform/xr.ts` + `<XR>` wrap + 🥽 VR chip — **WebXR** immersive-VR via @react-three/xr.
 - `web3d/src/platform/webtransport.ts` — **WebTransport** (HTTP/3) client + detection pill (provided, not yet the default transport — needs a QUIC endpoint).
 - `web3d/public/{manifest.webmanifest,sw.js,icon.svg}` + prod-only registration — **PWA**: installable + offline via a network-first service worker.
+- `web3d/src/scene/GameWorld.tsx` (`?perf`) — **r3f-perf** profiler overlay (FPS, GPU/CPU ms, draw calls, triangles), off by default.
 
-Verified: typecheck + 3D build green; touched files lint clean. **All in-browser
-behavior still needs a real-device check** — can't be verified headlessly.
-Specifically confirm: the `<XR>` wrapper doesn't disturb normal (non-VR) rendering;
-the SW behaves online; local generation/compute/render actually run.
+Verified by a **headless Chromium smoke run**: app boots with zero console
+errors, town renders, all HUD additions mount, the `<XR>` wrapper does NOT
+disturb normal rendering, manifest resolves, and the profiler overlay renders.
+**Still needs a real-device check** for the GPU-bound behavior that software
+rendering can't represent: local generation actually running, real GPU-ms, VR.
 
-**Still genuinely out of scope** (need infra, assets, or a heavy model):
-- Swapping the **game's** renderer to WebGPU+TSL (vs. the isolated demo) — blocked by `@react-three/postprocessing` being WebGL-only.
-- **WebTransport/WebRTC wired as the live transport** — needs an HTTP/3 / signalling server.
-- **Gaussian splatting** (needs a splat asset + lib), **Whisper-grade STT**, a real **WebNN inference path**.
+## PRD closure (2026-06-14)
+
+**Done (code shipped + build/headless-verified; runtime needs a real device):**
+Phase 0 (capability detect + legibility HUD + OPFS), Phase 1 (in-browser LLM in
+dialogue), Phase 2 *compute* + *isolated render demo*, Phase 4 (WebCodecs clip,
+Web Speech voice, WebXR), Phase 5 (PWA), + the r3f-perf profiler.
+
+**Won't-do (closed with reason — not just deferred):**
+- Phase 2 **game-renderer swap** to WebGPU+TSL — `@react-three/postprocessing` is
+  WebGL-only; swapping blind risks the whole scene. Revisit only if postprocessing
+  gains WebGPU support or the FX chain is dropped.
+- Phase 3 **WebTransport/WebRTC as live transport** — needs an HTTP/3 / signalling
+  server we don't run. The client module exists and is detected; SSE stays.
+- **Gaussian splatting** (no scene asset), **Whisper STT** (Web Speech covers it),
+  **WebNN inference path** (redundant with web-llm).
+
+**Needs you (cannot be done solo):** real-device verification of the GPU/AI
+features, and a **deploy** to `aliveville.com/game`. Until then this is "shipped to
+`main`, unverified on hardware, undeployed" — not "live".
 
 ### Phase 2 — WebGPU render + compute *(visual flex; higher effort, mostly fresh)*
 - Swap Three.js `WebGLRenderer` → **`WebGPURenderer` + TSL** node materials.
