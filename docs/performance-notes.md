@@ -13,6 +13,11 @@ the game's render path. Frame cost is unchanged by the frontier layer.
 ## Applied (safe, verified by build)
 - `controls/PlayerController.tsx`: hoisted the per-frame `new THREE.Vector3(0,1,0)`
   up-axis to a module constant (`UP_AXIS`). Removes one allocation per movement frame.
+- **`r3f-perf` profiler wired in** (`scene/GameWorld.tsx`, dev dependency): add
+  `?perf` to the URL to show a live overlay — FPS, GPU ms, CPU ms, **draw calls,
+  triangles**, geometries, textures, shaders. Off by default (zero overhead).
+  This is the in-game "heat map" to drive the tuning below. (GPU-ms is only
+  meaningful on real hardware, not headless software rendering.)
 
 ## NOT applied (need device profiling first — don't guess)
 Per-frame allocations remain in the hot loops (`new THREE.Vector3` / `.clone()`):
@@ -38,9 +43,9 @@ optimization but risks subtle aliasing bugs that a screenshot can't catch.
 ## Profiling plan (with a real device)
 1. Chrome DevTools → Performance: record 10 s of play, look at scripting vs
    rendering vs GPU, and the frame chart for long frames.
-2. Add an on-screen stats panel (e.g. `r3f-perf` or three's `WebGLRenderer.info`)
-   to watch draw calls / triangles / programs live; the existing FrontierHud
-   already shows FPS.
+2. Open the live profiler — append `?perf` to the URL (r3f-perf, already wired)
+   to watch draw calls / triangles / GPU-ms while you play; the FrontierHud also
+   shows FPS. For per-call depth, capture a frame with Spector.js.
 3. A/B the levers above (dpr, `?nofx`, shadows) and record fps deltas.
 4. Only then refactor the hot-loop allocations, verifying movement/combat still
    feel right after each change.

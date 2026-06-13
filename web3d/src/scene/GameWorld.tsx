@@ -3,6 +3,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer, FXAA, ToneMapping, Vignette } from "@react-three/postprocessing";
 import { Physics } from "@react-three/rapier";
 import { XR } from "@react-three/xr";
+import { Perf } from "r3f-perf";
 import { ToneMappingMode } from "postprocessing";
 import { Suspense, useEffect, useMemo } from "react";
 
@@ -26,6 +27,8 @@ import { Skyline } from "./Skyline.tsx";
 
 // low-end escape hatch + debugging: ?nofx disables the post-processing chain
 const POST_FX_ENABLED = typeof window === "undefined" || !new URLSearchParams(window.location.search).has("nofx");
+// ?perf shows the r3f-perf profiler overlay (FPS, draw calls, triangles, GPU/CPU ms)
+const PERF_ENABLED = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("perf");
 
 /** Registers the renderer's canvas for clip capture (must live inside <Canvas>). */
 function CaptureRegistrar(): null {
@@ -87,6 +90,7 @@ export function GameWorld({ world }: { world: World }) {
       style={{ position: "absolute", inset: 0 }}
     >
       <CaptureRegistrar />
+      {PERF_ENABLED ? <Perf position="top-left" /> : null}
       <XR store={xrStore}>
       <Suspense fallback={null}>
         <Physics gravity={[0, -22, 0]}>
