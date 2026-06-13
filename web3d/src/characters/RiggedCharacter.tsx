@@ -447,11 +447,11 @@ export const RiggedCharacter = forwardRef<CharacterAnimationHandle, RiggedCharac
     }
   });
 
-  const baseScale = visual.bodyShape === "broad" ? 1.08 : visual.bodyShape === "small" ? 0.8 : visual.bodyShape === "slim" ? 0.98 : 1;
+  // Uniform height: every NPC stands at the same root scale. bodyShape and
+  // gender skew width on the skeleton instead so silhouettes still differ.
   const variation = buildVariation(seedId, personaText);
-  // bodyShape skews width on the skeleton only; decor groups stay uniform via root scale
   const bodyShapeWidthScale = visual.bodyShape === "broad" ? 1.12 : visual.bodyShape === "slim" ? 0.92 : 1;
-  const bodyScale = baseScale * (female ? 0.95 : 1) * variation.heightScale;
+  const bodyScale = 1;
   // skeleton-level width scale: apply bodyShape + seeded variation; kept within ±12% of bodyScale
   const skeletonWidthScale = bodyShapeWidthScale * variation.widthScale;
 

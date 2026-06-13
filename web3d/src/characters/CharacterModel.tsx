@@ -19,13 +19,15 @@ interface Proportions {
   shoulderWidth: number;
 }
 
+// scale held at 1 across every body shape — height is uniform, silhouette
+// variation comes from torsoWidth/limbThickness/shoulderWidth instead.
 const PROPORTIONS: Record<ActorVisual["bodyShape"], Proportions> = {
   average: { scale: 1, torsoWidth: 0.46, torsoHeight: 0.62, headRadius: 0.27, limbThickness: 0.1, shoulderWidth: 0.56 },
-  broad: { scale: 1.07, torsoWidth: 0.6, torsoHeight: 0.66, headRadius: 0.27, limbThickness: 0.14, shoulderWidth: 0.78 },
-  slim: { scale: 1.02, torsoWidth: 0.38, torsoHeight: 0.64, headRadius: 0.25, limbThickness: 0.085, shoulderWidth: 0.46 },
-  small: { scale: 0.76, torsoWidth: 0.42, torsoHeight: 0.5, headRadius: 0.32, limbThickness: 0.095, shoulderWidth: 0.5 },
-  caped: { scale: 1.03, torsoWidth: 0.48, torsoHeight: 0.64, headRadius: 0.27, limbThickness: 0.1, shoulderWidth: 0.6 },
-  mechanical: { scale: 1.05, torsoWidth: 0.52, torsoHeight: 0.64, headRadius: 0.25, limbThickness: 0.13, shoulderWidth: 0.68 },
+  broad: { scale: 1, torsoWidth: 0.6, torsoHeight: 0.66, headRadius: 0.27, limbThickness: 0.14, shoulderWidth: 0.78 },
+  slim: { scale: 1, torsoWidth: 0.38, torsoHeight: 0.64, headRadius: 0.25, limbThickness: 0.085, shoulderWidth: 0.46 },
+  small: { scale: 1, torsoWidth: 0.42, torsoHeight: 0.5, headRadius: 0.32, limbThickness: 0.095, shoulderWidth: 0.5 },
+  caped: { scale: 1, torsoWidth: 0.48, torsoHeight: 0.64, headRadius: 0.27, limbThickness: 0.1, shoulderWidth: 0.6 },
+  mechanical: { scale: 1, torsoWidth: 0.52, torsoHeight: 0.64, headRadius: 0.25, limbThickness: 0.13, shoulderWidth: 0.68 },
 };
 
 export type CombatAnimKind = "attack1" | "attack2" | "attack3" | "dodge" | "hit" | "telegraph";

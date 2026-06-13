@@ -192,25 +192,18 @@ export interface BuildVariation {
 export function buildVariation(seedId: string, personaText: string): BuildVariation {
   const text = personaText.toLowerCase();
 
-  // seeded jitter: height ±8%, width ±6%
-  const hJitter = 1 + ((stableHash(`${seedId}:height`) % 17) - 8) / 100; // 0.92–1.08
-  const wJitter = 1 + ((stableHash(`${seedId}:width`) % 13) - 6) / 100; // 0.94–1.06
+  // Heights are intentionally uniform across NPCs — variation reads as a
+  // bug at distance. Silhouette still varies via width + body-shape decor.
+  const widthJitter = 1 + ((stableHash(`${seedId}:width`) % 13) - 6) / 100; // 0.94–1.06
 
-  let heightScale = hJitter;
-  let widthScale = wJitter;
-
-  // persona overrides (cap final values to avoid wild outliers)
-  if (/tower|giant|huge|colossal/.test(text)) {
-    heightScale = Math.min(hJitter * 1.12, 1.20);
-  } else if (/child|kid|small|tiny|petite/.test(text)) {
-    heightScale = Math.max(hJitter * 0.82, 0.72);
-    widthScale = Math.max(wJitter * 0.88, 0.80);
+  let widthScale = widthJitter;
+  if (/child|kid|small|tiny|petite/.test(text)) {
+    widthScale = Math.max(widthJitter * 0.88, 0.80);
   } else if (/lanky|thin|beanpole/.test(text)) {
-    heightScale = Math.min(hJitter * 1.04, 1.12);
-    widthScale = Math.max(wJitter * 0.92, 0.86);
+    widthScale = Math.max(widthJitter * 0.92, 0.86);
   }
 
-  return { heightScale, widthScale };
+  return { heightScale: 1, widthScale };
 }
 
 // ---------------------------------------------------------------------------
