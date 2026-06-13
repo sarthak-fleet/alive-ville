@@ -24,6 +24,47 @@
 - License: CC0 1.0 Universal (public domain)
 - Use in this repo: `web3d/public/assets/characters/ual.glb` — the rigged mannequin + 45 animation clips drive every character in the 3D client (locomotion blending, combat moves, death). Bodies are palette-tinted per character; procedural hair/eyes/capes attach to the Head/spine bones at runtime.
 
+## VRM Characters (Anime Avatars)
+
+- Loader: [`@pixiv/three-vrm`](https://github.com/pixiv/three-vrm) `v3.5.3` (MIT). Adds VRM 0.x + 1.0 support to `three.js`'s `GLTFLoader` via a plugin (`VRMLoaderPlugin`).
+- Status: **pulled 2026-06-13** into `web3d/public/assets/characters/vrm/` (5 `.vrm` files, ~63 MB total).
+- Renderer: `web3d/src/characters/VrmCharacter.tsx` mounts each VRM as a singleton instance per key, drives the humanoid bones procedurally (hip bob + arm/leg swing keyed off `setSpeed`), tweens combat poses (`attack1/2/3`, `dodge`, `hit`, `telegraph`), and calls `vrm.update(delta)` every frame so spring-bone hair / skirt physics and `aa` expression lipsync stay live.
+- Material handling: VRMs ship **MToon** materials by default (the correct anime-toon shading). We do **not** swap them to `MeshToonMaterial` (unlike Kenney/Quaternius GLBs). Damage flash / telegraph pulse writes to the MToon `emissive` channel and restores the per-material original.
+- Picker: `web3d/src/characters/vrm.ts::pickVrm` maps persona text + role + visual tags to a VRM key, or returns `null` to fall through to the procedural UAL mannequin (`RiggedCharacter.tsx`). Hash-rotates across the three "villager" VRMs so the population reads as varied while staying deterministic per persona.
+- Coverage: only NPCs (`Npc.tsx`) route through the picker. The player (`PlayerController.tsx`), interior NPCs, and HUD portraits still render on UAL. The previous Quaternius "Ultimate Modular Characters" archetype path (below) is superseded but `ArchetypeCharacter.tsx` and `archetypes.ts` remain on disk for rollback.
+
+| Slot | File | Author | Source URL | License + redistribute? | Attribution required? |
+|---|---|---|---|---|---|
+| `villagerA` | `villager-a.vrm` | VRoid Project (pixiv) | https://github.com/tegnike/aituber-kit/raw/main/public/vrm/AvatarSample_A.vrm | VRM Public License 1.0; redistribution=allow, modification=allow, corporate_commercial_use=allow | credit=unnecessary |
+| `villagerB` | `villager-b.vrm` | VRoid Project (pixiv) | https://github.com/tegnike/aituber-kit/raw/main/public/vrm/AvatarSample_B.vrm | VRM Public License 1.0; redistribution=allow, modification=allow, corporate_commercial_use=allow | credit=unnecessary |
+| `villagerC` | `villager-c.vrm` | VRoid Project (pixiv) | https://github.com/tegnike/aituber-kit/raw/main/public/vrm/AvatarSample_C.vrm | VRM Public License 1.0; redistribution=allow, modification=allow, corporate_commercial_use=allow | credit=unnecessary |
+| `hero` | `hero.vrm` (Seed-san) | VirtualCast, Inc. | https://github.com/vrm-c/vrm-specification/raw/master/samples/Seed-san/vrm/Seed-san.vrm | VRM Public License 1.0; `allowRedistribution=true`, `commercialUsage=corporation`, `modification=allowModificationRedistribution` | **Required** — credit "Seed-san model by VirtualCast, Inc." |
+| `acolyte` | `acolyte.vrm` (VRM1_Constraint_Twist_Sample) | pixiv Inc. | https://github.com/pixiv/three-vrm/raw/dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm | VRM Public License 1.0; `allowRedistribution=true`, `commercialUsage=corporation`, `modification=allowModificationRedistribution` | `creditNotation=unnecessary` — but preserve "(c) 2022 pixiv Inc." copyright string in file |
+
+Required attribution string (include in credits / about screen):
+
+> "Seed-san" 3D character model © VirtualCast, Inc. — used under the [VRM Public License 1.0](https://vrm.dev/licenses/1.0/).
+>
+> Includes 3D models © pixiv Inc. and VRoid Project, used under the [VRM Public License 1.0](https://vrm.dev/licenses/1.0/).
+
+Anchor for license terms: each `.vrm` file embeds its own machine-readable License Settings (`VRMC_vrm.meta` for VRM 1.0; `VRM.meta` for VRM 0.x). The license obligations in the table above were extracted directly from those embedded blocks at pull time, not from third-party README claims.
+
+Skipped sources (license unclear or prohibits redistribution): AliciaSolid (Dwango custom license with attribution + ambiguous redistribution clause), Nikechan v1/v2 (`licenseName=Redistribution_Prohibited`). The pixiv/three-vrm GitHub repo's `examples/models` directory only contains the one VRM1_Constraint_Twist_Sample at this time; "vrm-c" and "awesome-vrm" listings either had login walls or per-file license declarations we couldn't verify cleanly.
+
+## Quaternius Ultimate Modular Characters (superseded)
+
+> Superseded by the VRM characters above. Files remain on disk and code paths
+> (`ArchetypeCharacter.tsx`, `archetypes.ts`) are intact for rollback; the
+> picker is no longer wired into `Npc.tsx`.
+
+- Source: https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ and https://poly.pizza/bundle/Ultimate-Modular-Women-Pack-aCBDXDdTNN (mirrored from https://quaternius.com/)
+- License: CC0 1.0 Universal (public domain)
+- Status: **pulled 2026-06-13** into `web3d/public/assets/characters/archetypes/` (12 GLBs).
+- Subset selected: `adventurer`, `king`, `farmer`, `worker`, `punk`, `swat`, `astronaut`, `businessman` (men pack) and `witch`, `woman`, `soldier`, `scifi` (women pack).
+- Rig note: these GLBs do **not** share the UAL skeleton. They carry their own armature (`Hips/Torso/Chest/Head` with `.L`/`.R` limb naming) plus 24 baked clips per file (`CharacterArmature|Idle`, `Walk`, `Run`, `Punch_Left`, `Sword_Slash`, `Roll`, `HitRecieve`, `Death`, `Interact`, ...). Cross-pack and cross-character consistency is exact, so a single loader handles all 12.
+- Renderer: `web3d/src/characters/ArchetypeCharacter.tsx` clones via `SkeletonUtils` per instance, swaps every Standard/Basic material for `MeshToonMaterial` (gradient ramp + preserved per-mesh source colour), and plays the rig's own clips. The picker in `web3d/src/characters/archetypes.ts` maps persona text + role + visual tags to one of the archetype keys (or `null` to keep the UAL mannequin path).
+- Coverage: only NPCs (`web3d/src/characters/Npc.tsx`) route through the picker. The player (`PlayerController.tsx`), interior NPCs, and HUD portraits still render on UAL so the procedural identity layer (hair, face, decor) is unchanged where it was wired.
+
 ## Kenney Nature Kit
 
 - Source: https://kenney.nl/assets/nature-kit
@@ -70,3 +111,22 @@ See `docs/future-prd.md` §5 for the full hybrid strategy. This section will be 
 - See also `docs/future-prd.md` for pipeline requirements (determinism, perf budgets, LOD, licensing audit, fandom consistency via ingest prompts/references).
 
 Current usage remains minimal binary assets (procedural + the one Quaternius GLB). The hybrid pipeline is the major upcoming vertical.
+
+## Music
+
+Ambient looping tracks in `web3d/public/assets/audio/music/`. All tracks are by **Kevin MacLeod (incompetech.com)** under **Creative Commons Attribution 4.0** (CC BY 4.0). Re-encoded to 96 kbps stereo MP3 for shipping size.
+
+Required attribution string (include in credits / about screen):
+
+> Music by Kevin MacLeod (incompetech.com), licensed under Creative Commons Attribution 4.0.
+
+| Slot file | Source track | License | Source URL |
+|---|---|---|---|
+| `village-day.mp3` | "Suonatore di Liuto" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Suonatore%20di%20Liuto.mp3 |
+| `village-night.mp3` | "Heartbreaking" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Heartbreaking.mp3 |
+| `city.mp3` | "Floating Cities" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Floating%20Cities.mp3 |
+| `interior.mp3` | "Comfortable Mystery" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Comfortable%20Mystery.mp3 |
+| `combat.mp3` | "Anamalie" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Anamalie.mp3 |
+| `menu.mp3` | "Meditation Impromptu 03" | CC BY 4.0 | https://incompetech.com/music/royalty-free/mp3-royaltyfree/Meditation%20Impromptu%2003.mp3 |
+
+Pixabay and FreePD were tried first; FreePD has permanently shut down (2025) and Pixabay CDN URLs require session cookies that fail under `curl`. Incompetech serves direct MP3 URLs, so the entire pack is sourced there with attribution.

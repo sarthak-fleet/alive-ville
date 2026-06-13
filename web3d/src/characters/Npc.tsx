@@ -27,6 +27,8 @@ import { useBanterStore } from "./banter.ts";
 import type { CharacterAnimationHandle } from "./CharacterModel.tsx";
 import { followersStore } from "./followers.ts";
 import { RiggedCharacter } from "./RiggedCharacter.tsx";
+import { pickVrm } from "./vrm.ts";
+import { VrmCharacter } from "./VrmCharacter.tsx";
 
 const WALK_SPEED = 1.15;
 const TRAVEL_SPEED = 3.4;
@@ -80,6 +82,16 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     return base.accentColor === base.color ? { ...base, accentColor: fallback.accent } : base;
   }, [npc.appearance, npc.id]);
   const personaText = `${npc.name} ${npc.role ?? ""} ${npc.description ?? ""}`;
+  // VRM avatars (anime-styled, MToon, with hair/skirt spring-bone physics)
+  // are the primary rig for matched personas — see VrmCharacter.tsx + vrm.ts.
+  // When no keyword matches we fall back to the procedural UAL mannequin so
+  // procedural identity (hair / cape / face plane) keeps driving variety on
+  // unknown personas. The old Quaternius archetype path is superseded; both
+  // ArchetypeCharacter.tsx and archetypes.ts remain on disk for rollback.
+  const vrmKey = useMemo(
+    () => pickVrm(personaText, npc.role ?? "", npc.appearance?.visualTags ?? []),
+    [personaText, npc.role, npc.appearance?.visualTags]
+  );
   const inDialogue = useUiStore((state) => state.dialogueNpcId === npc.id);
   const banter = useBanterStore((state) => state.byNpc[npc.id]);
   const enemy = useCombatStore((state) => state.enemies[npc.id]);
@@ -305,7 +317,11 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
 
   return (
     <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
-      <RiggedCharacter ref={animation} visual={visual} appearance={npc.appearance} seedId={npc.id} personaText={personaText} />
+      {vrmKey ? (
+        <VrmCharacter ref={animation} vrmKey={vrmKey} />
+      ) : (
+        <RiggedCharacter ref={animation} visual={visual} appearance={npc.appearance} seedId={npc.id} personaText={personaText} />
+      )}
       {banter ? (
         <Billboard position={[0, 2.75, 0]}>
           <mesh position={[0, 0, -0.01]}>
