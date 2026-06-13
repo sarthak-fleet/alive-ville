@@ -81,6 +81,25 @@ Skipped sources (license unclear or prohibits redistribution): AliciaSolid (Dwan
 - Subset selected: 10 modular shells (`building-a` through `building-k`, skipping `i`), 2 fences (`fence`, `fence-low`), and `planter`. Shells are wired into `scene/District.tsx::Building` and uniformly scaled to fit the worldgen `BuildingModel` footprint so colliders + courtyard layout stay unchanged.
 - Material handling: same toon material swap as the nature kit. The procedural facade is the Suspense fallback so a missing or failing GLB degrades to the previous look.
 
+## Kenney Furniture Kit
+
+- Source: https://kenney.nl/assets/furniture-kit
+- License: CC0 1.0 Universal (public domain) — attribution recorded, none required.
+- Status: **pulled 2026-06-14** into `web3d/public/assets/furniture/` (33 GLBs from the 140-piece kit).
+- Subset selected:
+  - **Beds** — `bed-single`, `bed-double`, `bed-bunk`
+  - **Tables** — `table`, `table-round`, `table-cross`, `side-table`, `side-table-drawers`, `table-coffee`
+  - **Chairs** — `chair`, `chair-cushion`, `chair-rounded`, `stool-bar`, `lounge-chair`
+  - **Shelves / cabinets** — `bookcase-closed`, `bookcase-open`, `bookcase-open-low`, `cabinet`, `cabinet-drawer`
+  - **Counters / sofa** — `kitchen-bar`, `kitchen-bar-end`, `lounge-sofa`
+  - **Lamps** — `lamp-floor-round`, `lamp-floor-square`, `lamp-table-round`
+  - **Rugs** — `rug-rectangle`, `rug-round`, `rug-square`
+  - **Plants** — `plant-potted`, `plant-small`
+  - **Storage / decoratives** — `crate-closed`, `crate-open`, `books`
+- Wired into `scene/Interior.tsx::Furniture` via `scene/asset-registry.ts::FURNITURE_ASSETS`. Worldgen `FurnitureKind` keys map onto the asset lists; the procedural primitive body is the `<Suspense>` fallback so a missing or streaming GLB still draws something sensible.
+- `hearth`, `anvil`, and `barrel` deliberately stay on the procedural path — the kit has no good match for hot coals / forge anvil / wooden barrel, and substituting (e.g.) a kitchen stove would wreck the forge identity.
+- Material handling: same toon material swap as the nature + city kits. The Furniture Kit ships with **inline material colors** only (PBR `baseColorFactor` per `wood`/`fabric`/`metal` material — no texture atlas), so no `colormap.png` is shipped with the pack. The `MeshToonMaterial` rebuild in `kenneyGlb.tsx::useToonGlb` preserves each material's source color so the props read as wood/fabric/metal etc. against the existing toon gradient ramp.
+
 ---
 
 ## Future Asset Pipeline (2026+)

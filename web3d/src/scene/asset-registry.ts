@@ -1,9 +1,10 @@
 /**
  * Curated CC0 GLB pack registry.
  *
- * Source packs (both CC0, downloaded 2026-06-13):
- *   - Kenney Nature Kit         https://kenney.nl/assets/nature-kit
- *   - Kenney City Kit (Suburban) https://kenney.nl/assets/city-kit-suburban
+ * Source packs (all CC0):
+ *   - Kenney Nature Kit          https://kenney.nl/assets/nature-kit          (pulled 2026-06-13)
+ *   - Kenney City Kit (Suburban) https://kenney.nl/assets/city-kit-suburban   (pulled 2026-06-13)
+ *   - Kenney Furniture Kit       https://kenney.nl/assets/furniture-kit       (pulled 2026-06-14)
  *
  * The intent maps below are used by scene code to swap procedural primitives
  * for real GLBs. Procedural fallbacks remain wired in callsites so a missing
@@ -71,8 +72,73 @@ export const BUILDING_ASSETS = {
   planter: [url("assets/buildings/planter.glb")],
 } as const;
 
+/**
+ * Interior furniture props — replaces the procedural boxes in `Interior.tsx`'s
+ * `Furniture` component. Keys mirror the `FurnitureKind` union in
+ * `worldgen/interiors.ts`. Kinds the Furniture Kit can't sensibly cover
+ * (`hearth`, `anvil`) are intentionally absent — the renderer falls back to the
+ * existing procedural body for those so forge identity (glowing coals, anvil
+ * silhouette) stays intact.
+ */
+export const FURNITURE_ASSETS = {
+  bed: [
+    url("assets/furniture/bed-single.glb"),
+    url("assets/furniture/bed-double.glb"),
+    url("assets/furniture/bed-bunk.glb"),
+  ],
+  table: [
+    url("assets/furniture/table.glb"),
+    url("assets/furniture/table-round.glb"),
+    url("assets/furniture/table-cross.glb"),
+    url("assets/furniture/side-table.glb"),
+    url("assets/furniture/side-table-drawers.glb"),
+    url("assets/furniture/table-coffee.glb"),
+  ],
+  chair: [
+    url("assets/furniture/chair.glb"),
+    url("assets/furniture/chair-cushion.glb"),
+    url("assets/furniture/chair-rounded.glb"),
+    url("assets/furniture/stool-bar.glb"),
+    url("assets/furniture/lounge-chair.glb"),
+  ],
+  counter: [
+    url("assets/furniture/kitchen-bar.glb"),
+    url("assets/furniture/kitchen-bar-end.glb"),
+    url("assets/furniture/lounge-sofa.glb"),
+  ],
+  shelf: [
+    url("assets/furniture/bookcase-closed.glb"),
+    url("assets/furniture/bookcase-open.glb"),
+    url("assets/furniture/bookcase-open-low.glb"),
+    url("assets/furniture/cabinet.glb"),
+    url("assets/furniture/cabinet-drawer.glb"),
+  ],
+  rug: [
+    url("assets/furniture/rug-rectangle.glb"),
+    url("assets/furniture/rug-round.glb"),
+    url("assets/furniture/rug-square.glb"),
+  ],
+  plant: [
+    url("assets/furniture/plant-potted.glb"),
+    url("assets/furniture/plant-small.glb"),
+  ],
+  crate: [
+    url("assets/furniture/crate-closed.glb"),
+    url("assets/furniture/crate-open.glb"),
+    url("assets/furniture/books.glb"),
+  ],
+  /** Lamps and other ambient decoratives — not driven by a FurnitureKind yet,
+   *  but available for future placement passes. */
+  lamp: [
+    url("assets/furniture/lamp-floor-round.glb"),
+    url("assets/furniture/lamp-floor-square.glb"),
+    url("assets/furniture/lamp-table-round.glb"),
+  ],
+} as const;
+
 export type NatureKind = keyof typeof NATURE_ASSETS;
 export type BuildingKind = keyof typeof BUILDING_ASSETS;
+export type FurnitureAssetKind = keyof typeof FURNITURE_ASSETS;
 
 /**
  * Deterministically pick one entry from an asset list using a stable hash.

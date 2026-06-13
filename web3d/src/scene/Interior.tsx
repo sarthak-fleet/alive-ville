@@ -1,12 +1,14 @@
 import { Billboard, Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { memo, useMemo } from "react";
+import { memo, Suspense, useMemo } from "react";
 import * as THREE from "three";
 
 import type { CharacterAppearance } from "../../../src/types.ts";
 import { RiggedCharacter } from "../characters/RiggedCharacter.tsx";
 import { actorVisualFor, clothingColorsFor, stableHash } from "../mapping/visuals.ts";
-import type { FurnitureModel, InteriorModel } from "../worldgen/interiors.ts";
+import type { FurnitureKind, FurnitureModel, InteriorModel } from "../worldgen/interiors.ts";
+import { FURNITURE_ASSETS, pickAsset } from "./asset-registry.ts";
+import { ToonGlb } from "./kenneyGlb.tsx";
 import { brickTexture, crackedWallTexture, lightPoolTexture, plankTexture, tileTexture } from "./textures.ts";
 import { toonGradientMap, toonMaterial } from "./toon.ts";
 
@@ -444,12 +446,56 @@ function LayoutFeature({ interior, cx, cz }: { interior: InteriorModel; cx: numb
 // ---------------------------------------------------------------------------
 // Furniture
 
+/**
+ * Approximate target height (in world meters) to scale a Kenney Furniture Kit
+ * GLB to, per `FurnitureKind`. The kit ships at ~half-scale relative to our
+ * world, so each kind picks a value that makes the prop read as real-room-
+ * sized next to the player capsule. Kinds not in this table fall through to
+ * the procedural body (forge signature pieces).
+ */
+const FURNITURE_GLB_HEIGHT: Partial<Record<FurnitureKind, number>> = {
+  bed: 0.65,
+  table: 0.85,
+  chair: 0.95,
+  counter: 1.0,
+  shelf: 1.85,
+  rug: 0.04,
+  plant: 1.0,
+  crate: 0.7,
+};
+
+/** Map worldgen `FurnitureKind` to the matching list in FURNITURE_ASSETS.
+ *  Returns null for kinds with no Furniture Kit match (hearth/anvil/barrel
+ *  stay procedural so forge identity reads). */
+function glbListFor(kind: FurnitureKind): readonly string[] | null {
+  switch (kind) {
+    case "bed":
+      return FURNITURE_ASSETS.bed;
+    case "table":
+      return FURNITURE_ASSETS.table;
+    case "chair":
+      return FURNITURE_ASSETS.chair;
+    case "counter":
+      return FURNITURE_ASSETS.counter;
+    case "shelf":
+      return FURNITURE_ASSETS.shelf;
+    case "rug":
+      return FURNITURE_ASSETS.rug;
+    case "plant":
+      return FURNITURE_ASSETS.plant;
+    case "crate":
+      return FURNITURE_ASSETS.crate;
+    default:
+      return null;
+  }
+}
+
 function Furniture({ piece }: { piece: FurnitureModel }) {
   const wood = toonMaterial("#7a5a3d");
   const woodDark = toonMaterial("#5d4430");
   const base = toonMaterial(piece.color);
   const accent = toonMaterial(piece.accentColor);
-  const body = (() => {
+  const proceduralBody = (() => {
     switch (piece.kind) {
       case "bed":
         return (
@@ -573,6 +619,21 @@ function Furniture({ piece }: { piece: FurnitureModel }) {
         );
     }
   })();
+
+  const glbList = glbListFor(piece.kind);
+  const glbHeight = FURNITURE_GLB_HEIGHT[piece.kind];
+  const glbUrl = glbList && glbList.length > 0 ? pickAsset(glbList, stableHash(piece.id)) : null;
+
+  // Visual body: try a Kenney GLB for kinds we've curated, fall back to the
+  // procedural primitives below the Suspense boundary so a missing/streaming
+  // GLB still draws something sensible.
+  const body = glbUrl && glbHeight ? (
+    <Suspense fallback={proceduralBody}>
+      <ToonGlb url={glbUrl} targetHeight={glbHeight} outline={false} />
+    </Suspense>
+  ) : (
+    proceduralBody
+  );
 
   const solid = piece.kind !== "rug";
   return (
