@@ -27,6 +27,7 @@ import type {
   Action,
   ActionResult,
   ActionType,
+  ActorId,
   AgentMood,
   AppliedAction,
   CombatState,
@@ -47,7 +48,36 @@ const ACTION_TYPES: Set<ActionType> = new Set([
   "move", "talk", "gossip", "confront", "fight", "choose_character", "set_name", "remember",
   "inspect", "pickup", "drop", "give",
   "offer_quest", "accept_quest", "complete_quest", "fail_quest",
+  "buy", "sell",
 ]);
+
+/** Coins the player begins with on entering a world. */
+export const STARTING_COINS = 20;
+/** Default coin reward for completing a quest with no explicit reward. */
+const QUEST_COIN_REWARD = 25;
+/** Coins looted from an NPC the player defeats (clamped to their balance). */
+const FIGHT_COIN_LOOT = 12;
+
+/** Read an actor's coin balance (player or NPC); undefined ≈ 0. */
+export function coinsOf(world: World, actorId: ActorId | "player"): number {
+  if (actorId === "player") return world.player.coins ?? 0;
+  return getNpc(world, actorId)?.coins ?? 0;
+}
+
+function setCoins(world: World, actorId: ActorId | "player", value: number): void {
+  const clamped = Math.max(0, Math.round(value));
+  if (actorId === "player") {
+    world.player.coins = clamped;
+    return;
+  }
+  const npc = getNpc(world, actorId);
+  if (npc) npc.coins = clamped;
+}
+
+/** Add (or subtract) coins for an actor, floored at zero. */
+export function addCoins(world: World, actorId: ActorId | "player", delta: number): void {
+  setCoins(world, actorId, coinsOf(world, actorId) + delta);
+}
 
 /** ticks of inactivity before a following NPC stops following the player */
 const FOLLOW_TIMEOUT_TICKS = 60;
@@ -329,6 +359,10 @@ export function applyAction(world: World, action: Action): ActionResult {
         resolveFightConsequences(world, action.actorId, action.targetId);
         if (action.actorId === "player") {
           awardXp(world, XP_FIGHT_WON);
+          // loot coins from the defeated NPC (clamped to their balance)
+          const loot = Math.min(FIGHT_COIN_LOOT, coinsOf(world, action.targetId)) || FIGHT_COIN_LOOT;
+          addCoins(world, action.targetId, -loot);
+          addCoins(world, "player", loot);
           // player defeated an NPC — record a witness rumor for bystanders
           const deed = `${nameOf(world, "player")} defeated ${nameOf(world, action.targetId)} in combat.`;
           recordPlayerWitnessed(world, {
@@ -353,6 +387,7 @@ export function applyAction(world: World, action: Action): ActionResult {
           characterId: undefined,
           name: "Wanderer",
           appearance: undefined,
+          coins: world.player.coins ?? STARTING_COINS,
         };
         reassignArcRoles(world);
         return applied(action, `${nameOf(world, action.actorId)} returned to being the Wanderer.`);
@@ -366,6 +401,7 @@ export function applyAction(world: World, action: Action): ActionResult {
         name: chosen.name,
         appearance: chosen.appearance ? clonePlain(chosen.appearance) : undefined,
         locationId: playerLocation,
+        coins: world.player.coins ?? STARTING_COINS,
       };
       // followers of the old body should not trail indefinitely after a character swap
       for (const npc of world.npcs) {
@@ -459,6 +495,7 @@ export function applyAction(world: World, action: Action): ActionResult {
       applyQuestDeltas(world, quest.rewards?.relationshipDelta, quest.acceptedBy);
       applyQuestCompletionConsequences(world, quest, action.actorId);
       if (quest.acceptedBy === "player") awardXp(world, XP_QUEST_COMPLETE);
+      addCoins(world, action.actorId, quest.rewards?.coins ?? QUEST_COIN_REWARD);
       if (action.actorId !== "player" && quest.giverId) remember(world, action.actorId, `Completed "${quest.title}" for ${nameOf(world, quest.giverId)}.`);
       markAmbitionProgress(world, quest);
       syncStoryProgress(world);
@@ -480,6 +517,40 @@ export function applyAction(world: World, action: Action): ActionResult {
         nudgeMood(world, quest.giverId, { stress: 8, suspicion: 4, confidence: -2 });
       }
       return applied(action, `${nameOf(world, action.actorId)} failed "${quest.title}".`);
+    }
+    case "buy": {
+      const item = mustItem(world, action.itemId);
+      const price = item.price ?? 0;
+      if (item.holderId !== action.fromId) {
+        return { applied: false, action: action as Action, reason: `${nameOf(world, action.fromId)} no longer has ${item.name}.` };
+      }
+      if (coinsOf(world, action.actorId) < price) {
+        return { applied: false, action: action as Action, reason: `Not enough coins (need ${price}).` };
+      }
+      addCoins(world, action.actorId, -price);
+      addCoins(world, action.fromId, price);
+      item.holderId = action.actorId;
+      delete item.locationId;
+      adjustRelationshipAxes(world, action.fromId, action.actorId, { trust: 1 });
+      remember(world, action.actorId, `Bought ${item.name} from ${nameOf(world, action.fromId)} for ${price} coins.`);
+      remember(world, action.fromId, `Sold ${item.name} to ${nameOf(world, action.actorId)} for ${price} coins.`);
+      return applied(action, `${nameOf(world, action.actorId)} bought ${item.name} from ${nameOf(world, action.fromId)} for ${price} coins.`);
+    }
+    case "sell": {
+      const item = mustItem(world, action.itemId);
+      const price = item.price ?? 0;
+      if (item.holderId !== action.actorId) {
+        return { applied: false, action: action as Action, reason: `You don't hold ${item.name}.` };
+      }
+      if (coinsOf(world, action.toId) < price) {
+        return { applied: false, action: action as Action, reason: `${nameOf(world, action.toId)} can't afford ${item.name}.` };
+      }
+      addCoins(world, action.toId, -price);
+      addCoins(world, action.actorId, price);
+      item.holderId = action.toId;
+      delete item.locationId;
+      remember(world, action.actorId, `Sold ${item.name} to ${nameOf(world, action.toId)} for ${price} coins.`);
+      return applied(action, `${nameOf(world, action.actorId)} sold ${item.name} to ${nameOf(world, action.toId)} for ${price} coins.`);
     }
     default:
       return { applied: false, action: action as Action, reason: "Unsupported action type." };
@@ -798,6 +869,7 @@ function completeQuestForGift(world: World, giverId: string, targetId: string, i
   quest.status = "done";
   applyQuestDeltas(world, quest.rewards?.relationshipDelta, giverId);
   applyQuestCompletionConsequences(world, quest, giverId);
+  addCoins(world, giverId, quest.rewards?.coins ?? QUEST_COIN_REWARD);
   remember(world, giverId, `Completed "${quest.title}" by giving ${getItem(world, itemId)?.name ?? itemId} to ${nameOf(world, targetId)}.`);
   markAmbitionProgress(world, quest);
   return quest;

@@ -1350,6 +1350,25 @@
   pointer-events: none;
 }
 
+.player-coins {
+  position: absolute;
+  bottom: 40px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(8, 10, 18, 0.78);
+  border: 1px solid rgba(248, 212, 78, 0.4);
+  color: #f8d44e;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.player-coins-icon { filter: saturate(1.2); }
+
 .player-level {
   font-size: 11px;
   font-weight: 800;
@@ -1738,8 +1757,9 @@
 /* ── Frontier legibility HUD ─────────────────────────────────────────────── */
 .frontier-hud {
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 14px;
   display: flex;
   align-items: center;
   gap: 8px;

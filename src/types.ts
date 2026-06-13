@@ -21,7 +21,9 @@ export type ActionType =
   | "offer_quest"
   | "accept_quest"
   | "complete_quest"
-  | "fail_quest";
+  | "fail_quest"
+  | "buy"
+  | "sell";
 
 export interface BaseAction {
   type: ActionType;
@@ -43,11 +45,14 @@ export interface OfferQuestAction extends BaseAction { type: "offer_quest"; ques
 export interface AcceptQuestAction extends BaseAction { type: "accept_quest"; questId: QuestId; }
 export interface CompleteQuestAction extends BaseAction { type: "complete_quest"; questId: QuestId; }
 export interface FailQuestAction extends BaseAction { type: "fail_quest"; questId: QuestId; }
+export interface BuyAction extends BaseAction { type: "buy"; itemId: ItemId; fromId: ActorId; }
+export interface SellAction extends BaseAction { type: "sell"; itemId: ItemId; toId: ActorId; }
 
 export type Action =
   | MoveAction | TalkAction | GossipAction | ConfrontAction | FightAction | ChooseCharacterAction | SetNameAction | InspectAction | RememberAction
   | PickupAction | DropAction | GiveAction
-  | OfferQuestAction | AcceptQuestAction | CompleteQuestAction | FailQuestAction;
+  | OfferQuestAction | AcceptQuestAction | CompleteQuestAction | FailQuestAction
+  | BuyAction | SellAction;
 
 type WithoutActor<A extends Action> = Omit<A, "actorId"> & { actorId?: "player" };
 export type PlayerAction =
@@ -66,7 +71,9 @@ export type PlayerAction =
   | WithoutActor<OfferQuestAction>
   | WithoutActor<AcceptQuestAction>
   | WithoutActor<CompleteQuestAction>
-  | WithoutActor<FailQuestAction>;
+  | WithoutActor<FailQuestAction>
+  | WithoutActor<BuyAction>
+  | WithoutActor<SellAction>;
 
 export type MemoryVisibility = "private" | "shared" | "public";
 export interface MemoryMeta {
@@ -220,6 +227,8 @@ export interface Npc {
   secrets?: AgentSecret[];
   combat?: CombatState;
   appearance?: CharacterAppearance;
+  /** coin balance; undefined ≈ 0. Loot/trade flows through it. */
+  coins?: number;
   relationships: Record<ActorId, number>;
   relationshipAxes?: Record<ActorId | "player", RelationshipAxes>;
   memories: Memory[];
@@ -254,6 +263,8 @@ export interface Item {
   locationId?: LocationId;
   holderId?: HolderId;
   visual?: ItemVisualDesign;
+  /** coin value for buy/sell; undefined ≈ not for sale. */
+  price?: number;
 }
 
 export interface InteractableProp {
@@ -283,7 +294,7 @@ export interface Quest {
   giverId?: ActorId;
   status?: QuestStatus;
   acceptedBy?: ActorId | "player";
-  rewards?: { relationshipDelta?: Record<ActorId, number> };
+  rewards?: { relationshipDelta?: Record<ActorId, number>; coins?: number };
   consequences?: { relationshipDelta?: Record<ActorId, number> };
 }
 
@@ -299,6 +310,8 @@ export interface Player {
   appearance?: CharacterAppearance;
   combat?: CombatState;
   growth?: PlayerGrowth;
+  /** coin balance; undefined ≈ 0. */
+  coins?: number;
 }
 
 export type ArcStage = "training" | "trial" | "confrontation" | "complete";

@@ -246,6 +246,10 @@ export function Hud() {
         </div>
       </div>
 
+      <div className="player-coins" title="Coins">
+        <span className="player-coins-icon">🪙</span> {world.player.coins ?? 0}
+      </div>
+
       <div className="player-xp">
         <span className="player-level">Lv {world.player.growth?.level ?? 1}</span>
         <div className="player-xp-track">
