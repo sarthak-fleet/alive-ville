@@ -51,9 +51,20 @@ export function generateDistrict(world: World, location: Location): DistrictMode
   const courtyardRadius = Math.min(width, depth) * 0.28;
 
   const buildings = generateBuildings(world.id, location.id, origin, width, depth, palette, profile);
+  const plotHalfMin = Math.min(width, depth) / 2;
+  const isNatureBiome = /garden|home|wood|forest|park|nature|grove/i.test(roleTextFor(location));
   const props = [
     ...generateProps(world.id, location.id, center, courtyardRadius, palette, profile),
-    ...generateTrees(world.id, location.id, center, courtyardRadius, Math.min(width, depth) / 2, profile.trees),
+    ...generateTrees(world.id, location.id, center, courtyardRadius, plotHalfMin, profile.trees),
+    ...generateScatter(world.id, location.id, center, courtyardRadius, plotHalfMin, palette, isNatureBiome),
+    // Fences disabled: they run along plot edges with no gate/road cutout and
+    // were blocking district gateways. Re-enable once we respect the street
+    // graph + building entrance corridors.
+    // ...generateFences(world.id, location.id, origin, width, depth, palette),
+    // Entrance planters disabled: they're placed at building entries with no
+    // door-clearance margin and were blocking interior entry. Re-enable once
+    // we respect each building's interactable interior entry point.
+    // ...generateEntrancePlanters(world.id, location.id, buildings, center, palette),
   ];
   const courtyard = { x: center.x, z: center.z, radius: courtyardRadius };
 
@@ -210,6 +221,162 @@ function generateTrees(
     });
   }
   return trees;
+}
+
+const FLOWER_COLORS = ["#e25d68", "#f0c64a", "#a070d6", "#ff9a3d", "#7ec2ff"];
+const ROCK_COLOR = "#8d8a82";
+
+/**
+ * Scatter Kenney nature props (bushes, grass, flowers, rocks, mushroom) across
+ * the plot ring outside the courtyard. Density tuned per spec; nature biomes
+ * get extra rocks.
+ */
+function generateScatter(
+  worldId: string,
+  locationId: string,
+  center: { x: number; z: number },
+  courtyardRadius: number,
+  plotHalfMin: number,
+  palette: { structure: string; accent: string },
+  isNatureBiome: boolean
+): PropModel[] {
+  const rng = rngFor(worldId, locationId, "scatter");
+  const out: PropModel[] = [];
+  const innerR = courtyardRadius + 0.6;
+  const outerR = Math.max(innerR + 0.5, plotHalfMin - 5);
+  if (outerR <= innerR) return out;
+
+  const place = (kind: PropModel["kind"], i: number, color: string, accent: string) => {
+    const angle = rng() * Math.PI * 2;
+    const distance = range(rng, innerR, outerR);
+    out.push({
+      id: `${locationId}:${kind}:${i}`,
+      kind,
+      x: center.x + Math.cos(angle) * distance,
+      z: center.z + Math.sin(angle) * distance,
+      rotationY: rng() * Math.PI * 2,
+      color,
+      accentColor: accent,
+    });
+  };
+
+  const bushCount = 3 + Math.floor(rng() * 4); // 3-6
+  for (let i = 0; i < bushCount; i += 1) place("bush", i, shiftColor("#4e8f4a", range(rng, -0.1, 0.15)), palette.accent);
+
+  const grassCount = 2 + Math.floor(rng() * 3); // 2-4
+  for (let i = 0; i < grassCount; i += 1) place("grass", i, shiftColor("#6fae5c", range(rng, -0.1, 0.15)), palette.accent);
+
+  const flowerCount = 4 + Math.floor(rng() * 5); // 4-8
+  for (let i = 0; i < flowerCount; i += 1) place("flower", i, pick(rng, FLOWER_COLORS), "#3f7e44");
+
+  const rockCount = isNatureBiome ? 2 + Math.floor(rng() * 3) : 1 + Math.floor(rng() * 2); // 1-3 (2-4 nature)
+  for (let i = 0; i < rockCount; i += 1) place("rock", i, shiftColor(ROCK_COLOR, range(rng, -0.12, 0.1)), palette.accent);
+
+  if (rng() > 0.5) place("mushroom", 0, "#cc3a3a", "#f7f1d3");
+
+  return out;
+}
+
+/**
+ * Place 1-2 fence runs along plot edges. Each run is a short line of fence
+ * segments rotated to align with its edge.
+ */
+function generateFences(
+  worldId: string,
+  locationId: string,
+  origin: { x: number; z: number },
+  width: number,
+  depth: number,
+  palette: { structure: string; accent: string }
+): PropModel[] {
+  const rng = rngFor(worldId, locationId, "fences");
+  const runs = 1 + Math.floor(rng() * 2); // 1-2 runs
+  const out: PropModel[] = [];
+  const inset = SIDEWALK_INSET + 0.4;
+  const segLen = 1.6;
+  const segCount = 4 + Math.floor(rng() * 4); // 4-7 segments per run
+  const usedEdges = new Set<number>();
+  for (let r = 0; r < runs; r += 1) {
+    let edge = Math.floor(rng() * 4);
+    let guard = 0;
+    while (usedEdges.has(edge) && guard < 4) {
+      edge = (edge + 1) % 4;
+      guard += 1;
+    }
+    usedEdges.add(edge);
+    const horizontal = edge === 0 || edge === 2;
+    const fixed =
+      edge === 0
+        ? origin.z + inset
+        : edge === 2
+          ? origin.z + depth - inset
+          : edge === 1
+            ? origin.x + width - inset
+            : origin.x + inset;
+    const runLength = segLen * segCount;
+    const along = horizontal
+      ? range(rng, origin.x + inset + 1, origin.x + width - inset - runLength - 1)
+      : range(rng, origin.z + inset + 1, origin.z + depth - inset - runLength - 1);
+    const rotationY = horizontal ? 0 : Math.PI / 2;
+    for (let s = 0; s < segCount; s += 1) {
+      const offset = along + s * segLen + segLen / 2;
+      out.push({
+        id: `${locationId}:fence:${r}:${s}`,
+        kind: "fence",
+        x: horizontal ? offset : fixed,
+        z: horizontal ? fixed : offset,
+        rotationY,
+        color: shiftColor(palette.structure, -0.1),
+        accentColor: palette.accent,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Add a planter at 1-2 building entrances per district (entrance ~ side
+ * facing the courtyard).
+ */
+function generateEntrancePlanters(
+  worldId: string,
+  locationId: string,
+  buildings: BuildingModel[],
+  center: { x: number; z: number },
+  palette: { structure: string; accent: string }
+): PropModel[] {
+  if (buildings.length === 0) return [];
+  const rng = rngFor(worldId, locationId, "entrancePlanters");
+  const count = Math.min(buildings.length, 1 + Math.floor(rng() * 2));
+  const out: PropModel[] = [];
+  // Pick distinct building indices deterministically.
+  const order = buildings.map((_, i) => i).sort((a, b) => {
+    const ha = (a + 1) * rng();
+    const hb = (b + 1) * rng();
+    return ha - hb;
+  });
+  for (let i = 0; i < count; i += 1) {
+    const building = buildings[order[i]!]!;
+    const dx = center.x - building.x;
+    const dz = center.z - building.z;
+    let offsetX = 0;
+    let offsetZ = 0;
+    if (Math.abs(dx) > Math.abs(dz)) {
+      offsetX = Math.sign(dx) * (building.width / 2 + 0.7);
+    } else {
+      offsetZ = Math.sign(dz) * (building.depth / 2 + 0.7);
+    }
+    out.push({
+      id: `${locationId}:entryPlanter:${i}`,
+      kind: "planter",
+      x: building.x + offsetX,
+      z: building.z + offsetZ,
+      rotationY: 0,
+      color: shiftColor(palette.structure, -0.18),
+      accentColor: palette.accent,
+    });
+  }
+  return out;
 }
 
 export function shiftColor(hex: string, amount: number): string {

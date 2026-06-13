@@ -16,7 +16,21 @@ export interface BuildingModel {
   windows: boolean;
 }
 
-export type PropKind = "lamp" | "bench" | "planter" | "crate" | "sign" | "dummy" | "stall" | "tree";
+export type PropKind =
+  | "lamp"
+  | "bench"
+  | "planter"
+  | "crate"
+  | "sign"
+  | "dummy"
+  | "stall"
+  | "tree"
+  | "bush"
+  | "grass"
+  | "flower"
+  | "rock"
+  | "mushroom"
+  | "fence";
 
 export interface PropModel {
   id: string;

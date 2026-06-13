@@ -241,14 +241,7 @@ function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
           <boxGeometry args={[1.8, 0.6, 0.6]} />
         </mesh>
       ) : prop.kind === "planter" ? (
-        <>
-          <mesh position={[0, 0.3, 0]} castShadow material={baseMat}>
-            <boxGeometry args={[1.2, 0.6, 1.2]} />
-          </mesh>
-          <mesh position={[0, 0.95, 0]} castShadow material={toonMaterial("#5d9c59")}>
-            <sphereGeometry args={[0.55, 10, 8]} />
-          </mesh>
-        </>
+        <Planter prop={prop} baseMat={baseMat} />
       ) : prop.kind === "crate" ? (
         <mesh position={[0, 0.45, 0]} castShadow material={baseMat}>
           <boxGeometry args={[0.9, 0.9, 0.9]} />
@@ -279,6 +272,18 @@ function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
         </>
       ) : prop.kind === "tree" ? (
         <Tree prop={prop} />
+      ) : prop.kind === "bush" ? (
+        <NatureProp prop={prop} kind="bush" baseMat={baseMat} targetHeight={0.75} />
+      ) : prop.kind === "grass" ? (
+        <NatureProp prop={prop} kind="grass" baseMat={baseMat} targetHeight={0.5} />
+      ) : prop.kind === "flower" ? (
+        <NatureProp prop={prop} kind="flower" baseMat={baseMat} targetHeight={0.4} />
+      ) : prop.kind === "rock" ? (
+        <NatureProp prop={prop} kind="rock" baseMat={baseMat} targetHeight={0.5} />
+      ) : prop.kind === "mushroom" ? (
+        <NatureProp prop={prop} kind="mushroom" baseMat={baseMat} targetHeight={0.5} />
+      ) : prop.kind === "fence" ? (
+        <Fence prop={prop} baseMat={baseMat} />
       ) : (
         // sign
         <>
@@ -334,6 +339,102 @@ function Tree({ prop }: { prop: PropModel }) {
   return (
     <Suspense fallback={proceduralTree}>
       <ToonGlb url={treeUrl} targetHeight={targetHeight} rotationY={((hash >> 8) % 360) * (Math.PI / 180)} outline={false} />
+    </Suspense>
+  );
+}
+
+/**
+ * Generic Kenney nature-prop renderer (bush/grass/flower/rock/mushroom).
+ * Mirrors the Tree pattern: deterministic asset pick + Suspense fallback to a
+ * tiny procedural shape so a missing GLB still reads as ground cover.
+ */
+function NatureProp({
+  prop,
+  kind,
+  baseMat,
+  targetHeight,
+}: {
+  prop: PropModel;
+  kind: "bush" | "grass" | "flower" | "rock" | "mushroom";
+  baseMat: THREE.Material;
+  targetHeight: number;
+}) {
+  const hash = stableHash(prop.id);
+  const url = useMemo(() => {
+    const list = NATURE_ASSETS[kind];
+    return list.length > 0 ? pickAsset(list, hash) : null;
+  }, [kind, hash]);
+
+  const fallback = (
+    <mesh position={[0, targetHeight / 2, 0]} castShadow material={baseMat}>
+      <sphereGeometry args={[targetHeight * 0.5, 8, 6]} />
+    </mesh>
+  );
+
+  if (!url) return fallback;
+  return (
+    <Suspense fallback={fallback}>
+      <ToonGlb
+        url={url}
+        targetHeight={targetHeight + ((hash >> 6) % 15) / 100}
+        rotationY={((hash >> 8) % 360) * (Math.PI / 180)}
+        outline={false}
+      />
+    </Suspense>
+  );
+}
+
+/**
+ * Kenney fence post/run segment. Rotation is provided by worldgen so the
+ * fence line aligns with its plot edge.
+ */
+function Fence({ prop, baseMat }: { prop: PropModel; baseMat: THREE.Material }) {
+  const hash = stableHash(prop.id);
+  const url = useMemo(() => {
+    const list = BUILDING_ASSETS.fence;
+    return list.length > 0 ? pickAsset(list, hash) : null;
+  }, [hash]);
+
+  const fallback = (
+    <mesh position={[0, 0.5, 0]} castShadow material={baseMat}>
+      <boxGeometry args={[1.5, 1, 0.08]} />
+    </mesh>
+  );
+
+  if (!url) return fallback;
+  return (
+    <Suspense fallback={fallback}>
+      <ToonGlb url={url} targetHeight={1.0} outline={false} />
+    </Suspense>
+  );
+}
+
+/**
+ * Planter: prefers Kenney planter GLB; falls back to the original procedural
+ * box + foliage sphere so existing scenes keep their look.
+ */
+function Planter({ prop, baseMat }: { prop: PropModel; baseMat: THREE.Material }) {
+  const hash = stableHash(prop.id);
+  const url = useMemo(() => {
+    const list = BUILDING_ASSETS.planter;
+    return list.length > 0 ? pickAsset(list, hash) : null;
+  }, [hash]);
+
+  const fallback = (
+    <>
+      <mesh position={[0, 0.3, 0]} castShadow material={baseMat}>
+        <boxGeometry args={[1.2, 0.6, 1.2]} />
+      </mesh>
+      <mesh position={[0, 0.95, 0]} castShadow material={toonMaterial("#5d9c59")}>
+        <sphereGeometry args={[0.55, 10, 8]} />
+      </mesh>
+    </>
+  );
+
+  if (!url) return fallback;
+  return (
+    <Suspense fallback={fallback}>
+      <ToonGlb url={url} targetHeight={0.5} outline={false} />
     </Suspense>
   );
 }
