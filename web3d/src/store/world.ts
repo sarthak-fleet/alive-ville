@@ -31,6 +31,7 @@ interface WorldStore {
   events: WorldEvent[];
   agentLoopRunning: boolean;
   importing: boolean;
+  lastNpcInitiationAt: number;
   init: () => Promise<void>;
   connectLive: () => () => void;
   send: (action: PlayerAction) => Promise<TickSummary | null>;
@@ -46,6 +47,15 @@ let eventSeq = 0;
 async function markHostilesFrom(summary: TickSummary): Promise<void> {
   const { useCombatStore } = await import("../combat/store.ts");
   useCombatStore.getState().setHostileFromSummaryActions(summary.actions.map((entry) => entry.action));
+}
+
+export function resetTransientWorldUiState(): void {
+  useWorldStore.setState({
+    lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
+  });
+  useUiStore.getState().setInteriorBuildingId(null);
+  useUiStore.getState().closeDialogue();
+  useUiStore.getState().setInteractionTarget(null);
 }
 
 async function resetCombatForWorld(): Promise<void> {
@@ -88,7 +98,6 @@ function surfaceNpcBanter(summary: TickSummary, world: World): void {
 }
 
 const INITIATION_COOLDOWN_MS = 90_000;
-let lastInitiationAt = Number.NEGATIVE_INFINITY;
 
 /** the world talks back: a same-place NPC addressing the player opens the conversation */
 async function maybeNpcInitiatesDialogue(summary: TickSummary, world: World): Promise<void> {
@@ -97,14 +106,14 @@ async function maybeNpcInitiatesDialogue(summary: TickSummary, world: World): Pr
   if (useDirectorStore.getState().cutscene) return;
   const { useCombatStore } = await import("../combat/store.ts");
   if (Object.values(useCombatStore.getState().enemies).some((enemy) => enemy.hostile && !enemy.defeated)) return;
-  if (performance.now() - lastInitiationAt < INITIATION_COOLDOWN_MS) return;
+  if (performance.now() - useWorldStore.getState().lastNpcInitiationAt < INITIATION_COOLDOWN_MS) return;
   for (const entry of summary.actions) {
     const action = entry.action as { type: string; actorId?: string; targetId?: string; text?: string };
     if (!["talk", "confront", "gossip"].includes(action.type)) continue;
     if (action.targetId !== "player" || !action.actorId || action.actorId === "player") continue;
     const npc = world.npcs.find((candidate) => candidate.id === action.actorId);
     if (!npc || npc.combat?.defeated || npc.locationId !== world.player.locationId) continue;
-    lastInitiationAt = performance.now();
+    useWorldStore.setState({ lastNpcInitiationAt: performance.now() });
     useUiStore.getState().openDialogue(npc.id, action.text ?? entry.text);
     return;
   }
@@ -119,6 +128,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   events: [],
   agentLoopRunning: false,
   importing: false,
+  lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
 
   async init() {
     set({ loading: true, error: null });
@@ -163,8 +173,14 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
         void (async () => {
           try {
             const world = await fetchState();
-            set({ world, events: [], lastSummary: null, agentLoopRunning: false });
-            useUiStore.getState().setInteriorBuildingId(null);
+            set({
+              world,
+              events: [],
+              lastSummary: null,
+              agentLoopRunning: false,
+              lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
+            });
+            resetTransientWorldUiState();
             await resetCombatForWorld();
           } catch {
             // transient fetch failure; the next tick reconciles
@@ -218,8 +234,16 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       const source = "source" in parsed ? (parsed as { source?: unknown }).source : parsed;
       if (!source || typeof source !== "object") throw new Error("World source is missing");
       const result = await importWorldSource(source as never);
-      set({ world: result.state, events: [], lastSummary: null, importing: false, error: null, agentLoopRunning: false });
-      useUiStore.getState().setInteriorBuildingId(null);
+      set({
+        world: result.state,
+        events: [],
+        lastSummary: null,
+        importing: false,
+        error: null,
+        agentLoopRunning: false,
+        lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
+      });
+      resetTransientWorldUiState();
       await resetCombatForWorld();
     } catch (error) {
       set({ importing: false });
