@@ -69,4 +69,18 @@ describe("currency", () => {
     expect(coinsOf(world, "player")).toBe(15);
     expect(coinsOf(world, "mira")).toBe(35);
   });
+
+  test("being defeated costs the player a 25% cut to the victor", () => {
+    const world = fixture();
+    world.player.coins = 40;
+    world.player.combat = { hp: 1, maxHp: 120, posture: 1, defeated: false };
+    const tomas = world.npcs.find((n) => n.id === "tomas")!;
+    tomas.locationId = world.player.locationId;
+
+    const result = applyAction(world, { type: "fight", actorId: "tomas", targetId: "player" });
+    expect(result.applied).toBe(true);
+    expect(world.player.combat?.defeated).toBe(true);
+    expect(coinsOf(world, "player")).toBe(30);
+    expect(coinsOf(world, "tomas")).toBe(10);
+  });
 });

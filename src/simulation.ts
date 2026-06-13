@@ -57,6 +57,8 @@ export const STARTING_COINS = 20;
 const QUEST_COIN_REWARD = 25;
 /** Coins looted from an NPC the player defeats (clamped to their balance). */
 const FIGHT_COIN_LOOT = 12;
+/** Fraction of the player's coins the victor takes when the player is defeated. */
+const DEFEAT_COIN_PENALTY = 0.25;
 
 /** Read an actor's coin balance (player or NPC); undefined ≈ 0. */
 export function coinsOf(world: World, actorId: ActorId | "player"): number {
@@ -377,6 +379,13 @@ export function applyAction(world: World, action: Action): ActionResult {
       // player was defeated by an NPC — tag the victor and enter rumor pipeline
       if (action.targetId === "player" && world.player.combat?.defeated) {
         tagBestedThePlayer(world, action.actorId, combatChronicleId);
+        // stakes: the victor takes a cut of the player's coins on defeat
+        const dropped = Math.floor(coinsOf(world, "player") * DEFEAT_COIN_PENALTY);
+        if (dropped > 0) {
+          addCoins(world, "player", -dropped);
+          addCoins(world, action.actorId, dropped);
+          remember(world, action.actorId, `Took ${dropped} coins from ${nameOf(world, "player")} after winning.`);
+        }
       }
       return applied(action, fightOutcomeText(world, action.actorId, action.targetId, action.moveId, counterText));
     }
