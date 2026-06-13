@@ -6,6 +6,7 @@ import { type DialogueResponse, fetchDialogueHistory, postDialogue, postDialogue
 import { followChime, questChime, talkBlip, uiBlip } from "../audio/sfx.ts";
 import { setFollowing } from "../characters/followers.ts";
 import { useCombatStore } from "../combat/store.ts";
+import { isVoiceEnabled, listenOnce, sayNpc, setVoiceEnabled, sttSupported, ttsSupported } from "../platform/voice.ts";
 import { useUiStore } from "../store/ui.ts";
 import { npcById, useWorldStore } from "../store/world.ts";
 import { portraitApiUrl, portraitStaticUrl } from "./portrait.ts";
@@ -26,6 +27,8 @@ export function Dialogue() {
   const world = useWorldStore((state) => state.world);
   const send = useWorldStore((state) => state.send);
   const [draft, setDraft] = useState("");
+  const [voiceOn, setVoiceOn] = useState(() => isVoiceEnabled());
+  const [listening, setListening] = useState(false);
   // relationship + story are keyed by npc so switching conversations resets via
   // render-time derivation, without a sync setState in the effect (cascading renders)
   const [relationshipState, setRelationshipState] = useState<{ npcId: string; value: Relationship } | null>(null);
@@ -121,6 +124,7 @@ export function Dialogue() {
     if (response.relationship) setRelationshipState({ npcId: npc.id, value: response.relationship });
     if (response.reply) {
       pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
+      sayNpc(response.reply);
       if (response.action) {
         pushLine({ speaker: "event", speakerName: "", text: response.action.text });
         if (response.action.type === "follow") setFollowing(npc.id, true);
@@ -148,6 +152,7 @@ export function Dialogue() {
       const response = await postDialogueChoose(npc.id, option.id);
       talkBlip();
       pushLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
+      sayNpc(response.reply);
       if (response.action) {
         pushLine({ speaker: "event", speakerName: "", text: response.action.text });
         if (response.action.type === "accept_quest" || response.action.type === "complete_quest") questChime();
@@ -191,6 +196,7 @@ export function Dialogue() {
           if (reply) {
             talkBlip();
             pushLine({ speaker: "npc", speakerName: npc.name, text: reply });
+            sayNpc(reply);
             setBusy(false);
             inputRef.current?.focus();
             return;
@@ -222,6 +228,7 @@ export function Dialogue() {
           if (response.reply) {
             if (streamedAny) ui.updateLastDialogueLine(response.reply);
             else ui.pushDialogueLine({ speaker: "npc", speakerName: npc.name, text: response.reply });
+            sayNpc(response.reply);
             if (response.action) {
               ui.pushDialogueLine({ speaker: "event", speakerName: "", text: response.action.text });
               if (response.action.type === "create_quest" || response.action.type === "offer_quest" || response.action.type === "complete_quest") questChime();
@@ -310,6 +317,21 @@ export function Dialogue() {
             <span className="rel-score">{relationship.score > 0 ? `+${relationship.score}` : relationship.score}</span>
           </div>
         ) : null}
+        {ttsSupported() ? (
+          <button
+            type="button"
+            className={`dialogue-voice ${voiceOn ? "on" : ""}`}
+            title={voiceOn ? "NPC voice on" : "NPC voice off"}
+            aria-label="Toggle NPC voice"
+            onClick={() => {
+              const next = !voiceOn;
+              setVoiceOn(next);
+              setVoiceEnabled(next);
+            }}
+          >
+            {voiceOn ? "🔊" : "🔈"}
+          </button>
+        ) : null}
         <button type="button" className="dialogue-close" onClick={closeDialogue}>
           ✕
         </button>
@@ -343,9 +365,27 @@ export function Dialogue() {
             ref={inputRef}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder={`Talk to ${npc.name}`}
+            placeholder={listening ? "Listening…" : `Talk to ${npc.name}`}
             maxLength={240}
           />
+          {sttSupported() ? (
+            <button
+              type="button"
+              className={`dialogue-mic ${listening ? "on" : ""}`}
+              title="Dictate (speech-to-text)"
+              aria-label="Dictate"
+              disabled={busy || listening}
+              onClick={() => {
+                const stop = listenOnce((transcript) => {
+                  setDraft(transcript);
+                  setListening(false);
+                });
+                if (stop) setListening(true);
+              }}
+            >
+              🎙
+            </button>
+          ) : null}
           <button type="submit" disabled={busy || !draft.trim()}>
             Send
           </button>

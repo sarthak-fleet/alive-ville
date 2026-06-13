@@ -1760,3 +1760,24 @@
   letter-spacing: 0.06em;
   font-size: 10px;
 }
+
+/* ── Dialogue voice / mic buttons ────────────────────────────────────────── */
+.dialogue-voice,
+.dialogue-mic {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  color: #f1f5fb;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.8;
+}
+.dialogue-voice:hover,
+.dialogue-mic:hover { opacity: 1; }
+.dialogue-voice.on,
+.dialogue-mic.on {
+  color: #9be3ff;
+  border-color: rgba(127, 208, 255, 0.5);
+  background: rgba(127, 208, 255, 0.12);
+}
+.dialogue-mic:disabled { opacity: 0.45; cursor: default; }
