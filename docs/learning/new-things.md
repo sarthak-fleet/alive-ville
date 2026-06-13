@@ -141,3 +141,21 @@ ai-game.
 - What: Render captured 3D scenes as millions of anisotropic 3D gaussians instead of meshes — photoreal environments. Optional PRD flex.
 - Why here: TBD
 - Source: https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/
+
+## Web Speech API (TTS + STT)
+- What: Built-in browser speech synthesis (`speechSynthesis`) and recognition (`SpeechRecognition`) — NPC voices + voice dictation, no model/dependency.
+- Why here: TBD
+- Gotcha (from code): `SpeechRecognition` is unprefixed in some browsers and `webkitSpeechRecognition` in others, and isn't in our TS lib — read it off `globalThis` with a hand-written type. See `web3d/src/platform/voice.ts`.
+- Source: https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API
+
+## PWA — service worker + web manifest
+- What: Installable, offline-capable app via a manifest + a service worker that intercepts fetches.
+- Why here: TBD
+- Gotcha (from code): the SW is **network-first** (try network, cache fresh, fall back to cache offline) so it never serves stale assets online; API paths are skipped; registered prod-only; scope is `/game/` (the Vite base). See `web3d/public/sw.js`, `web3d/src/main.tsx`.
+- Source: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps
+
+## WebXR (immersive-VR via @react-three/xr)
+- What: Enter the 3D town in a VR headset; @react-three/xr integrates XR frame timing with the R3F render loop.
+- Why here: TBD
+- Gotcha (from code): hand-rolling `renderer.xr` on R3F does NOT pump XR frames — you need the r3f/xr store + `<XR>` wrapper. Outside a session `<XR>` is a passthrough. See `web3d/src/platform/xr.ts`, `web3d/src/scene/GameWorld.tsx`.
+- Source: https://github.com/pmndrs/xr

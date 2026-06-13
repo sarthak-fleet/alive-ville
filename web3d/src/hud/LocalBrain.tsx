@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { type ComputeResult, runMatmulBenchmark } from "../ai/gpu-compute.ts";
 import { startRenderDemo } from "../ai/gpu-render.ts";
 import { useLocalBrain } from "../ai/local-llm.ts";
+import { webTransportSupported } from "../platform/webtransport.ts";
 
 /** Default persona so the user can prove local generation in one click. */
 const SYSTEM_PERSONA =
@@ -87,6 +88,7 @@ export function LocalBrain(): React.ReactElement {
             <Pill on={Boolean(caps?.wasmThreads)} label="WASM threads" />
             <Pill on={Boolean(caps?.webnn)} label="WebNN" />
             <Pill on={Boolean(caps?.opfs)} label="OPFS" />
+            <Pill on={webTransportSupported()} label="WebTransport" />
           </div>
 
           {status === "unsupported" ? (

@@ -1,0 +1,19 @@
+{
+  "name": "Aliveville — AI World Simulator",
+  "short_name": "Aliveville",
+  "description": "A browser-playable AI world simulator: a living 3D town whose NPCs think locally on your GPU.",
+  "start_url": "/game/",
+  "scope": "/game/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#07111d",
+  "theme_color": "#07111d",
+  "icons": [
+    {
+      "src": "/game/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

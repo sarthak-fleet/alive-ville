@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Aliveville">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#1b2335" />
+      <stop offset="100%" stop-color="#07111d" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)" />
+  <circle cx="256" cy="232" r="120" fill="none" stroke="#7fd0ff" stroke-width="14" opacity="0.9" />
+  <circle cx="256" cy="232" r="42" fill="#9be3ff" />
+  <path d="M120 396 h272" stroke="#7fd0ff" stroke-width="16" stroke-linecap="round" opacity="0.7" />
+  <text x="256" y="470" fill="#e8ecf5" font-family="system-ui, sans-serif" font-size="58" font-weight="800" letter-spacing="8" text-anchor="middle">AV</text>
+</svg>

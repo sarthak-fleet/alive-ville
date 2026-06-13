@@ -82,19 +82,22 @@ The instrumentation that makes the whole project read as a flex.
 - `hud/FrontierHud.tsx` — Phase-0 legibility overlay: FPS, NPC count, active backend pill, "no server" badge.
 - `platform/opfs-save.ts` + `platform/clip.ts` + `hud/PlatformControls.tsx` — OPFS local save (Phase 0) and canvas clip recording (Phase 4).
 
-- `web3d/src/ai/gpu-compute.ts` — **first-party WebGPU compute**: a WGSL square-matmul benchmark (GFLOP/s readout in the Local AI panel), isolated from the game's render path. Phase-2 compute capability proven directly, not just via web-llm.
+- `web3d/src/ai/gpu-compute.ts` — **first-party WebGPU compute**: a WGSL square-matmul benchmark (GFLOP/s readout), isolated from the render path.
+- `web3d/src/ai/gpu-render.ts` — **isolated WebGPU render** pipeline (WGSL vertex+fragment plasma on its own canvas) — Phase-2 render capability without touching the game's WebGL renderer.
+- `web3d/src/platform/voice.ts` — **Web Speech**: NPC text-to-speech + speech-to-text dictation in dialogue (opt-in, built-in APIs, no dep).
+- `web3d/src/platform/xr.ts` + `<XR>` wrap + 🥽 VR chip — **WebXR** immersive-VR via @react-three/xr.
+- `web3d/src/platform/webtransport.ts` — **WebTransport** (HTTP/3) client + detection pill (provided, not yet the default transport — needs a QUIC endpoint).
+- `web3d/public/{manifest.webmanifest,sw.js,icon.svg}` + prod-only registration — **PWA**: installable + offline via a network-first service worker.
 
-Verified: typecheck + 3D build green; my files lint clean. **In-browser behavior
-(model load, generation, capability pills, GPU-compute benchmark, clip download)
-still needs a real-device check** — can't be verified headlessly.
+Verified: typecheck + 3D build green; touched files lint clean. **All in-browser
+behavior still needs a real-device check** — can't be verified headlessly.
+Specifically confirm: the `<XR>` wrapper doesn't disturb normal (non-VR) rendering;
+the SW behaves online; local generation/compute/render actually run.
 
-**Deliberately deferred** (each needs a real device and/or risks the live game —
-do with the user present, not autonomously):
-- Phase 2 **WebGPU *render* swap** (`WebGPURenderer` + TSL) — `@react-three/postprocessing`
-  is WebGL-only; swapping the live renderer blind could break the whole scene.
-- Phase 3 **WebTransport / WebRTC** — needs HTTP/3 / signalling infra; can't verify headlessly.
-- **WebXR**, **Whisper/TTS voice**, **Gaussian splatting**, **PWA service worker**
-  (SW caching materially changes prod behavior — ask first).
+**Still genuinely out of scope** (need infra, assets, or a heavy model):
+- Swapping the **game's** renderer to WebGPU+TSL (vs. the isolated demo) — blocked by `@react-three/postprocessing` being WebGL-only.
+- **WebTransport/WebRTC wired as the live transport** — needs an HTTP/3 / signalling server.
+- **Gaussian splatting** (needs a splat asset + lib), **Whisper-grade STT**, a real **WebNN inference path**.
 
 ### Phase 2 — WebGPU render + compute *(visual flex; higher effort, mostly fresh)*
 - Swap Three.js `WebGLRenderer` → **`WebGPURenderer` + TSL** node materials.
