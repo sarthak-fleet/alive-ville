@@ -24,6 +24,22 @@
 - License: CC0 1.0 Universal (public domain)
 - Use in this repo: `web3d/public/assets/characters/ual.glb` — the rigged mannequin + 45 animation clips drive every character in the 3D client (locomotion blending, combat moves, death). Bodies are palette-tinted per character; procedural hair/eyes/capes attach to the Head/spine bones at runtime.
 
+## Kenney Nature Kit
+
+- Source: https://kenney.nl/assets/nature-kit
+- License: CC0 1.0 Universal (public domain) — attribution recorded, none required.
+- Status: **pulled 2026-06-13** into `web3d/public/assets/nature/` (16 GLBs).
+- Subset selected: trees (`tree-oak`, `tree-default`, `tree-pine`, `tree-detailed`, `tree-palm`), bushes (`bush-small`, `bush-detailed`, `bush-large`), grass (`grass-small`, `grass-large`), flowers (`flower-red`, `flower-yellow`, `flower-purple`), rocks (`rock-large`, `rock-small`), and `mushroom-red`. Trees are wired into `scene/District.tsx::Tree` via `scene/asset-registry.ts`; the rest are registered for future prop kinds.
+- Material handling: GLBs are loaded via `scene/kenneyGlb.tsx::useToonGlb`, deep-cloned, and have their materials swapped to `MeshToonMaterial` keyed off the existing `toonGradientMap()` so the toon look survives the asset swap. Procedural meshes remain as Suspense fallbacks.
+
+## Kenney City Kit (Suburban)
+
+- Source: https://kenney.nl/assets/city-kit-suburban
+- License: CC0 1.0 Universal (public domain) — attribution recorded, none required.
+- Status: **pulled 2026-06-13** into `web3d/public/assets/buildings/` (13 GLBs).
+- Subset selected: 10 modular shells (`building-a` through `building-k`, skipping `i`), 2 fences (`fence`, `fence-low`), and `planter`. Shells are wired into `scene/District.tsx::Building` and uniformly scaled to fit the worldgen `BuildingModel` footprint so colliders + courtyard layout stay unchanged.
+- Material handling: same toon material swap as the nature kit. The procedural facade is the Suspense fallback so a missing or failing GLB degrades to the previous look.
+
 ---
 
 ## Future Asset Pipeline (2026+)

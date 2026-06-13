@@ -1,6 +1,6 @@
 import { Billboard, Outlines, Text } from "@react-three/drei";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, Suspense, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { stableHash } from "../mapping/visuals.ts";
@@ -8,6 +8,8 @@ import { shiftColor } from "../worldgen/district.ts";
 import type { BuildingModel, DistrictModel, ItemPlacement, PropModel } from "../worldgen/index.ts";
 import type { InteractablePlacement } from "../worldgen/model.ts";
 import { mulberry32, seedFromString } from "../worldgen/rng.ts";
+import { BUILDING_ASSETS, NATURE_ASSETS, pickAsset } from "./asset-registry.ts";
+import { ToonGlb } from "./kenneyGlb.tsx";
 import { registerOccluder, unregisterOccluder } from "./occlusion.ts";
 import { facadeMaterial, lightPoolTexture, pavingTexture, speckleTexture } from "./textures.ts";
 import { toonGradientMap, toonMaterial } from "./toon.ts";
@@ -125,13 +127,36 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
     return { roofBoxes, antenna, awning };
   }, [building, courtyard.x, courtyard.z]);
 
+  // Pick a deterministic Kenney shell variant per building id; the GLB is
+  // scaled to fit the procedural footprint so colliders + worldgen layout
+  // remain unchanged. The procedural facade box is the Suspense fallback so
+  // a missing/failing GLB degrades to the previous look automatically.
+  const shellUrl = useMemo(() => {
+    const list = BUILDING_ASSETS.shell;
+    return list.length > 0 ? pickAsset(list, seedFromString(`${building.id}:shell`)) : null;
+  }, [building.id]);
+  const proceduralFacade = (
+    <mesh position={[0, building.height / 2, 0]} castShadow receiveShadow material={facade}>
+      <boxGeometry args={[building.width, building.height, building.depth]} />
+      <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
+    </mesh>
+  );
+
   return (
     <RigidBody type="fixed" colliders={false}>
       <group ref={buildingRef} position={[building.x, 0, building.z]}>
-        <mesh position={[0, building.height / 2, 0]} castShadow receiveShadow material={facade}>
-          <boxGeometry args={[building.width, building.height, building.depth]} />
-          <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
-        </mesh>
+        {shellUrl ? (
+          <Suspense fallback={proceduralFacade}>
+            <ToonGlb
+              url={shellUrl}
+              position={[0, 0, 0]}
+              targetSize={[building.width, building.height, building.depth]}
+              outline={false}
+            />
+          </Suspense>
+        ) : (
+          proceduralFacade
+        )}
         <mesh position={[0, building.height + 0.25, 0]} castShadow material={roofMat}>
           <boxGeometry args={[building.width + 0.5, 0.5, building.depth + 0.5]} />
         </mesh>
@@ -275,7 +300,16 @@ function Tree({ prop }: { prop: PropModel }) {
   const trunk = toonMaterial(prop.accentColor);
   const foliage = toonMaterial(prop.color);
   const foliageDark = toonMaterial(shiftColor(prop.color, -0.18));
-  return (
+
+  // Pick a Kenney tree GLB deterministically. Falls back to the procedural
+  // capsule + spheres below the Suspense boundary if the GLB is missing or
+  // still streaming.
+  const treeUrl = useMemo(() => {
+    const list = NATURE_ASSETS.tree;
+    return list.length > 0 ? pickAsset(list, hash) : null;
+  }, [hash]);
+
+  const proceduralTree = (
     <group scale={scale}>
       <mesh position={[0, 1, 0]} castShadow material={trunk}>
         <cylinderGeometry args={[0.14, 0.22, 2, 7]} />
@@ -291,6 +325,16 @@ function Tree({ prop }: { prop: PropModel }) {
         <sphereGeometry args={[0.6, 10, 8]} />
       </mesh>
     </group>
+  );
+
+  if (!treeUrl) return proceduralTree;
+  // Kenney nature trees are ~1m model units; normalize to ~3.2m city scale
+  // and let the per-prop hash apply the same variance as the procedural path.
+  const targetHeight = 3.2 * scale;
+  return (
+    <Suspense fallback={proceduralTree}>
+      <ToonGlb url={treeUrl} targetHeight={targetHeight} rotationY={((hash >> 8) % 360) * (Math.PI / 180)} outline={false} />
+    </Suspense>
   );
 }
 
