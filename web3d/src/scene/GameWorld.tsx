@@ -6,7 +6,9 @@ import { ToneMappingMode } from "postprocessing";
 import { Suspense, useEffect, useMemo } from "react";
 
 import { isNight, type World } from "../../../src/types.ts";
+import { playTrack } from "../audio/music.ts";
 import { Npc } from "../characters/Npc.tsx";
+import { useCombatStore } from "../combat/store.ts";
 import { CombatVfx } from "../combat/Vfx.tsx";
 import { PlayerController } from "../controls/PlayerController.tsx";
 import { useUiStore } from "../store/ui.ts";
@@ -39,6 +41,24 @@ export function GameWorld({ world }: { world: World }) {
   }, [model, placements]);
 
   const activeDistrict = model.districts.find((district) => district.locationId === world.player.locationId) ?? model.districts[0];
+
+  // pick the ambient music track from the player's current context. interior
+  // wins over district; combat overrides everything; otherwise the district
+  // name hints city vs village and time-of-day selects day vs night variants.
+  const inCombat = useCombatStore((state) => Object.values(state.enemies).some((enemy) => enemy.hostile && !enemy.defeated));
+  const musicKey = (() => {
+    if (inCombat) return "combat" as const;
+    if (activeInterior) return "interior" as const;
+    const label = `${activeDistrict?.name ?? ""} ${activeDistrict?.roleText ?? ""}`.toLowerCase();
+    const isCity = /city|metro|downtown|plaza|capital|street|market|skyline|tower/.test(label);
+    if (isCity) return "city" as const;
+    return night ? ("village-night" as const) : ("village-day" as const);
+  })();
+
+  useEffect(() => {
+    playTrack(musicKey);
+  }, [musicKey]);
+
   if (!activeDistrict) return null;
 
   return (

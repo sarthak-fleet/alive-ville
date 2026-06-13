@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { xpForNextLevel } from "../../../src/arcs.ts";
 import { timeOfDay } from "../../../src/types.ts";
-import { updateMusicMood } from "../audio/music.ts";
+import { isMusicMuted, setMusicMuted, subscribeMusicMute } from "../audio/music.ts";
 import { isSfxEnabled, pickupChime, questChime, setSfxEnabled } from "../audio/sfx.ts";
 import { useBanterStore } from "../characters/banter.ts";
 import { useCombatStore } from "../combat/store.ts";
@@ -10,7 +10,6 @@ import { isTypingTarget } from "../controls/input.ts";
 import { combatToastHook, playerGesture, requestTeleport } from "../controls/runtime.ts";
 import { IntroCinematic } from "../director/IntroCinematic.tsx";
 import { useDirectorStore } from "../director/store.ts";
-import { worldPressure } from "../mapping/mood.ts";
 import { useUiStore } from "../store/ui.ts";
 import { useWorldStore } from "../store/world.ts";
 import { cityModelFor } from "../worldgen/cache.ts";
@@ -40,6 +39,7 @@ export function Hud() {
   const [importOpen, setImportOpen] = useState(false);
   const [chronicleOpen, setChronicleOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSfxEnabled());
+  const [musicMuted, setMusicMutedState] = useState(() => isMusicMuted());
   const [pointerLocked, setPointerLocked] = useState(false);
   const [combatToasts, setCombatToasts] = useState<Array<{ id: number; text: string; kind: "defeat" | "info" }>>([]);
   const combatToastSeqRef = useRef(0);
@@ -49,6 +49,9 @@ export function Hud() {
     document.addEventListener("pointerlockchange", onLockChange);
     return () => document.removeEventListener("pointerlockchange", onLockChange);
   }, []);
+
+  // mirror music mute state in case it changes from elsewhere
+  useEffect(() => subscribeMusicMute(setMusicMutedState), []);
 
   // wire the combat toast hook so damageEnemy can push defeat/kill toasts
   useEffect(() => {
@@ -75,12 +78,6 @@ export function Hud() {
     }, 1000);
     return () => window.clearInterval(interval);
   }, [pruneEvents]);
-
-  // score follows the world: time of day, story pressure, combat
-  useEffect(() => {
-    if (!world) return;
-    updateMusicMood({ phase: timeOfDay(world.clock), pressure: worldPressure(world), combat: inCombat });
-  }, [world, inCombat]);
 
   // sync player level into combat scaling; celebrate level-ups
   const prevLevel = useRef(1);
@@ -293,6 +290,16 @@ export function Hud() {
           {error} (click to dismiss)
         </div>
       ) : null}
+
+      <button
+        type="button"
+        className={`music-toggle ${musicMuted ? "off" : "on"}`}
+        title={musicMuted ? "Unmute music" : "Mute music"}
+        aria-label={musicMuted ? "Unmute music" : "Mute music"}
+        onClick={() => setMusicMuted(!musicMuted)}
+      >
+        {musicMuted ? "♪̸" : "♪"}
+      </button>
     </div>
   );
 }

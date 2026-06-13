@@ -1,157 +1,204 @@
-import { audioContext, isSfxEnabled, masterBus } from "./sfx.ts";
+/**
+ * File-based ambient music manager.
+ *
+ * Plays one looped HTMLAudioElement at a time and crossfades between tracks.
+ * Mute state is mirrored to localStorage so the toggle survives reloads.
+ * Pauses while the tab is hidden so a backgrounded game doesn't burn CPU on
+ * silent audio decoding.
+ */
+
+const MUTE_STORAGE_KEY = "alive.music.muted";
+const BASE_GAIN = 0.3;
+const FADE_MS = 1000;
+const FADE_STEP_MS = 50;
+
+export type MusicKey = "village-day" | "village-night" | "city" | "interior" | "combat" | "menu";
+
+/** map of music key to public asset URL. uses Vite's BASE_URL so it works on /game/. */
+function trackUrl(key: MusicKey): string {
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  return `${base}/assets/audio/music/${key}.mp3`;
+}
+
+interface ActiveTrack {
+  key: MusicKey;
+  el: HTMLAudioElement;
+  /** active fade interval, if any */
+  fader: number | null;
+}
+
+let current: ActiveTrack | null = null;
+let pending: ActiveTrack | null = null;
+let muted = readMuted();
+const listeners = new Set<(muted: boolean) => void>();
+
+function readMuted(): boolean {
+  try {
+    return localStorage.getItem(MUTE_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeMuted(next: boolean): void {
+  try {
+    localStorage.setItem(MUTE_STORAGE_KEY, next ? "1" : "0");
+  } catch {
+    /* private-mode storage failures are non-fatal */
+  }
+}
+
+export function isMusicMuted(): boolean {
+  return muted;
+}
+
+export function subscribeMusicMute(callback: (muted: boolean) => void): () => void {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+export function setMusicMuted(next: boolean): void {
+  if (muted === next) return;
+  muted = next;
+  writeMuted(next);
+  // apply to whatever is currently playing
+  if (current) applyGain(current.el, next ? 0 : BASE_GAIN);
+  if (pending) applyGain(pending.el, 0);
+  if (next) {
+    current?.el.pause();
+    pending?.el.pause();
+  } else {
+    // unmute while document visible: resume current track
+    if (current && !document.hidden) void current.el.play().catch(() => {});
+  }
+  listeners.forEach((listener) => listener(next));
+}
+
+function applyGain(el: HTMLAudioElement, value: number): void {
+  el.volume = Math.max(0, Math.min(1, value));
+}
+
+function fadeTo(track: ActiveTrack, targetGain: number, durationMs: number, onDone?: () => void): void {
+  if (track.fader !== null) {
+    window.clearInterval(track.fader);
+    track.fader = null;
+  }
+  const startGain = track.el.volume;
+  const steps = Math.max(1, Math.floor(durationMs / FADE_STEP_MS));
+  let stepIndex = 0;
+  track.fader = window.setInterval(() => {
+    stepIndex += 1;
+    const t = stepIndex / steps;
+    applyGain(track.el, startGain + (targetGain - startGain) * t);
+    if (stepIndex >= steps) {
+      if (track.fader !== null) {
+        window.clearInterval(track.fader);
+        track.fader = null;
+      }
+      applyGain(track.el, targetGain);
+      onDone?.();
+    }
+  }, FADE_STEP_MS);
+}
+
+function createTrack(key: MusicKey): ActiveTrack {
+  const el = new Audio(trackUrl(key));
+  el.loop = true;
+  el.preload = "auto";
+  el.crossOrigin = "anonymous";
+  el.volume = 0;
+  return { key, el, fader: null };
+}
 
 /**
- * Generative score — no audio files. A step sequencer plays bass roots, slow
- * pad chords, and probabilistic arpeggio notes from a mood-selected scale,
- * plus an ambient bed (wind, night crickets). Moods crossfade smoothly.
+ * Switch to the given track, crossfading from any currently-playing track.
+ * Safe to call repeatedly with the same key — becomes a no-op.
+ * Browsers require a user gesture before .play() resolves; we swallow the
+ * resulting rejection so the first call (often pre-gesture) doesn't throw.
  */
-export interface MusicMood {
-  phase: "dawn" | "day" | "dusk" | "night";
-  pressure: number;
-  combat: boolean;
-}
+export function playTrack(key: MusicKey): void {
+  // already playing this exact track — nothing to do
+  if (current?.key === key && !pending) return;
+  // already transitioning to this exact track — let it finish
+  if (pending?.key === key) return;
 
-interface MoodProfile {
-  /** semitone offsets from the root */
-  scale: number[];
-  root: number;
-  stepSeconds: number;
-  arpChance: number;
-  padGain: number;
-  brightness: number;
-}
+  // mid-transition to a different track: kill it before starting a new one
+  if (pending) {
+    if (pending.fader !== null) window.clearInterval(pending.fader);
+    pending.el.pause();
+    pending.el.src = "";
+    pending = null;
+  }
 
-const PROFILES: Record<string, MoodProfile> = {
-  dawn: { scale: [0, 2, 4, 7, 9, 11], root: 220, stepSeconds: 0.5, arpChance: 0.35, padGain: 0.045, brightness: 1600 },
-  day: { scale: [0, 2, 4, 7, 9], root: 196, stepSeconds: 0.46, arpChance: 0.45, padGain: 0.04, brightness: 2200 },
-  dusk: { scale: [0, 3, 5, 7, 10], root: 174.6, stepSeconds: 0.55, arpChance: 0.3, padGain: 0.05, brightness: 1200 },
-  night: { scale: [0, 3, 5, 7, 10], root: 146.8, stepSeconds: 0.62, arpChance: 0.22, padGain: 0.055, brightness: 900 },
-  tense: { scale: [0, 2, 3, 7, 8], root: 138.6, stepSeconds: 0.42, arpChance: 0.3, padGain: 0.06, brightness: 800 },
-  combat: { scale: [0, 3, 5, 6, 7, 10], root: 164.8, stepSeconds: 0.24, arpChance: 0.6, padGain: 0.05, brightness: 1400 },
-};
+  const next = createTrack(key);
+  pending = next;
 
-let mood: MusicMood = { phase: "day", pressure: 0, combat: false };
-let running = false;
-let timer: number | null = null;
-let step = 0;
-let musicBus: GainNode | null = null;
-let crickets: number | null = null;
-let windSource: AudioBufferSourceNode | null = null;
-
-function profile(): MoodProfile {
-  if (mood.combat) return PROFILES["combat"]!;
-  if (mood.pressure > 70) return PROFILES["tense"]!;
-  return PROFILES[mood.phase] ?? PROFILES["day"]!;
-}
-
-export function updateMusicMood(next: MusicMood): void {
-  mood = next;
-  updateAmbience();
-}
-
-export function startMusic(): void {
-  if (running) return;
-  const context = audioContext();
-  const master = masterBus();
-  if (!context || !master) return;
-  running = true;
-  musicBus = context.createGain();
-  musicBus.gain.value = 1;
-  musicBus.connect(master);
-  startWind();
-  updateAmbience();
-  const tick = () => {
-    playStep();
-    timer = window.setTimeout(tick, profile().stepSeconds * 1000);
+  const startNext = () => {
+    pending = null;
+    if (current) {
+      // retire the outgoing track once the fade-out lands
+      const outgoing = current;
+      fadeTo(outgoing, 0, FADE_MS, () => {
+        outgoing.el.pause();
+        outgoing.el.src = "";
+      });
+    }
+    current = next;
+    if (!document.hidden && !muted) {
+      void next.el.play().catch(() => {});
+      fadeTo(next, BASE_GAIN, FADE_MS);
+    } else {
+      // load but stay silent — visibility/mute handler will start playback
+      applyGain(next.el, muted ? 0 : BASE_GAIN);
+    }
   };
-  tick();
+
+  // small async hop so multiple playTrack calls in the same tick collapse cleanly
+  window.setTimeout(() => {
+    if (pending === next) startNext();
+  }, 0);
 }
 
-function note(frequency: number, duration: number, gainValue: number, type: OscillatorType, filterFrequency: number): void {
-  const context = audioContext();
-  if (!context || !musicBus || !isSfxEnabled()) return;
-  const osc = context.createOscillator();
-  const gain = context.createGain();
-  const filter = context.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = filterFrequency;
-  osc.type = type;
-  osc.frequency.value = frequency;
-  const t = context.currentTime;
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(gainValue, t + Math.min(0.12, duration * 0.3));
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-  osc.connect(filter).connect(gain).connect(musicBus);
-  osc.start(t);
-  osc.stop(t + duration + 0.05);
+/** Stops all music. Used on teardown / explicit silence. */
+export function stopMusic(): void {
+  if (current) {
+    if (current.fader !== null) window.clearInterval(current.fader);
+    current.el.pause();
+    current.el.src = "";
+    current = null;
+  }
+  if (pending) {
+    if (pending.fader !== null) window.clearInterval(pending.fader);
+    pending.el.pause();
+    pending.el.src = "";
+    pending = null;
+  }
 }
 
-function degree(index: number, octave = 0): number {
-  const p = profile();
-  const semis = p.scale[((index % p.scale.length) + p.scale.length) % p.scale.length]! + 12 * octave;
-  return p.root * Math.pow(2, semis / 12);
-}
+// visibility: pause when tab is hidden, resume when shown (and not muted)
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (!current) return;
+    if (document.hidden) {
+      current.el.pause();
+    } else if (!muted) {
+      void current.el.play().catch(() => {});
+    }
+  });
 
-function playStep(): void {
-  if (!isSfxEnabled()) {
-    step += 1;
-    return;
-  }
-  const p = profile();
-  // bass root every 4 steps, alternating I and VI-ish
-  if (step % 4 === 0) {
-    note(degree(step % 16 === 8 ? 3 : 0, -1), p.stepSeconds * 3.4, 0.05, "triangle", 500);
-  }
-  // pad chord every 8 steps
-  if (step % 8 === 0) {
-    const base = step % 32 === 16 ? 2 : 0;
-    note(degree(base), p.stepSeconds * 7, p.padGain, "sine", p.brightness);
-    note(degree(base + 2), p.stepSeconds * 7, p.padGain * 0.8, "sine", p.brightness);
-    note(degree(base + 4), p.stepSeconds * 7, p.padGain * 0.6, "sine", p.brightness);
-  }
-  // arpeggio sparkle
-  if (Math.random() < p.arpChance) {
-    note(degree(Math.floor(Math.random() * p.scale.length), 1), p.stepSeconds * 1.6, 0.03, "sine", p.brightness * 1.4);
-  }
-  // combat pulse
-  if (mood.combat && step % 2 === 0) {
-    note(degree(0, -1), 0.1, 0.05, "square", 400);
-  }
-  step += 1;
-}
-
-function startWind(): void {
-  const context = audioContext();
-  if (!context || !musicBus) return;
-  const seconds = 4;
-  const buffer = context.createBuffer(1, context.sampleRate * seconds, context.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
-  windSource = context.createBufferSource();
-  windSource.buffer = buffer;
-  windSource.loop = true;
-  const filter = context.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 320;
-  const gain = context.createGain();
-  gain.gain.value = 0.018;
-  windSource.connect(filter).connect(gain).connect(musicBus);
-  windSource.start();
-}
-
-function updateAmbience(): void {
-  // crickets at night only
-  if (mood.phase === "night" && running && crickets === null) {
-    const chirp = () => {
-      if (!isSfxEnabled() || mood.phase !== "night") return;
-      for (let index = 0; index < 3; index += 1) {
-        window.setTimeout(() => note(4200 + Math.random() * 600, 0.05, 0.012, "sine", 6000), index * 90);
-      }
-    };
-    crickets = window.setInterval(chirp, 2400);
-  } else if (mood.phase !== "night" && crickets !== null) {
-    window.clearInterval(crickets);
-    crickets = null;
-  }
-  void timer;
+  // browsers block .play() before the first user gesture. Retry whatever
+  // track we have queued the moment a gesture lands. one-shot — once
+  // playback succeeds the listener is dead weight.
+  const onGesture = () => {
+    if (current && !muted && !document.hidden) {
+      void current.el.play().catch(() => {});
+    }
+    if (pending && !muted && !document.hidden) {
+      void pending.el.play().catch(() => {});
+    }
+    window.removeEventListener("pointerdown", onGesture);
+    window.removeEventListener("keydown", onGesture);
+  };
+  window.addEventListener("pointerdown", onGesture, { passive: true });
+  window.addEventListener("keydown", onGesture);
 }
