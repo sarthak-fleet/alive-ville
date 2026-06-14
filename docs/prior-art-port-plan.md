@@ -60,14 +60,24 @@ below are permissively licensed (copyable WITH attribution).
    deterministically in offline catch-up (`catch-up.ts` — the literal "sleep"); LLM
    version (`consolidatePlayerImpression`) ready to wire into the live loop next to
    reflection. Tests in `tests/consolidation.test.ts`. Letta pattern (Apache-2.0).
-3. **mem0 single-pass atomic fact extraction** — replace the regex importance heuristic
-   (`agents.ts:254`) with one cheap LLM call emitting atomic facts + importance. Steal the
-   prompt shape; skip the graph store.
-4. **Hierarchical planning (Stanford `plan.py`)** — upgrade partial planning to
-   day→hourly→5-15min agendas + needs-driven replanning (mechanism #6, medium evidence).
-5. **A\* movement (AI Town `movement.ts`)** — optional; current Dijkstra works. Marginal.
-6. **Graphiti edge-invalidation** — beliefs that change with history (trust→betrayed).
-   Concept-only (needs a graph store); reimplement lightly if/when needed.
+3. ~~**mem0 atomic fact extraction**~~ **SHIPPED (lightweight variant, 2026-06-14).** Did the
+   *deterministic, no-LLM* version: `memoryMetaFromText` (`agents.ts`) now gives graduated
+   importance (high-stakes + conflict + consequence signals) instead of binary 7/4. Keeps it
+   lightweight/browser-friendly; the LLM fact-extraction variant remains optional.
+4. ~~**Relational/causal memory layer**~~ **SHIPPED (2026-06-14).** `src/memory-relational.ts`
+   (pure, browser-safe): `memoriesAbout` (entity-centric recall), `entitiesInText`,
+   `relationalContext` — "what you remember about <the player / a named NPC>", independent of
+   keyword overlap. Wired into BOTH server dialogue (`dialogue.ts`) and the **in-browser**
+   local dialogue (`npc-prompt.ts`). Tests in `tests/memory-relational.test.ts`. This is the
+   lightweight, no-graph-DB version of the Graphiti idea (#6 below subsumed for now).
+5. **Hierarchical planning (Stanford `plan.py`)** — NOT done. Bigger, different axis
+   (behavior, not memory), and quality is LLM/playtest-gated. Good next steal if you want
+   deeper autonomy.
+6. **A\* movement** — NOT done; marginal (Dijkstra works).
+7. **Local WebGPU embedder (transformers.js)** — DEcided AGAINST for now: it adds a heavy
+   model dependency and **contradicts the "lightweight + in-browser" principle** we set, and
+   embeddings aren't the recall bottleneck at game scale (structured + lexical + synthesis
+   wins). Revisit only if a playtest shows semantic recall is genuinely needed client-side.
 
 ## Future — BOTC multiplayer (north-star)
 - **Referee owns ground truth**, exposes only per-player views (AvalonBench/Werewolf

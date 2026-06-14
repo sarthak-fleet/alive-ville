@@ -245,10 +245,18 @@ export function scheduledBlockFor(world: World, npc: Npc): ScheduleBlock | null 
     .find((block) => world.clock.hour >= block.hour) ?? schedule.at(-1) ?? null;
 }
 
+// Graduated deterministic importance (mem0-inspired, but no LLM): start from a
+// baseline and add for high-stakes content, conflict/action, and consequence —
+// instead of a binary 7/4. Kept on the same ~1–10 scale so the reflection
+// importance-sum threshold behaves as before.
 export function memoryMetaFromText(text: string): NonNullable<Memory["meta"]> {
   const tags = tokenize(text).filter((term) => term.length > 3).slice(0, 6);
-  const importance = /secret|bridge|missing|flame|whisper|danger|promise|blue|stole|hide/i.test(text) ? 7 : 4;
-  const emotionalWeight = /angry|panic|scared|unsafe|blamed|confronted/i.test(text) ? 6 : 2;
+  let importance = 3;
+  if (/secret|bridge|missing|flame|whisper|danger|promise|blue|stole|hide/i.test(text)) importance += 3; // high-stakes lore
+  if (/fight|attack|threat|confront|betray|kill|defeat|steal/i.test(text)) importance += 2; // conflict/action
+  if (/quest|gave|gift|reward|coins|defeated|won|lost/i.test(text)) importance += 1; // consequence
+  importance = Math.min(9, importance);
+  const emotionalWeight = /angry|panic|scared|unsafe|blamed|confronted|betray|furious/i.test(text) ? 6 : 2;
   return { importance, tags, visibility: "private", emotionalWeight, sourceActorId: "world" };
 }
 

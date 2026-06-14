@@ -7,6 +7,7 @@
  * still flows through the server path.
  */
 
+import { relationalContext } from "../../../src/memory-relational.ts";
 import { rankMemories } from "../../../src/memory-score.ts";
 import type { Npc, World } from "../../../src/types.ts";
 
@@ -44,12 +45,20 @@ export function buildNpcUserPrompt(npc: Npc, world: World, lines: DialogueLineLi
   const memories = rankMemories(npc.memories ?? [], world.tick, playerText, LOCAL_MEMORY_LIMIT)
     .map((memory) => `- ${memory.text}`)
     .join("\n");
+  // relational recall: what this NPC remembers about the player + any NPC named
+  const relational = relationalContext(
+    npc.memories ?? [],
+    playerText,
+    { id: "player", name: playerName },
+    world.npcs.map((other) => ({ id: other.id, name: other.name }))
+  );
   const transcript = lines
     .filter((line) => line.speaker === "player" || line.speaker === "npc")
     .slice(-6)
     .map((line) => `${line.speaker === "player" ? playerName : line.speakerName || "You"}: ${line.text}`)
     .join("\n");
   return [
+    relational,
     memories ? `What you remember that's relevant:\n${memories}` : "",
     transcript,
     `${playerName}: ${playerText}`,

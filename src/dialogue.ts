@@ -2,6 +2,7 @@ import { memoryMetaFromText } from "./agents.ts";
 import { recordChronicle } from "./chronicle.ts";
 import { checkCoherence } from "./coherence.ts";
 import { completeText, type CompleteTextResult, isLlmEnabled, streamText } from "./llm/router.ts";
+import { relationalContext } from "./memory-relational.ts";
 import { divergenceNudges, rightNowFor, voiceFingerprint } from "./npc-voice.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
 import { applyAction, locationName, retrieveMemoriesSemantic, validateAction } from "./simulation.ts";
@@ -412,9 +413,17 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
 }
 
 async function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], playerText: string): Promise<string> {
-  const memories = (await retrieveMemoriesSemantic(world, npc.id, playerText, MEMORY_LIMIT))
+  const topicMemories = (await retrieveMemoriesSemantic(world, npc.id, playerText, MEMORY_LIMIT))
     .map((memory) => `- (t${memory.tick}) ${memory.text}`)
     .join("\n");
+  // relational recall: what this NPC remembers about the player + any NPC named
+  const relational = relationalContext(
+    npc.memories,
+    playerText,
+    { id: "player", name: world.player.name ?? "the player" },
+    world.npcs.map((other) => ({ id: other.id, name: other.name }))
+  );
+  const memories = [relational, topicMemories].filter(Boolean).join("\n");
   const here = world.npcs
     .filter((other) => other.id !== npc.id && other.locationId === npc.locationId)
     .map((other) => other.name)
