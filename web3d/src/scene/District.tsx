@@ -42,6 +42,8 @@ export const District = memo(function District({ district, night }: { district: 
       {district.buildings.map((building) => (
         <Building key={building.id} building={building} night={night} courtyard={district.courtyard} />
       ))}
+      {/* fill the empty courtyard plaza with a centerpiece */}
+      <CourtyardCenterpiece courtyard={district.courtyard} accent={district.palette.accent} />
       {district.props.map((prop) => (
         <Prop key={prop.id} prop={prop} night={night} />
       ))}
@@ -54,6 +56,50 @@ export const District = memo(function District({ district, night }: { district: 
     </group>
   );
 });
+
+// A stone tiered fountain at the courtyard center — anchors the otherwise-empty
+// plaza. The player spawns ~courtyardRadius*0.5 off-center, so the dead-center
+// placement never traps them.
+const STONE = "#9b958a";
+const STONE_DARK = "#7d776c";
+const WATER = "#5aa6c8";
+function CourtyardCenterpiece({ courtyard, accent }: { courtyard: { x: number; z: number; radius: number }; accent: string }) {
+  if (courtyard.radius < 3) return null;
+  const stone = toonMaterial(STONE);
+  const stoneDark = toonMaterial(STONE_DARK);
+  const water = toonMaterial(WATER, WATER);
+  return (
+    <group position={[courtyard.x, 0, courtyard.z]}>
+      <RigidBody type="fixed" colliders={false}>
+        {/* lower basin rim + pool */}
+        <mesh position={[0, 0.28, 0]} castShadow receiveShadow material={stone}>
+          <cylinderGeometry args={[1.5, 1.65, 0.56, 24]} />
+          <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
+        </mesh>
+        <mesh position={[0, 0.48, 0]} material={water}>
+          <cylinderGeometry args={[1.32, 1.32, 0.16, 24]} />
+        </mesh>
+        {/* pedestal */}
+        <mesh position={[0, 0.95, 0]} castShadow material={stoneDark}>
+          <cylinderGeometry args={[0.34, 0.5, 1.0, 14]} />
+        </mesh>
+        {/* upper basin + pool */}
+        <mesh position={[0, 1.5, 0]} castShadow material={stone}>
+          <cylinderGeometry args={[0.66, 0.5, 0.26, 16]} />
+          <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
+        </mesh>
+        <mesh position={[0, 1.66, 0]} material={water}>
+          <cylinderGeometry args={[0.5, 0.5, 0.08, 16]} />
+        </mesh>
+        {/* finial */}
+        <mesh position={[0, 1.92, 0]} castShadow material={toonMaterial(accent, accent)}>
+          <sphereGeometry args={[0.17, 12, 10]} />
+        </mesh>
+        <CuboidCollider args={[1.65, 0.5, 1.65]} position={[0, 0.5, 0]} />
+      </RigidBody>
+    </group>
+  );
+}
 
 function Ground({ district, cx, cz }: { district: DistrictModel; cx: number; cz: number }) {
   const plotMat = useMemo(() => {
