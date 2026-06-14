@@ -61,6 +61,42 @@ function authHeaders(): Record<string, string> {
   return key ? { authorization: `Bearer ${key}` } : {};
 }
 
+// --- Rate-limit governor ------------------------------------------------------
+// The ambient proposeAction firehose (up to LLM_MAX_NPCS calls every tick) shares
+// ONE upstream quota with player-facing dialogue. When the gateway is rate-limited
+// the firehose was burning the entire budget on retries, so the player's dialogue
+// call got 429 → NPCs went "lost in thought (say that again)".
+//
+// The fix: shed the ambient load first. On any 429/5xx, proposeAction enters an
+// exponential cooldown and short-circuits WITHOUT a network call — freeing the
+// quota for dialogue, which is never gated by this breaker. A player who talks
+// during a rate-limit storm trips the breaker too, so the firehose backs off
+// immediately. Any success clears it.
+const AMBIENT_COOLDOWN_BASE_MS = 8_000;
+const AMBIENT_COOLDOWN_MAX_MS = 60_000;
+let ambientCooldownUntil = 0;
+let ambientCooldownMs = 0;
+
+function isTransientHttpError(error: string | null): boolean {
+  return error === "timeout" || /^HTTP (429|500|502|503|504)$/.test(error ?? "");
+}
+
+function ambientThrottled(): boolean {
+  return Date.now() < ambientCooldownUntil;
+}
+
+/** Called when ANY call sees a transient upstream failure — backs the firehose off. */
+function tripAmbientCooldown(): void {
+  ambientCooldownMs = ambientCooldownMs ? Math.min(ambientCooldownMs * 2, AMBIENT_COOLDOWN_MAX_MS) : AMBIENT_COOLDOWN_BASE_MS;
+  ambientCooldownUntil = Date.now() + ambientCooldownMs;
+}
+
+/** Called on any successful upstream call — clears the backoff. */
+function clearAmbientCooldown(): void {
+  ambientCooldownMs = 0;
+  ambientCooldownUntil = 0;
+}
+
 // Force-pinning a single model defeats the gateway's health-aware fallback: when
 // that model is rate-limited/exhausted the call returns empty → NPCs go "lost in
 // thought". Default to advisory (body.model is a hint; the gateway routes to a
@@ -101,6 +137,10 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
 
   const model = proposeModelFor(tier);
   if (!model) return { skipped: true, reason: `unknown tier ${tier}` };
+
+  // Shed ambient load while the upstream is rate-limited — no network call, so
+  // the freed quota goes to player dialogue. Dialogue paths are never gated.
+  if (ambientThrottled()) return { skipped: true, reason: "rate_cooldown" };
 
   const url = `${process.env["LLM_BASE_URL"]!.replace(/\/$/, "")}/chat/completions`;
   const timeoutMs = Number(process.env["LLM_TIMEOUT_MS"] ?? 8000);
@@ -164,6 +204,8 @@ export async function proposeAction({ tier = "normal", system, user, signal }: P
   const latencyMs = Date.now() - started;
   const meta = { tier, model, latencyMs, usage, error, jsonOk: parsed?.ok ?? false };
   logLlmCall({ kind: "proposeAction", ...meta, raw });
+  if (isTransientHttpError(error)) tripAmbientCooldown();
+  else clearAmbientCooldown();
 
   if (error) return { error, meta };
   if (!parsed || !parsed.ok) return { error: parsed?.reason ?? "Empty response.", raw, meta };
@@ -252,6 +294,10 @@ export async function streamText({ tier = "quest", system, user, signal, onToken
 
   const meta: ProposeMeta = { tier, model, latencyMs: Date.now() - started, error, jsonOk: false };
   logLlmCall({ kind: "streamText", ...meta, raw });
+  // A dialogue 429/5xx means the quota is exhausted — back the ambient firehose off
+  // hard so this and the next dialogue turn have headroom.
+  if (isTransientHttpError(error)) tripAmbientCooldown();
+  else if (!error) clearAmbientCooldown();
   if (error) return { error, raw, meta };
   return { text: raw.trim(), raw, meta };
 }
@@ -317,6 +363,8 @@ export async function completeText({ tier = "quest", system, user, signal, timeo
     jsonOk: false,
   };
   logLlmCall({ kind: "completeText", ...meta, raw });
+  if (isTransientHttpError(error)) tripAmbientCooldown();
+  else if (!error) clearAmbientCooldown();
 
   if (error) return { error, raw, meta };
   return { text: raw!.trim(), raw: raw!, meta };

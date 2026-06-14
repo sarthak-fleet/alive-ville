@@ -16,6 +16,28 @@ interface Relationship {
   label: string;
 }
 
+// Upstream hiccups that are worth a quiet retry rather than a dead end.
+const TRANSIENT_DIALOGUE_ERROR = /429|HTTP 5|timeout|empty|cooldown/i;
+
+function dialogueSoftLine(npcName: string, error?: string): string {
+  if (error && TRANSIENT_DIALOGUE_ERROR.test(error)) {
+    return `${npcName} is drowned out by the crowd — the town's AI is busy right now. Give it a few seconds and try again.`;
+  }
+  return `${npcName} pauses, lost in thought. (say that again)`;
+}
+
+/** On a transient failure, wait for the rate-limit breaker to free quota, then try once more. */
+async function retryDialogueOnce(npcId: string, text: string, error?: string): Promise<DialogueResponse | null> {
+  if (!error || !TRANSIENT_DIALOGUE_ERROR.test(error)) return null;
+  await new Promise((resolve) => setTimeout(resolve, 900));
+  try {
+    const response = await postDialogue(npcId, text);
+    return response.llm && response.reply ? response : null;
+  } catch {
+    return null;
+  }
+}
+
 export function Dialogue() {
   const dialogueNpcId = useUiStore((state) => state.dialogueNpcId);
   const lines = useUiStore((state) => state.dialogueLines);
@@ -140,7 +162,7 @@ export function Dialogue() {
       return true;
     }
     // LLM mode is on but this call hiccuped (model cooldown/timeout): soft retry line
-    pushLine({ speaker: "event", speakerName: "", text: `${npc.name} pauses, lost in thought. (say that again)` });
+    pushLine({ speaker: "event", speakerName: "", text: dialogueSoftLine(npc.name, response.error) });
     return true;
   };
 
@@ -244,9 +266,19 @@ export function Dialogue() {
               }
             }
           } else {
-            const soft = `${npc.name} pauses, lost in thought. (say that again)`;
-            if (streamedAny) ui.updateLastDialogueLine(soft);
-            else ui.pushDialogueLine({ speaker: "event", speakerName: "", text: soft });
+            // No reply: the breaker has now backed the ambient firehose off, so a
+            // single delayed retry usually lands instead of dead-ending.
+            const retried = await retryDialogueOnce(npc.id, text, response.error);
+            if (retried?.reply) {
+              if (streamedAny) ui.updateLastDialogueLine(retried.reply);
+              else ui.pushDialogueLine({ speaker: "npc", speakerName: npc.name, text: retried.reply });
+              sayNpc(retried.reply);
+              if (retried.relationship) setRelationshipState({ npcId: npc.id, value: retried.relationship });
+            } else {
+              const soft = dialogueSoftLine(npc.name, response.error);
+              if (streamedAny) ui.updateLastDialogueLine(soft);
+              else ui.pushDialogueLine({ speaker: "event", speakerName: "", text: soft });
+            }
           }
           inputRef.current?.focus();
           return;
