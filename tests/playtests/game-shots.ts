@@ -35,8 +35,35 @@ async function nonBlankPixels(page: import("@playwright/test").Page): Promise<nu
   });
 }
 
+async function reachable(url: string): Promise<boolean> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 2500);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
+
+  // The vite client (:5175) must be serving the game page. (It proxies nothing;
+  // the client talks to the sim API on :5174 directly — if that's down the
+  // start-flow click below just logs and the shots show the load screen.)
+  if (!(await reachable(BASE_URL))) {
+    console.error(
+      `\n✖ Game not reachable at ${BASE_URL}\n` +
+        `  Start the dev servers first (two terminals, or background them):\n` +
+        `    pnpm dev:server   # sim API on :5174\n` +
+        `    pnpm dev          # vite client on :5175\n` +
+        `  Then re-run: pnpm playtest:game\n`
+    );
+    process.exit(1);
+  }
+
   const browser = await chromium.launch({
     headless: true,
     args: [

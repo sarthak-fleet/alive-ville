@@ -19,6 +19,7 @@
     "test:gameplay": "vitest run tests/gameplay-loop.test.ts tests/world.test.ts tests/quests.test.ts",
     "probe:lifelikeness": "tsx --env-file-if-exists=.env src/probes/cli.ts",
     "playtest:astro-landing": "tsx tests/playtests/astro-landing.ts",
+    "playtest:game": "tsx tests/playtests/game-shots.ts",
     "playtest:all": "pnpm playtest:astro-landing",
     "portraits:pregen": "tsx scripts/pregen-portraits.ts",
     "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build:3d",

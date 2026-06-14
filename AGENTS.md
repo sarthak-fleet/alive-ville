@@ -2,6 +2,28 @@
 
 Also read and follow the shared fleet-level agent standard at `../AGENTS.md`. Treat this repository as owned product code: protect production stability, keep changes scoped, verify work, and record durable follow-up tasks when something remains incomplete or blocked.
 
+## Visual verification (see your own 3D changes)
+
+This is a visual product — you cannot judge layout, models, lighting, or "feel"
+from code alone. Use the headless screenshot harness to eyeball changes:
+
+```bash
+pnpm dev:server     # sim API on :5174  (one terminal / backgrounded)
+pnpm dev            # vite client on :5175
+pnpm playtest:game  # writes tmp/playtest-artifacts/game/{01-spawn,02-walked,03-orbit}.png
+```
+
+Then open/Read the PNGs. The harness (`tests/playtests/game-shots.ts`) loads the
+game, clicks through start → character → play, suppresses the onboarding modal,
+walks the player, and snaps a few frames. It prints a clear error if the servers
+aren't running.
+
+Caveats: headless WebGL is software-rendered (SwiftShader), so FPS and exact
+shading differ from a real GPU, and WebGPU features (in-browser LLM, Kokoro)
+don't run — but geometry, character models, placement, and composition all
+render, which is enough to catch most layout/look regressions. The landing site
+has a sibling harness: `pnpm playtest:astro-landing`.
+
 <claude-mem-context>
 # Memory Context
 
