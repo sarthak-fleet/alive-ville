@@ -2124,6 +2124,14 @@
   font-weight: 600;
 }
 
+/* leave-building chip — make the exit obvious while inside */
+.chip.leave-building {
+  border-color: rgba(248, 212, 78, 0.6);
+  background: linear-gradient(180deg, rgba(248, 212, 78, 0.22), rgba(248, 212, 78, 0.08));
+  color: #f7ecc6;
+}
+.chip.leave-building:hover { border-color: rgba(248, 212, 78, 0.9); }
+
 /* --- in-browser model downloads indicator --- */
 .downloads-indicator {
   position: fixed;

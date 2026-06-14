@@ -40,20 +40,24 @@ export const Interior = memo(function Interior({
     return new THREE.MeshToonMaterial({ map: texture, gradientMap: toonGradientMap() });
   }, [interior.floorColor, preset.floorTexture, width, depth]);
 
+  // Walls are semi-transparent so the third-person camera can see into the room
+  // from outside (an opaque box hides the player + the exit door). Fresh material
+  // per room — never mutate the shared toonMaterial cache.
   const wallMat = useMemo(() => {
+    const base: THREE.MeshToonMaterialParameters = { gradientMap: toonGradientMap(), transparent: true, opacity: 0.5, depthWrite: false };
     if (preset.wallTexture === "brick") {
       const texture = brickTexture(interior.wallColor).clone();
       texture.repeat.set(width / 4, wallHeight / 2);
       texture.needsUpdate = true;
-      return new THREE.MeshToonMaterial({ map: texture, gradientMap: toonGradientMap() });
+      return new THREE.MeshToonMaterial({ ...base, map: texture });
     }
     if (preset.wallTexture === "broken") {
       const texture = crackedWallTexture(interior.wallColor).clone();
       texture.repeat.set(width / 4, wallHeight / 2);
       texture.needsUpdate = true;
-      return new THREE.MeshToonMaterial({ map: texture, gradientMap: toonGradientMap() });
+      return new THREE.MeshToonMaterial({ ...base, map: texture });
     }
-    return toonMaterial(interior.wallColor);
+    return new THREE.MeshToonMaterial({ ...base, color: new THREE.Color(interior.wallColor) });
   }, [interior.wallColor, preset.wallTexture, width, wallHeight]);
 
   const trimMat = toonMaterial(interior.accentColor);

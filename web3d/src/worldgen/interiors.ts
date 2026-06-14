@@ -142,50 +142,50 @@ export function roomVisualFor(role: RoomRole): RoomPreset {
     case "forge":
       return {
         role,
-        ceilingHeight: 2.6,
+        ceilingHeight: 3.6,
         wallTexture: "brick",
         floorTexture: "stone",
-        ambientIntensity: 12,
+        ambientIntensity: 18,
         hearthBoost: 2.4,
         wallDressing: "standard",
       };
     case "tavern":
       return {
         role,
-        ceilingHeight: 3.2,
+        ceilingHeight: 4.2,
         wallTexture: "wood",
         floorTexture: "plank",
-        ambientIntensity: 28,
+        ambientIntensity: 40,
         hearthBoost: 1.0,
         wallDressing: "banners",
       };
     case "home":
       return {
         role,
-        ceilingHeight: 2.9,
+        ceilingHeight: 3.8,
         wallTexture: "plaster",
         floorTexture: "tile",
-        ambientIntensity: 22,
+        ambientIntensity: 32,
         hearthBoost: 1.2,
         wallDressing: "many-frames",
       };
     case "abandoned":
       return {
         role,
-        ceilingHeight: 3.0,
+        ceilingHeight: 3.8,
         wallTexture: "broken",
         floorTexture: "stone",
-        ambientIntensity: 4,
+        ambientIntensity: 7,
         hearthBoost: 0,
         wallDressing: "boarded",
       };
     default:
       return {
         role,
-        ceilingHeight: 3.2,
+        ceilingHeight: 4.0,
         wallTexture: "plaster",
         floorTexture: "plank",
-        ambientIntensity: 26,
+        ambientIntensity: 38,
         hearthBoost: 1.0,
         wallDressing: "standard",
       };
@@ -310,9 +310,10 @@ export function interiorForBuilding(world: World, model: WorldModel, buildingId:
   const preset = roomVisualFor(plan.role);
   const rng = rngFor(world.id, buildingId, "interior");
 
-  // room scales with the building footprint
-  const width = clamp(building.width * 1.6, 9, 18);
-  const depth = clamp(building.depth * 1.7, 8, 13);
+  // room scales with the building footprint — generous so it doesn't feel like
+  // a closet once you're inside with furniture + an inhabitant
+  const width = clamp(building.width * 2.0, 14, 28);
+  const depth = clamp(building.depth * 2.1, 13, 22);
   const origin = { x: model.bounds.minX, z: model.bounds.maxZ + ROOM_MARGIN_FROM_CITY };
   const exit = { x: origin.x + width / 2, z: origin.z + depth - 0.6 };
   const spawn = { x: exit.x, z: exit.z - 1.6 };

@@ -146,6 +146,18 @@ export function Hud() {
     return () => window.removeEventListener("keydown", onKey);
   }, [openDialogue, send]);
 
+  // guaranteed exit: works from anywhere in the room, independent of the door
+  // interaction prompt (which you can wander out of range of in a big room)
+  const leaveBuilding = (): void => {
+    const ui = useUiStore.getState();
+    const currentWorld = useWorldStore.getState().world;
+    if (!currentWorld || !ui.interiorBuildingId) return;
+    const door = cityModelFor(currentWorld).doors.find((entry) => entry.buildingId === ui.interiorBuildingId);
+    if (door) requestTeleport(door.outsideX, door.outsideZ);
+    ui.setInteriorBuildingId(null);
+    ui.setInteractionTarget(null);
+  };
+
   if (!world) return null;
 
   const interiorLabel = interiorBuildingId
@@ -163,6 +175,11 @@ export function Hud() {
           {String(Math.floor(world.clock.hour)).padStart(2, "0")}:00 ({timeOfDay(world.clock)})
         </div>
         <div className="topbar-actions">
+          {interiorBuildingId ? (
+            <button type="button" className="chip leave-building" onClick={leaveBuilding}>
+              🚪 Leave building
+            </button>
+          ) : null}
           {/* the world is alive by default; the old pause chip read as a media
               stop button and players hit it by accident */}
           {!agentLoopRunning ? (
