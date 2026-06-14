@@ -159,7 +159,7 @@ export async function generateDialogueReply(
   if ("error" in result && result.error) return { ok: false, reason: result.error };
   if (!("text" in result) || !result.text) return { ok: false, reason: "empty_reply" };
 
-  let parsed = parseDialogueJson(result.text, npc.name);
+  let parsed = parseDialogueJson(result.text, npc.name, world.player.name ?? "");
   if (!parsed.reply) return { ok: false, reason: "empty_reply" };
 
   // Coherence pre-flight — runs on both streaming and non-streaming paths.
@@ -175,7 +175,7 @@ export async function generateDialogueReply(
       ? heldBackTokenizer((delta: string) => { streamBuffer += delta; })
       : undefined;
     const retry = await complete({ tier: npc.tier === "quest" ? "quest" : "normal", system: correctedSystem, user, onToken: retryOnToken });
-    const retryParsed = "text" in retry && retry.text ? parseDialogueJson(retry.text, npc.name) : null;
+    const retryParsed = "text" in retry && retry.text ? parseDialogueJson(retry.text, npc.name, world.player.name ?? "") : null;
     const retryCoherence = retryParsed?.reply
       ? checkCoherence(world, npc, retryParsed.reply, { playerText })
       : null;
@@ -376,10 +376,13 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
     `Goals: ${(npc.goals ?? []).join("; ") || "live your life"}.`,
     knownSecrets ? `Secrets you hold:\n${knownSecrets}` : "",
     ``,
-    `You are talking face to face with the player INSIDE a living world where you`,
-    `can really act. FORMAT: write your spoken line directly (1-3 sentences, in`,
-    `character, no name prefix, no quotes, no markdown). Then, on a NEW final line,`,
-    `write exactly: @@{"action":null,"disposition":0}`,
+    `You are talking face to face with ${world.player.name ?? "the visitor"} INSIDE a`,
+    `living world where you can really act.`,
+    `FORMAT: reply with ONLY your own spoken words — 1-3 sentences, in character. Do`,
+    `NOT begin with any name prefix (not "${npc.name}:", not "${world.player.name ?? "the visitor"}:").`,
+    `Do NOT write ${world.player.name ?? "the visitor"}'s lines, do NOT narrate, and do NOT`,
+    `continue the conversation past your one reply. No quotes, no markdown. Then, on a`,
+    `NEW final line, write exactly: @@{"action":null,"disposition":0}`,
     ``,
     `"disposition": how this exchange shifted your feelings about the player,`,
     `an integer from -2 (offended) to 2 (warmed), usually 0.`,
@@ -584,13 +587,13 @@ function createDynamicQuest(world: World, npc: Npc, action: NonNullable<ParsedDi
   return `${npc.name} entrusts you with a new task: ${title}.`;
 }
 
-function parseDialogueJson(raw: string, npcName: string): ParsedDialogue {
+function parseDialogueJson(raw: string, npcName: string, playerName = ""): ParsedDialogue {
   const text = raw.trim().replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
   // streaming format: spoken text, then a final "@@{...}" control line
   const marker = text.lastIndexOf("@@");
   if (marker !== -1) {
-    const spoken = sanitizeReply(text.slice(0, marker), npcName);
+    const spoken = sanitizeReply(text.slice(0, marker), npcName, playerName);
     const tail = text.slice(marker + 2).trim();
     try {
       const control = JSON.parse(tail) as { action?: ParsedDialogue["action"]; disposition?: unknown };
@@ -609,7 +612,7 @@ function parseDialogueJson(raw: string, npcName: string): ParsedDialogue {
   if (start !== -1 && end > start) {
     try {
       const parsed = JSON.parse(text.slice(start, end + 1)) as Partial<ParsedDialogue> & { reply?: unknown; disposition?: unknown };
-      const reply = typeof parsed.reply === "string" ? sanitizeReply(parsed.reply, npcName) : "";
+      const reply = typeof parsed.reply === "string" ? sanitizeReply(parsed.reply, npcName, playerName) : "";
       const disposition = typeof parsed.disposition === "number" ? Math.max(-2, Math.min(2, Math.round(parsed.disposition))) : 0;
       const action = parsed.action && typeof parsed.action === "object" ? (parsed.action as ParsedDialogue["action"]) : null;
       if (reply) return { reply, action, disposition };
@@ -617,7 +620,7 @@ function parseDialogueJson(raw: string, npcName: string): ParsedDialogue {
       // fall through to plain-text handling
     }
   }
-  return { reply: sanitizeReply(text, npcName), action: null, disposition: 0 };
+  return { reply: sanitizeReply(text, npcName, playerName), action: null, disposition: 0 };
 }
 
 function normalizeAction(
@@ -640,10 +643,24 @@ function normalizeAction(
   }
 }
 
-function sanitizeReply(raw: string, npcName: string): string {
+export function sanitizeReply(raw: string, npcName: string, playerName = ""): string {
   let text = raw.trim();
-  const prefix = new RegExp(`^${npcName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*`, "i");
-  text = text.replace(prefix, "").trim();
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // labels the model wrongly prefixes its reply with, or uses to fake extra turns
+  const labels = [npcName, playerName, "Player", "Wanderer", "NPC", "You"].filter((l) => l && l.length <= 40);
+  const labelAlt = labels.map(esc).join("|");
+  // strip a leading speaker label ("Wanderer:", "Old Doran:", …)
+  text = text.replace(new RegExp(`^\\s*(?:${labelAlt})\\s*:\\s*`, "i"), "").trim();
+  // stop transcript continuation: drop from the first later "<Speaker>:" line onward,
+  // so the model can't ventriloquise both sides of the conversation
+  const turnRe = new RegExp(`^\\s*(?:${labelAlt})\\s*:`, "i");
+  const lines = text.split(/\r?\n/);
+  const kept: string[] = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    if (i > 0 && turnRe.test(lines[i]!)) break;
+    kept.push(lines[i]!);
+  }
+  text = kept.join(" ").replace(/\s+/g, " ").trim();
   if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("“") && text.endsWith("”"))) {
     text = text.slice(1, -1).trim();
   }
