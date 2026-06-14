@@ -16,11 +16,13 @@ export function locationPalette(location: Location): Palette {
 }
 
 export function paletteForText(text: string): Palette {
-  if (/forge|training|engine|repair/i.test(text)) return { ground: "#3a3028", structure: "#8a4c2e", accent: "#f08a38" };
-  if (/garden|wood|rookery|home/i.test(text)) return { ground: "#243f2a", structure: "#497c4a", accent: "#b5e48c" };
-  if (/bridge|overpass|alley|threat/i.test(text)) return { ground: "#27313d", structure: "#657180", accent: "#7fd0ff" };
-  if (/inn|kiosk|counter|report/i.test(text)) return { ground: "#2f3344", structure: "#596477", accent: "#f8d44e" };
-  return { ground: "#283546", structure: "#5d718b", accent: "#f5d782" };
+  // Warmer, lighter, more saturated than before — the old grounds were near-black
+  // slate which read as flat/dead flooring. Buildings add per-building hue on top.
+  if (/forge|training|engine|repair/i.test(text)) return { ground: "#4a3c2c", structure: "#9c5a34", accent: "#ffa24a" };
+  if (/garden|wood|rookery|home/i.test(text)) return { ground: "#33513a", structure: "#58955d", accent: "#c4ee9a" };
+  if (/bridge|overpass|alley|threat/i.test(text)) return { ground: "#3a4654", structure: "#75839c", accent: "#8fd6ff" };
+  if (/inn|kiosk|counter|report/i.test(text)) return { ground: "#3e4356", structure: "#6c7994", accent: "#ffdf6a" };
+  return { ground: "#414a5e", structure: "#7184a4", accent: "#f7dc8a" };
 }
 
 export type BodyShape = "average" | "broad" | "caped" | "mechanical" | "small" | "slim";

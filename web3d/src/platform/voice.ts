@@ -1,10 +1,12 @@
 /**
- * voice.ts — NPC text-to-speech + player speech-to-text via the Web Speech API.
+ * voice.ts — NPC text-to-speech + player speech-to-text.
  *
- * Built-in browser APIs, no dependency. TTS speaks NPC replies; STT lets the
- * player dictate into the dialogue box. Both are feature-detected and fully
- * opt-in — neither runs unless the UI asks.
+ * TTS prefers Kokoro-82M in-browser (kokoro.ts, far more natural) and falls back
+ * to the built-in Web Speech voice. STT uses the Web Speech recognition API.
+ * Both are opt-in — nothing runs unless the UI enables voice.
  */
+
+import { kokoroSpeak, kokoroStop } from "./kokoro.ts";
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -32,9 +34,12 @@ export function setVoiceEnabled(value: boolean): void {
 export function isVoiceEnabled(): boolean {
   return ttsEnabled;
 }
-/** Speak an NPC line only when the player has turned voice on. */
+/** Speak an NPC line only when the player has turned voice on. Kokoro first, Web Speech fallback. */
 export function sayNpc(text: string): void {
-  if (ttsEnabled) speak(text);
+  if (!ttsEnabled) return;
+  void kokoroSpeak(text).then((ok) => {
+    if (!ok) speak(text);
+  });
 }
 
 export function ttsSupported(): boolean {
@@ -57,6 +62,7 @@ export function speak(text: string): void {
 }
 
 export function stopSpeaking(): void {
+  kokoroStop();
   if (ttsSupported()) globalThis.speechSynthesis.cancel();
 }
 

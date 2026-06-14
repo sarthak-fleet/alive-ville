@@ -20,7 +20,7 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
   const edgeMat = toonMaterial("#3a4150");
 
   const groundMat = useMemo(() => {
-    const texture = speckleTexture(shiftColor(baseColor, -0.12)).clone();
+    const texture = speckleTexture(shiftColor(baseColor, 0.06)).clone();
     texture.repeat.set(width / 14, depth / 14);
     texture.needsUpdate = true;
     return new THREE.MeshToonMaterial({ map: texture, gradientMap: toonGradientMap() });
