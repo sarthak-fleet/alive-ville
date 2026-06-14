@@ -48,6 +48,8 @@ interface NpcProps {
   spawn: PlacedNpcSpawn;
   model: WorldModel;
   quests: Quest[];
+  /** showcase mode: stand at the spawn anchor (idle only), face the player when near */
+  staticMode?: boolean;
 }
 
 type AmbientRole = "shopkeeper" | "patroller" | "idler" | "wanderer";
@@ -67,7 +69,7 @@ function agencyFor(npc: NpcData): number {
   return 0.7;
 }
 
-export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
+export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps) {
   const group = useRef<THREE.Group>(null);
   const animation = useRef<CharacterAnimationHandle>(null);
   const labelRef = useRef<THREE.Group>(null);
@@ -177,6 +179,20 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     animation.current?.setDefeated(clientDefeated);
     if (clientDefeated) {
       animation.current?.setSpeed(0);
+      syncRegistry(npc.id, node.position);
+      return;
+    }
+
+    // showcase: agents hold their spot (idle only) and turn to face the player
+    // when they come near — no wandering, travel, or combat.
+    if (staticMode) {
+      animation.current?.setSpeed(0);
+      const dx = playerPosition.x - node.position.x;
+      const dz = playerPosition.z - node.position.z;
+      if (dx * dx + dz * dz < 30) {
+        s.heading = dampAngle(s.heading, Math.atan2(dx, dz), 5, delta);
+        node.rotation.y = s.heading;
+      }
       syncRegistry(npc.id, node.position);
       return;
     }

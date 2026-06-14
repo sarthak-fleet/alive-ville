@@ -224,7 +224,17 @@ export async function runTick(
   refreshMoods(world);
   // information travels and changes minds — the world schemes on its own
   for (const event of propagateInformation(world)) {
-    if (event.kind === "gossip_spread") continue; // too chatty to surface
+    if (event.kind === "gossip_spread") {
+      // normally too chatty to surface; in the showcase the spreading IS the
+      // demo, so show it as a visible murmur (banter bubble) between agents
+      if (!world.showcase) continue;
+      actions.push({
+        applied: true,
+        action: { type: "gossip", actorId: event.actorId, targetId: event.aboutId ?? event.actorId, aboutId: event.aboutId ?? event.actorId, text: event.text },
+        text: event.text,
+      } as AppliedAction);
+      continue;
+    }
     actions.push({
       applied: true,
       action: { type: "remember", actorId: event.actorId, text: event.text },

@@ -82,7 +82,8 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
         kind: "gossip_spread",
         actorId: teller.id,
         aboutId: listener.id,
-        text: `${teller.name} shares a rumor with ${listener.name}.`,
+        // carry the actual rumor so it can surface as a visible murmur (showcase)
+        text: `Psst… ${strip(memory.text).slice(0, 90)}`,
       });
     }
   }

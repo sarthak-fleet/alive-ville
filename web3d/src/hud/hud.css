@@ -1970,6 +1970,25 @@
 .start-card-name { font-family: var(--font-display); letter-spacing: 0.03em; color: #f3ecd8; }
 .start-card-blurb { color: var(--text-dim); }
 
+/* the AI-demo showcase card — make it stand out as the flagship demo */
+.start-card.showcase {
+  border-color: rgba(127, 208, 255, 0.5);
+  box-shadow: var(--shadow), 0 0 30px rgba(127, 208, 255, 0.22);
+}
+.world-demo-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  vertical-align: middle;
+  border-radius: 999px;
+  color: #bfe9ff;
+  background: rgba(127, 208, 255, 0.16);
+  border: 1px solid rgba(127, 208, 255, 0.55);
+}
+
 /* anime worlds are beta while the showcase leans on stylized CC0 assets */
 .start-card.beta { opacity: 0.82; }
 .world-beta-badge {

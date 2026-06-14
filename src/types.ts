@@ -431,6 +431,8 @@ export interface World {
   eventLog: TickSummary[];
   /** causal trace of legible world beats — capped, ordered oldest-first (see src/chronicle.ts) */
   chronicle?: ChronicleEvent[];
+  /** showcase mode: a small static-agent "talk + gossip" demo (no wander/combat/quests) */
+  showcase?: boolean;
 }
 
 export type ChronicleEventKind =

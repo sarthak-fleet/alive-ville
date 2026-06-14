@@ -32,6 +32,7 @@ interface BundledWorld {
   blurb: string;
   kind: "world" | "source";
   beta?: boolean;
+  showcase?: boolean;
 }
 
 /** Root flow: pick a world, then pick who you are in it. */
@@ -51,8 +52,9 @@ export function StartFlow() {
       try {
         const res = await fetch(api("/api/worlds"));
         const data = (await res.json()) as { worlds: BundledWorld[] };
-        // showcase (stylized) worlds first; anime betas after
-        setWorlds([...data.worlds].sort((a, b) => Number(a.beta ?? false) - Number(b.beta ?? false)));
+        // the AI-demo showcase first, then regular worlds, then anime betas
+        const rank = (w: BundledWorld) => (w.showcase ? 0 : w.beta ? 2 : 1);
+        setWorlds([...data.worlds].sort((a, b) => rank(a) - rank(b)));
       } catch {
         setWorlds([]);
       }
@@ -181,12 +183,13 @@ export function StartFlow() {
                 <button
                   key={entry.id}
                   type="button"
-                  className={`start-card ${entry.beta ? "beta" : ""}`}
+                  className={`start-card ${entry.beta ? "beta" : ""} ${entry.showcase ? "showcase" : ""}`}
                   disabled={busy !== null}
                   onClick={() => void selectWorld(entry.id)}
                 >
                   <div className="start-card-name">
                     {busy === entry.id ? "Generating…" : entry.name}
+                    {entry.showcase ? <span className="world-demo-badge">AI DEMO</span> : null}
                     {entry.beta ? <span className="world-beta-badge">BETA</span> : null}
                   </div>
                   <div className="start-card-blurb">{entry.blurb}</div>

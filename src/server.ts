@@ -779,6 +779,8 @@ interface BundledWorld {
   file: string;
   /** anime worlds are beta while the showcase leans on stylized CC0 asset packs */
   beta: boolean;
+  /** the static-agent gossip demo — surfaced as a distinct card */
+  showcase: boolean;
 }
 
 let bundledWorldsCache: BundledWorld[] | null = null;
@@ -808,6 +810,7 @@ function listBundledWorlds(): BundledWorld[] {
           kind: isSource ? "source" : "world",
           file: `${dir}${file}`,
           beta: Boolean(raw["beta"]) || dir.includes("/anime/"),
+          showcase: Boolean(raw["showcase"]),
         });
       } catch {
         // unreadable file; skip

@@ -1,0 +1,257 @@
+{
+  "showcase": true,
+  "id": "lanternmere",
+  "name": "Lanternmere Plaza",
+  "story": {
+    "title": "Lanternmere — A Living Gossip",
+    "premise": "Lanternmere is a tiny lantern-lit market plaza at dusk. Six neighbours linger in the square, trading small talk and smaller secrets. Nothing here needs saving — it is a place to simply talk. But these people remember what you say, form opinions, and pass word to one another. Tell one of them something, and watch it travel.",
+    "opening": "The lanterns are warm against the blue evening. The neighbours are gathered around the old fountain, half-listening to each other, ready to talk to whoever wanders in.",
+    "currentObjective": "Talk to the neighbours. Tell one of them something and see who else knows it a moment later."
+  },
+  "storyProgress": {
+    "phase": "starter",
+    "unlockedCutsceneIds": [],
+    "playedCutsceneIds": []
+  },
+  "tick": 0,
+  "player": {
+    "locationId": "plaza",
+    "name": "Wanderer",
+    "appearance": {
+      "hair": "windswept dark hair",
+      "outfit": "traveler's coat with a red scarf",
+      "palette": ["#1c2540", "#e8c39e", "#c8382a"],
+      "silhouette": "average",
+      "visualTags": ["scarf", "coat", "wanderer"]
+    }
+  },
+  "clock": {
+    "hoursPerTick": 1,
+    "hour": 18,
+    "day": 1
+  },
+  "rules": [
+    {
+      "id": "small_world",
+      "kind": "social",
+      "text": "Lanternmere is small — word travels fast. What one neighbour hears, the others soon hear too."
+    },
+    {
+      "id": "warm_evening",
+      "kind": "world",
+      "text": "It is a calm dusk in the plaza. No one is in danger; everyone has time to talk."
+    }
+  ],
+  "factions": [
+    {
+      "id": "lanternmere",
+      "name": "The Lanternmere neighbours",
+      "goals": ["keep the evening pleasant", "know everyone's business"],
+      "resources": ["the fountain", "the notice board"],
+      "reputation": 0
+    }
+  ],
+  "tensions": [],
+  "villainPlans": [],
+  "directorState": { "pressure": 0 },
+  "locations": [
+    {
+      "id": "plaza",
+      "name": "Lanternmere Plaza",
+      "x": 0,
+      "y": 0,
+      "w": 170,
+      "h": 150,
+      "visual": {
+        "role": "market square social hub",
+        "description": "A cobbled plaza ringed by warm shopfronts, lit by hanging lanterns around an old stone fountain.",
+        "palette": { "ground": "#3a3344", "structure": "#8a6a4a", "accent": "#f7c552" },
+        "visualTags": ["lanterns", "market", "fountain", "cozy"],
+        "landmarks": ["fountain", "notice_board"],
+        "elevation": 0.05
+      }
+    }
+  ],
+  "exits": [],
+  "items": [],
+  "interactables": [],
+  "quests": [],
+  "eventLog": [],
+  "npcs": [
+    {
+      "id": "maren",
+      "name": "Maren",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "innkeeper and the heart of the plaza",
+      "factionId": "lanternmere",
+      "description": "She runs the lantern inn and knows everyone. Warm, talkative, and constitutionally unable to sit on a good piece of news. If you want something known, tell Maren.",
+      "appearance": {
+        "sourceLook": "warm innkeeper woman, motherly",
+        "bodyType": "average height, welcoming posture",
+        "hair": "auburn hair in a loose bun",
+        "outfit": "a russet dress under a flour-dusted apron",
+        "palette": ["#9a4a3c", "#e8c39e", "#f2c14e"],
+        "silhouette": "soft, aproned, hands-on-hips innkeeper",
+        "visualTags": ["woman", "innkeeper", "warm", "apron"]
+      },
+      "traits": {
+        "personality": ["warm", "chatty", "nosy"],
+        "values": ["community", "hospitality", "knowing things"],
+        "flaws": ["cannot keep a secret"],
+        "speechStyle": "warm, fast, full of 'oh you must hear this'"
+      },
+      "mood": { "emotion": "cheerful", "stress": 12, "confidence": 78, "suspicion": 20 },
+      "goals": ["make every visitor feel at home", "be the first to know the news"],
+      "relationships": { "pip": 4, "doran": 3, "sable": 2, "bram": 1, "wynne": 0 },
+      "memories": [
+        { "tick": 0, "text": "Bram has been quieter than usual this week, and twice forgot to open the forge.", "meta": { "importance": 4, "tags": ["bram"], "visibility": "shared", "subject": "bram", "sourceActorId": "world" } }
+      ]
+    },
+    {
+      "id": "bram",
+      "name": "Bram",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "blacksmith with a heavy heart",
+      "factionId": "lanternmere",
+      "description": "The plaza's blacksmith, broad and quiet. He is hiding that he has quietly sold the forge and means to leave Lanternmere for good before the festival — he can't bear to say goodbye.",
+      "appearance": {
+        "sourceLook": "gruff burly blacksmith",
+        "bodyType": "broad, heavy-shouldered",
+        "hair": "short grey-streaked hair, soot on his brow",
+        "outfit": "scorched leather apron over a grey work shirt",
+        "palette": ["#5a5048", "#c79a72", "#8a4c2e"],
+        "silhouette": "broad smith with crossed arms",
+        "visualTags": ["worker", "blacksmith", "smith", "forge", "gruff", "broad"]
+      },
+      "traits": {
+        "personality": ["gruff", "loyal", "guarded"],
+        "values": ["honest work", "not making a fuss"],
+        "flaws": ["bottles things up"],
+        "speechStyle": "short, low, reluctant sentences"
+      },
+      "mood": { "emotion": "melancholy", "stress": 64, "confidence": 50, "suspicion": 38 },
+      "goals": ["leave town quietly without a scene", "avoid talking about the forge"],
+      "relationships": { "doran": 3, "maren": 1, "sable": -1, "wynne": 0, "pip": 2 },
+      "secrets": [
+        { "id": "bram_leaving", "text": "Bram has secretly sold the forge and plans to leave Lanternmere for good before the festival.", "risk": 80, "knownBy": ["bram"] }
+      ],
+      "memories": []
+    },
+    {
+      "id": "sable",
+      "name": "Sable",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "herbalist and hedge-witch who notices everything",
+      "factionId": "lanternmere",
+      "description": "Keeper of the corner herb stall, sharp-eyed and dry. She trades in remedies and in other people's business, and she has noticed Bram packing crates after dark.",
+      "appearance": {
+        "sourceLook": "sly hedge-witch herbalist in a hood",
+        "bodyType": "lean, watchful",
+        "hair": "dark hair under a deep green hood",
+        "outfit": "a layered green witch's shawl hung with dried herbs",
+        "palette": ["#3f6e4a", "#d8c39e", "#7a5cd0"],
+        "silhouette": "hooded, herb-laden hedge-witch",
+        "visualTags": ["witch", "herbalist", "hedge-witch", "sly", "hood"]
+      },
+      "traits": {
+        "personality": ["sly", "perceptive", "dry-witted"],
+        "values": ["knowledge", "leverage", "self-reliance"],
+        "flaws": ["hoards what she knows for advantage"],
+        "speechStyle": "low, knowing, a little mocking"
+      },
+      "mood": { "emotion": "amused", "stress": 22, "confidence": 70, "suspicion": 55 },
+      "goals": ["learn what everyone is hiding", "confirm her suspicion about Bram"],
+      "relationships": { "maren": 2, "wynne": 1, "doran": 1, "pip": 0, "bram": -1 },
+      "memories": [
+        { "tick": 0, "text": "I saw Bram loading crates onto a cart behind the forge after midnight. He's hiding something.", "meta": { "importance": 6, "tags": ["bram", "secret"], "visibility": "shared", "subject": "bram", "sourceActorId": "sable" } }
+      ]
+    },
+    {
+      "id": "doran",
+      "name": "Old Doran",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "village elder who has seen it all",
+      "factionId": "lanternmere",
+      "description": "The eldest neighbour, once the plaza's headman. Gentle and unhurried, fond of small philosophy. His memory wanders, but his read on people rarely does.",
+      "appearance": {
+        "sourceLook": "kindly old village elder",
+        "bodyType": "stooped, slow-moving",
+        "hair": "white hair and a long white beard",
+        "outfit": "a worn elder's coat with a brass clasp",
+        "palette": ["#5b5560", "#e0c9a8", "#c9a14a"],
+        "silhouette": "stooped elder leaning on a cane",
+        "visualTags": ["elder", "old", "gentleman", "wise"]
+      },
+      "traits": {
+        "personality": ["gentle", "philosophical", "patient"],
+        "values": ["wisdom", "kindness", "memory"],
+        "flaws": ["forgetful", "rambles"],
+        "speechStyle": "slow, fond, with little proverbs"
+      },
+      "mood": { "emotion": "content", "stress": 8, "confidence": 66, "suspicion": 18 },
+      "goals": ["see the plaza stay close-knit", "pass on what he remembers"],
+      "relationships": { "maren": 3, "bram": 3, "pip": 4, "sable": 1, "wynne": 1 },
+      "memories": []
+    },
+    {
+      "id": "pip",
+      "name": "Pip",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "errand-running child who repeats everything",
+      "factionId": "lanternmere",
+      "description": "A quick, bright errand-runner of about ten. Pip cannot hold a thought without sharing it — whatever Pip hears, the whole plaza hears within minutes.",
+      "appearance": {
+        "sourceLook": "energetic young errand kid",
+        "bodyType": "small and quick",
+        "hair": "messy sandy hair",
+        "outfit": "an oversized patched tunic and worn boots",
+        "palette": ["#4a7aa8", "#e8c39e", "#e0b84a"],
+        "silhouette": "small darting child",
+        "visualTags": ["child", "kid", "young", "quick", "small"]
+      },
+      "traits": {
+        "personality": ["excitable", "curious", "guileless"],
+        "values": ["being in on things", "being useful"],
+        "flaws": ["cannot keep anything quiet"],
+        "speechStyle": "breathless, run-on, 'did you hear?!'"
+      },
+      "mood": { "emotion": "excited", "stress": 10, "confidence": 60, "suspicion": 8 },
+      "goals": ["be the first to tell everyone the news", "win the grown-ups' approval"],
+      "relationships": { "maren": 4, "doran": 4, "bram": 2, "sable": 1, "wynne": 2 },
+      "memories": []
+    },
+    {
+      "id": "wynne",
+      "name": "Wynne",
+      "locationId": "plaza",
+      "tier": "background",
+      "role": "wary newcomer passing through",
+      "factionId": "lanternmere",
+      "description": "A traveller who arrived a few days ago and has not decided whether to trust the place. Formerly a caravan guard. Watches more than she speaks, and weighs every rumour for what it's worth.",
+      "appearance": {
+        "sourceLook": "guarded traveller, former caravan guard",
+        "bodyType": "lean, athletic, alert",
+        "hair": "black hair in a tight braid",
+        "outfit": "a travel-worn soldier's coat with a buckled belt",
+        "palette": ["#4a566a", "#caa07a", "#9aa7b8"],
+        "silhouette": "alert, road-worn guard",
+        "visualTags": ["soldier", "guard", "traveler", "wary", "lean"]
+      },
+      "traits": {
+        "personality": ["guarded", "observant", "blunt"],
+        "values": ["self-reliance", "reading a room", "loyalty once earned"],
+        "flaws": ["slow to trust", "suspicious of easy friendliness"],
+        "speechStyle": "clipped, careful, testing"
+      },
+      "mood": { "emotion": "wary", "stress": 40, "confidence": 64, "suspicion": 70 },
+      "goals": ["decide whether Lanternmere is worth staying in", "figure out who here is honest"],
+      "relationships": { "maren": 1, "sable": 1, "doran": 1, "pip": 2, "bram": 0 },
+      "memories": []
+    }
+  ]
+}

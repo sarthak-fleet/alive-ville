@@ -87,9 +87,11 @@ async function main(): Promise<void> {
   await page.goto(BASE_URL, { waitUntil: "domcontentloaded" });
 
   // --- click through the start flow: world -> character -> playing ---
+  // GAME_SHOWCASE=1 selects the AI-demo showcase card; else the first world.
+  const cardSel = process.env["GAME_SHOWCASE"] ? ".start-card.showcase" : ".start-card";
   try {
-    await page.locator(".start-card").first().waitFor({ timeout: 20_000 });
-    await page.locator(".start-card").first().click();
+    await page.locator(cardSel).first().waitFor({ timeout: 20_000 });
+    await page.locator(cardSel).first().click();
     await page.locator(".char-pick").first().waitFor({ timeout: 10_000 });
     await page.locator(".char-pick").first().click();
   } catch (e) {

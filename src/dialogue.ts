@@ -218,7 +218,10 @@ export async function generateDialogueReply(
   // what you tell an NPC is no longer sealed: juicy lines become shareable
   // and travel the rumor network (see src/rumors.ts)
   const playerLineMeta = memoryMetaFromText(playerText);
-  const visibility = (playerLineMeta.importance ?? 0) >= 5 ? "shared" : "private";
+  // In the showcase, the whole point is that word travels — let substantive
+  // lines spread (≥3) instead of only the juiciest (≥5).
+  const shareThreshold = world.showcase ? 3 : 5;
+  const visibility = (playerLineMeta.importance ?? 0) >= shareThreshold ? "shared" : "private";
   // shared player lines become the root of a causal chain — stamp the
   // chronicle id onto the seed memory so gossip + secret recognition can
   // trace any later beat back to "the player said this"

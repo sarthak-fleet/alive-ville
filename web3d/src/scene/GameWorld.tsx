@@ -112,7 +112,7 @@ export function GameWorld({ world }: { world: World }) {
             if (!spawn) return null;
             // hide exterior render for NPCs currently inhabiting the active interior
             if (activeInterior?.inhabitantId === npc.id) return null;
-            return <Npc key={npc.id} npc={npc} worldId={world.id} spawn={spawn} model={model} quests={world.quests ?? []} />;
+            return <Npc key={npc.id} npc={npc} worldId={world.id} spawn={spawn} model={model} quests={world.quests ?? []} staticMode={world.showcase === true} />;
           })}
           <PlayerController world={world} model={model} placements={placements} activeDistrict={activeDistrict} />
           <CombatVfx />
