@@ -298,6 +298,9 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
       direction.normalize().applyAxisAngle(UP_AXIS, s.yaw);
     }
 
+    // the showcase is talk-only — never let the player swing at the neighbours
+    if (world.showcase) combatInput.attackPressed = false;
+
     // combat FSM (attacks, dodge, hitstun, death) can take over movement
     const combatFrame = updatePlayerCombat({
       state: playerCombatState,

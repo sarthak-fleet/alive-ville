@@ -429,12 +429,11 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
     ...instructions,
     ``,
     rumorBlock,
-    ``,
-    standingBeliefs,
-    ``,
-    voiceBlock,
-    rightNowBlock,
-    divergeBlock,
+    // The voice-fingerprint / standing-beliefs / diverge / right-now blocks stack
+    // up and stilt the output into stiff, generic lines. A focused chat prompt
+    // (persona + gossip) gives the model room to sound natural — keep those extras
+    // for the dynamic game only.
+    ...(world.showcase ? [] : [``, standingBeliefs, ``, voiceBlock, rightNowBlock, divergeBlock]),
   ]
     .filter(Boolean)
     .join("\n");
