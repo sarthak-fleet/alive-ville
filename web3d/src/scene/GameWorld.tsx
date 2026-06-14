@@ -23,16 +23,12 @@ import { CityGround } from "./CityGround.tsx";
 import { District, InteractableMarker, ItemMarker } from "./District.tsx";
 import { Interior } from "./Interior.tsx";
 import { Lighting } from "./Lighting.tsx";
-import { N8AO } from "./n8ao.ts";
 import { Skyline } from "./Skyline.tsx";
 
 // low-end escape hatch + debugging: ?nofx disables the post-processing chain
 const POST_FX_ENABLED = typeof window === "undefined" || !new URLSearchParams(window.location.search).has("nofx");
 // ?perf shows the r3f-perf profiler overlay (FPS, draw calls, triangles, GPU/CPU ms)
 const PERF_ENABLED = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("perf");
-// ?ao adds ambient occlusion (grounds the procedural geometry; off by default —
-// it's a real GPU cost + a look/perf call only a real device can judge).
-const AO_ENABLED = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("ao");
 
 /** Registers the renderer's canvas for clip capture (must live inside <Canvas>). */
 function CaptureRegistrar(): null {
@@ -129,7 +125,6 @@ export function GameWorld({ world }: { world: World }) {
             pass, and without it the whole scene renders flat and dark. */}
         {POST_FX_ENABLED ? (
           <EffectComposer multisampling={0}>
-            {AO_ENABLED ? <N8AO aoRadius={2} intensity={2.2} distanceFalloff={1} halfRes /> : <></>}
             <Bloom mipmapBlur intensity={night ? 0.85 : 0.4} luminanceThreshold={0.82} luminanceSmoothing={0.2} />
             <Vignette eskil={false} offset={0.34} darkness={0.38} />
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />

@@ -133,6 +133,9 @@ function generateBuildings(
         const floors = Math.round(range(rng, profile.minFloors, profile.maxFloors));
         const buildingDepth = Math.min(beltDepth, range(rng, beltDepth * 0.7, beltDepth));
         const shade = range(rng, -0.18, 0.22);
+        // per-building hue rotation + saturation so a street reads as varied
+        // buildings, not one tinted block (the old monochrome look).
+        const body = hueShift(shiftColor(palette.structure, shade), range(rng, -18, 18), range(rng, 1.05, 1.3));
         buildings.push({
           id: `${locationId}:${edge.name}:${lot}`,
           x: edge.horizontal ? edge.start + lotCenter : edge.fixed,
@@ -140,8 +143,8 @@ function generateBuildings(
           width: edge.horizontal ? lotWidth - 0.8 : buildingDepth,
           depth: edge.horizontal ? buildingDepth : lotWidth - 0.8,
           height: Math.max(1, floors) * FLOOR_HEIGHT + range(rng, 0, 1.2),
-          bodyColor: shiftColor(palette.structure, shade),
-          roofColor: shiftColor(palette.structure, -0.3),
+          bodyColor: body,
+          roofColor: shiftColor(body, -0.34),
           accentColor: palette.accent,
           floors,
           windows: floors >= 2,
@@ -388,4 +391,36 @@ export function shiftColor(hex: string, amount: number): string {
     return Math.max(0, Math.min(255, Math.round(next)));
   });
   return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Rotate hue (degrees) and scale saturation in HSL — pure, for per-building variety. */
+export function hueShift(hex: string, degrees: number, satMul = 1): string {
+  const value = Number.parseInt(hex.replace("#", ""), 16);
+  const r = ((value >> 16) & 0xff) / 255;
+  const g = ((value >> 8) & 0xff) / 255;
+  const b = (value & 0xff) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  let h = 0;
+  let s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+  }
+  h = (h + degrees + 360) % 360;
+  s = Math.max(0, Math.min(1, s * satMul));
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [rr, gg, bb] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  const to = (n: number): string =>
+    Math.max(0, Math.min(255, Math.round((n + m) * 255)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${to(rr)}${to(gg)}${to(bb)}`;
 }
