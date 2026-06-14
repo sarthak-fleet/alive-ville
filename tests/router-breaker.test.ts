@@ -15,7 +15,7 @@ function resOk(content: string): Response {
 }
 
 describe("router rate-limit breaker", () => {
-  let prev: Record<string, string | undefined>;
+  let prev: { key?: string; base?: string; local?: string; force?: string };
 
   beforeEach(() => {
     prev = {
