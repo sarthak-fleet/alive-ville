@@ -319,20 +319,27 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
   // the NPC client-side so the world stops feeling like a morgue. The sim
   // still tracks them as defeated — coming back later they stay gone.
   const [corpseHidden, setCorpseHidden] = useState(false);
+  // reset at render when the NPC revives (render-time keyed reset, not setState-in-effect)
+  const [corpseTrackedDefeated, setCorpseTrackedDefeated] = useState(defeated);
+  if (corpseTrackedDefeated !== defeated) {
+    setCorpseTrackedDefeated(defeated);
+    if (!defeated) setCorpseHidden(false);
+  }
   useEffect(() => {
-    if (!defeated) {
-      setCorpseHidden(false);
-      return;
-    }
+    if (!defeated) return undefined;
     const t = window.setTimeout(() => setCorpseHidden(true), 6000);
     return () => window.clearTimeout(t);
   }, [defeated]);
+
+  // If this NPC's VRM fails to load/parse, drop to the procedural rig instead
+  // of rendering nothing.
+  const [vrmFailed, setVrmFailed] = useState(false);
   if (corpseHidden) return null;
 
   return (
     <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
-      {vrmKey ? (
-        <VrmCharacter ref={animation} vrmKey={vrmKey} />
+      {vrmKey && !vrmFailed ? (
+        <VrmCharacter ref={animation} vrmKey={vrmKey} onError={() => setVrmFailed(true)} />
       ) : (
         <RiggedCharacter ref={animation} visual={visual} appearance={npc.appearance} seedId={npc.id} personaText={personaText} />
       )}

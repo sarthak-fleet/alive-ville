@@ -32,11 +32,11 @@ import {
   type VRM,
   VRMLoaderPlugin,
 } from "@pixiv/three-vrm";
-import { Outlines, useGLTF } from "@react-three/drei";
+import { Outlines } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import { scaledDelta } from "../controls/runtime.ts";
 import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
@@ -56,16 +56,114 @@ const TARGET_HEIGHT = 1.7;
 interface VrmCharacterProps {
   vrmKey: VrmKey;
   protagonist?: boolean;
+  /** called once if the VRM fails to load/parse — caller falls back to the procedural rig */
+  onError?: () => void;
 }
 
 /**
- * `gltf.userData.vrm` is populated by `VRMLoaderPlugin` after parse. Drei's
- * `useGLTF` caches the *parsed gltf* by url and accepts an `extendLoader`
- * callback (4th arg) where we register the plugin against the underlying
- * GLTFLoader.
+ * Parse a fresh VRM per call. We deliberately do NOT use drei's `useGLTF` here:
+ * it caches the *parsed* gltf by url and hands every caller the SAME scene
+ * object — but a Three.js object can only have one parent, so multiple NPCs that
+ * map to the same VRM key would fight over one instance and all-but-one would
+ * render invisible. The raw .vrm bytes are still HTTP-cached by the browser, so
+ * only the (cheap) parse repeats per instance.
  */
-function extendWithVrm(loader: GLTFLoader): void {
-  loader.register((parser) => new VRMLoaderPlugin(parser));
+function loadVrm(url: string): Promise<VRM> {
+  return new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
+    loader.load(
+      url,
+      (gltf) => {
+        const vrm = (gltf.userData as { vrm?: VRM } | undefined)?.vrm;
+        if (vrm) resolve(vrm);
+        else reject(new Error(`VRM not attached to gltf for ${url}`));
+      },
+      undefined,
+      reject
+    );
+  });
+}
+
+/** Free geometry + materials for a per-instance VRM on unmount (avoids VRAM leaks across world swaps). */
+function disposeVrm(vrm: VRM): void {
+  vrm.scene.traverse((object: THREE.Object3D) => {
+    const mesh = object as THREE.Mesh;
+    if (!(mesh as { isMesh?: boolean }).isMesh) return;
+    mesh.geometry?.dispose?.();
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of mats) (mat as THREE.Material | null)?.dispose?.();
+  });
+}
+
+interface VrmSetup {
+  vrm: VRM;
+  root: THREE.Group;
+  bones: BoneMap;
+  mtoonMaterials: MToonMaterial[];
+  normalizeScale: number;
+  isVrm0: boolean;
+}
+
+/** One-time rig/material/scale prep on a freshly-parsed VRM instance. */
+function setupVrm(vrmInstance: VRM): VrmSetup {
+  // Defensive: disable frustum culling on every skinned mesh — long sessions
+  // sometimes drop a mesh whose root world matrix hasn't updated yet.
+  vrmInstance.scene.traverse((object: THREE.Object3D) => {
+    const m = object as THREE.Mesh & { isMesh?: boolean; isSkinnedMesh?: boolean };
+    if (m.isMesh || m.isSkinnedMesh) {
+      m.frustumCulled = false;
+      m.castShadow = true;
+      m.receiveShadow = true;
+    }
+  });
+
+  // Strip joints not referenced by any skinned mesh (pixiv-recommended).
+  VRMUtils.removeUnnecessaryJoints(vrmInstance.scene);
+
+  // VRM 0.x faces -Z; VRM 1.0 faces +Z. Detect via meta.metaVersion.
+  const metaVersion = (vrmInstance.meta as { metaVersion?: string } | undefined)?.metaVersion;
+  const vrm0 = !metaVersion || metaVersion.startsWith("0");
+
+  // Normalize to ~1.7m height.
+  vrmInstance.scene.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(vrmInstance.scene);
+  const rawHeight = box.max.y - box.min.y;
+  const normalize = Number.isFinite(rawHeight) && rawHeight > 0.01 ? TARGET_HEIGHT / rawHeight : 1;
+
+  // Bone refs for procedural locomotion + combat poses.
+  const humanoid = vrmInstance.humanoid as unknown as {
+    getNormalizedBoneNode: (name: string) => THREE.Object3D | null;
+  } | undefined;
+  const get = (name: string): THREE.Object3D | null => humanoid?.getNormalizedBoneNode(name) ?? null;
+  const bn = VRMHumanBoneName;
+  const bones: BoneMap = {
+    hips: get(bn["Hips"]!),
+    spine: get(bn["Spine"]!),
+    chest: get(bn["Chest"]!) ?? get(bn["UpperChest"]!),
+    head: get(bn["Head"]!),
+    leftUpperArm: get(bn["LeftUpperArm"]!),
+    rightUpperArm: get(bn["RightUpperArm"]!),
+    leftLowerArm: get(bn["LeftLowerArm"]!),
+    rightLowerArm: get(bn["RightLowerArm"]!),
+    leftUpperLeg: get(bn["LeftUpperLeg"]!),
+    rightUpperLeg: get(bn["RightUpperLeg"]!),
+    leftLowerLeg: get(bn["LeftLowerLeg"]!),
+    rightLowerLeg: get(bn["RightLowerLeg"]!),
+  };
+
+  // Collect MToon materials for emissive flash / telegraph pulses.
+  const mtoonMaterials: MToonMaterial[] = [];
+  vrmInstance.scene.traverse((object: THREE.Object3D) => {
+    const mesh = object as THREE.Mesh;
+    if (!(mesh as { isMesh?: boolean }).isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const mat of mats) {
+      if (mat instanceof MToonMaterial) mtoonMaterials.push(mat);
+    }
+  });
+
+  return { vrm: vrmInstance, root: vrmInstance.scene, bones, mtoonMaterials, normalizeScale: normalize, isVrm0: vrm0 };
 }
 
 interface CombatPose {
@@ -152,12 +250,8 @@ const COMBAT_POSES: Record<CombatAnimKind, CombatPose> = {
 };
 
 export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterProps>(
-  function VrmCharacter({ vrmKey, protagonist = false }, ref) {
+  function VrmCharacter({ vrmKey, protagonist = false, onError }, ref) {
     const url = VRMS[vrmKey];
-    const gltf = useGLTF(url, true, true, extendWithVrm) as unknown as {
-      scene: THREE.Group;
-      userData?: { vrm?: VRM };
-    };
     const speedRef = useRef(0);
     const defeatedRef = useRef(false);
     const flashUntil = useRef(0);
@@ -166,97 +260,37 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
     const phaseRef = useRef(Math.random() * Math.PI * 2);
     const combatAnim = useRef<{ kind: CombatAnimKind; startedAt: number } | null>(null);
 
-    const { vrm, root, bones, mtoonMaterials, normalizeScale, isVrm0 } = useMemo(() => {
-      // `useGLTF` returns the parsed gltf object. With our extendLoader the
-      // VRM plugin attaches `vrm` to userData. NOTE: we do NOT clone the VRM
-      // here — VRMs include skeleton + spring-bone state per instance, and a
-      // safe per-instance clone needs `VRMUtils.deepCloneVrm` style work that
-      // is non-trivial to ship. For now each VRM key is a singleton instance
-      // in the world (multiple NPCs that map to the same key will share the
-      // same scene, which is acceptable for v1 — Npc.tsx only ever has one
-      // active per persona in normal play).
-      const vrmInstance: VRM | undefined =
-        (gltf as { userData?: { vrm?: VRM } }).userData?.vrm ??
-        ((gltf as unknown as { vrm?: VRM }).vrm as VRM | undefined);
-
-      if (!vrmInstance) {
-        // Loader didn't attach VRM (corrupt or non-VRM file). Return an
-        // empty placeholder so Npc.tsx's try/catch upstream can fall back.
-        throw new Error(`VRM not attached to gltf for ${url}`);
-      }
-
-      // Defensive: disable frustum culling on every skinned mesh — long
-      // sessions sometimes drop a mesh whose root world matrix hasn't
-      // updated yet, same as the archetype loader.
-      vrmInstance.scene.traverse((object: THREE.Object3D) => {
-        const m = object as THREE.Mesh & { isMesh?: boolean; isSkinnedMesh?: boolean };
-        if (m.isMesh || m.isSkinnedMesh) {
-          m.frustumCulled = false;
-          m.castShadow = true;
-          m.receiveShadow = true;
+    // Per-instance load: each NPC parses its own VRM (see loadVrm). null until
+    // ready; on failure we call onError so Npc.tsx swaps in the procedural rig.
+    const [setup, setSetup] = useState<VrmSetup | null>(null);
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
+    useEffect(() => {
+      let cancelled = false;
+      let created: VRM | null = null;
+      void (async () => {
+        try {
+          const vrm = await loadVrm(url);
+          if (cancelled) {
+            disposeVrm(vrm);
+            return;
+          }
+          created = vrm;
+          setSetup(setupVrm(vrm));
+        } catch {
+          if (!cancelled) onErrorRef.current?.();
         }
-      });
-
-      // Strip joints not referenced by any skinned mesh. Trims GPU bone
-      // matrix uploads and CPU updates — pixiv recommends this.
-      VRMUtils.removeUnnecessaryJoints(vrmInstance.scene);
-
-      // VRM 0.x faces -Z by default. VRM 1.0 faces +Z. Without conditional
-      // rotation half the models moonwalk. Detect via meta.metaVersion.
-      const metaVersion = (vrmInstance.meta as { metaVersion?: string } | undefined)?.metaVersion;
-      const vrm0 = !metaVersion || metaVersion.startsWith("0");
-
-      // Normalize to ~1.7m height. VRMs ship in real units (meters), so the
-      // scale is usually close to 1.0 already.
-      vrmInstance.scene.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(vrmInstance.scene);
-      const rawHeight = box.max.y - box.min.y;
-      const normalize =
-        Number.isFinite(rawHeight) && rawHeight > 0.01 ? TARGET_HEIGHT / rawHeight : 1;
-
-      // Bone refs for procedural locomotion + combat poses.
-      const humanoid = vrmInstance.humanoid as unknown as {
-        getNormalizedBoneNode: (name: string) => THREE.Object3D | null;
-      } | undefined;
-      const get = (name: string): THREE.Object3D | null =>
-        humanoid?.getNormalizedBoneNode(name) ?? null;
-      const bn = VRMHumanBoneName;
-      const boneMap: BoneMap = {
-        hips: get(bn["Hips"]!),
-        spine: get(bn["Spine"]!),
-        chest: get(bn["Chest"]!) ?? get(bn["UpperChest"]!),
-        head: get(bn["Head"]!),
-        leftUpperArm: get(bn["LeftUpperArm"]!),
-        rightUpperArm: get(bn["RightUpperArm"]!),
-        leftLowerArm: get(bn["LeftLowerArm"]!),
-        rightLowerArm: get(bn["RightLowerArm"]!),
-        leftUpperLeg: get(bn["LeftUpperLeg"]!),
-        rightUpperLeg: get(bn["RightUpperLeg"]!),
-        leftLowerLeg: get(bn["LeftLowerLeg"]!),
-        rightLowerLeg: get(bn["RightLowerLeg"]!),
+      })();
+      return () => {
+        cancelled = true;
+        setSetup(null);
+        if (created) disposeVrm(created);
       };
+    }, [url]);
 
-      // Collect MToon materials for emissive flash / telegraph pulses.
-      const mtoons: MToonMaterial[] = [];
-      vrmInstance.scene.traverse((object: THREE.Object3D) => {
-        const mesh = object as THREE.Mesh;
-        const isMesh = (mesh as { isMesh?: boolean }).isMesh;
-        if (!isMesh) return;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const mat of mats) {
-          if (mat instanceof MToonMaterial) mtoons.push(mat);
-        }
-      });
-
-      return {
-        vrm: vrmInstance,
-        root: vrmInstance.scene,
-        bones: boneMap,
-        mtoonMaterials: mtoons,
-        normalizeScale: normalize,
-        isVrm0: vrm0,
-      };
-    }, [gltf, url]);
+    const vrm = setup?.vrm ?? null;
+    const bones = setup?.bones ?? null;
+    const mtoonMaterials = useMemo(() => setup?.mtoonMaterials ?? [], [setup]);
 
     // Cache original emissive values so we can restore between pulses.
     const originalEmissive = useMemo(() => {
@@ -265,18 +299,6 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
         intensity: mat.emissiveIntensity ?? 0,
       }));
     }, [mtoonMaterials]);
-
-    useEffect(() => {
-      // Dispose materials on unmount to prevent VRAM leaks across world swaps.
-      return () => {
-        root.traverse((object: THREE.Object3D) => {
-          const mesh = object as THREE.Mesh;
-          if (!(mesh as { isMesh?: boolean }).isMesh) return;
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const mat of mats) (mat as THREE.Material | null)?.dispose?.();
-        });
-      };
-    }, [root]);
 
     useImperativeHandle(ref, () => ({
       setSpeed: (speed: number) => {
@@ -304,6 +326,7 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
     }));
 
     useFrame((_, rawDelta) => {
+      if (!vrm || !bones) return; // still loading this instance
       const delta = scaledDelta(rawDelta);
 
       // CRITICAL: vrm.update is what drives spring-bone physics (hair, skirt,
@@ -410,14 +433,18 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
       }
     });
 
+    // Nothing to show until this instance finishes parsing (brief). Npc.tsx
+    // keeps the NPC's label/position; the model just pops in a frame later.
+    if (!setup) return null;
+
     // VRM 0.x face -Z (need PI rotation to align with our +Z forward
     // convention). VRM 1.x already faces +Z.
-    const rotateY = isVrm0 ? Math.PI : 0;
+    const rotateY = setup.isVrm0 ? Math.PI : 0;
 
     return (
       <group>
         <group rotation={[0, rotateY, 0]}>
-          <primitive object={root} scale={normalizeScale} />
+          <primitive object={setup.root} scale={setup.normalizeScale} />
         </group>
         {protagonist ? <Outlines thickness={0.055} color="#c8382a" screenspace={false} /> : null}
       </group>
@@ -425,7 +452,7 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
   }
 );
 
-// Drei `useGLTF.preload` accepts the same `extendLoader` signature, so VRM
-// preload also needs the plugin registered or the cache miss recomputes.
+// VRMs are parsed per instance (see loadVrm) so multiple NPCs sharing a key each
+// get their own scene; the raw bytes are HTTP-cached so only the parse repeats.
 // We intentionally do NOT preload every VRM at module load — each is ~10-15
 // MB, totalling >60 MB. Suspense + on-demand loading is the right shape.
