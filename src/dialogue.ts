@@ -366,6 +366,57 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
   const nudges = divergenceNudges(npc);
   const divergeBlock = nudges.length > 0 ? `DIVERGE:\n${nudges.join("\n")}` : "";
 
+  const playerName = world.player.name ?? "the visitor";
+  // Showcase agents are static talkers: drop the whole act-in-the-world action
+  // menu (move/fight/quest/give/lead/follow) — irrelevant here and a wall of
+  // noise that pushed weak models off the rails. Keep it a focused chat + gossip.
+  const instructions = world.showcase
+    ? [
+        ``,
+        `You are simply chatting with ${playerName} in the plaza — nothing to do but talk.`,
+        `Stay fully in character. Reply with ONLY your own spoken words — 1-2 short`,
+        `sentences. No name prefix (not "${npc.name}:", not "${playerName}:"), no quotes, no`,
+        `narration; never write ${playerName}'s lines or continue past your one reply.`,
+        `If something you've heard (see RUMORS / your memories) fits, bring it up —`,
+        `gossip is welcome, and it's fine to be wrong or to wonder aloud.`,
+        `Then, on a NEW final line, write exactly: @@{"action":null,"disposition":0}`,
+        ``,
+        `"disposition": how this exchange shifted your feelings about ${playerName}, an`,
+        `integer from -2 (offended) to 2 (warmed), usually 0.`,
+      ]
+    : [
+        ``,
+        `You are talking face to face with ${playerName} INSIDE a`,
+        `living world where you can really act.`,
+        `FORMAT: reply with ONLY your own spoken words — 1-3 sentences, in character. Do`,
+        `NOT begin with any name prefix (not "${npc.name}:", not "${playerName}:").`,
+        `Do NOT write ${playerName}'s lines, do NOT narrate, and do NOT`,
+        `continue the conversation past your one reply. No quotes, no markdown. Then, on a`,
+        `NEW final line, write exactly: @@{"action":null,"disposition":0}`,
+        ``,
+        `"disposition": how this exchange shifted your feelings about the player,`,
+        `an integer from -2 (offended) to 2 (warmed), usually 0.`,
+        ``,
+        `"action": null for pure talk — or, when the conversation reaches a decision`,
+        `point, one of (use exact ids from CAPABILITIES):`,
+        `{"type":"move","locationId":"<id>"} — walk off somewhere (ends the chat)`,
+        `{"type":"give","itemId":"<id>"} — hand the player an item you hold`,
+        `{"type":"offer_quest","questId":"<id>"} — formally ask for the player's help`,
+        `{"type":"fight"} — attack the player (only when truly provoked or it fits your nature)`,
+        `{"type":"create_quest","title":"<short task name>","description":"<one sentence>"} —`,
+        `  entrust the player with a NEW task when the conversation naturally produces one`,
+        `{"type":"complete_quest","questId":"<id>"} — declare a quest fulfilled when the player has done it`,
+        `{"type":"lead","locationId":"<id>"} — guide the player somewhere: you set off, they follow`,
+        `  (use this whenever they ask you to take/show/escort them to a place)`,
+        `{"type":"follow"} — start traveling WITH the player (when you agree to come along)`,
+        `{"type":"unfollow"} — stop following the player`,
+        `{"type":"spar"} — accept a friendly, non-lethal practice duel (training, testing each other)`,
+        ``,
+        `Never repeat a line you already said. If the conversation is circling or has`,
+        `run its course, make a decision: act, or say goodbye and move. You may`,
+        `refuse, lie, bargain, or redirect as the character would.`,
+      ];
+
   return [
     `You are ${npc.name}, a character in "${world.story?.title ?? world.name}".`,
     `World premise: ${world.story?.premise ?? "(unknown)"}`,
@@ -375,36 +426,7 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
     npc.mood ? `Current mood: ${npc.mood.emotion} (stress ${npc.mood.stress}, suspicion ${npc.mood.suspicion}).` : "",
     `Goals: ${(npc.goals ?? []).join("; ") || "live your life"}.`,
     knownSecrets ? `Secrets you hold:\n${knownSecrets}` : "",
-    ``,
-    `You are talking face to face with ${world.player.name ?? "the visitor"} INSIDE a`,
-    `living world where you can really act.`,
-    `FORMAT: reply with ONLY your own spoken words — 1-3 sentences, in character. Do`,
-    `NOT begin with any name prefix (not "${npc.name}:", not "${world.player.name ?? "the visitor"}:").`,
-    `Do NOT write ${world.player.name ?? "the visitor"}'s lines, do NOT narrate, and do NOT`,
-    `continue the conversation past your one reply. No quotes, no markdown. Then, on a`,
-    `NEW final line, write exactly: @@{"action":null,"disposition":0}`,
-    ``,
-    `"disposition": how this exchange shifted your feelings about the player,`,
-    `an integer from -2 (offended) to 2 (warmed), usually 0.`,
-    ``,
-    `"action": null for pure talk — or, when the conversation reaches a decision`,
-    `point, one of (use exact ids from CAPABILITIES):`,
-    `{"type":"move","locationId":"<id>"} — walk off somewhere (ends the chat)`,
-    `{"type":"give","itemId":"<id>"} — hand the player an item you hold`,
-    `{"type":"offer_quest","questId":"<id>"} — formally ask for the player's help`,
-    `{"type":"fight"} — attack the player (only when truly provoked or it fits your nature)`,
-    `{"type":"create_quest","title":"<short task name>","description":"<one sentence>"} —`,
-    `  entrust the player with a NEW task when the conversation naturally produces one`,
-    `{"type":"complete_quest","questId":"<id>"} — declare a quest fulfilled when the player has done it`,
-    `{"type":"lead","locationId":"<id>"} — guide the player somewhere: you set off, they follow`,
-    `  (use this whenever they ask you to take/show/escort them to a place)`,
-    `{"type":"follow"} — start traveling WITH the player (when you agree to come along)`,
-    `{"type":"unfollow"} — stop following the player`,
-    `{"type":"spar"} — accept a friendly, non-lethal practice duel (training, testing each other)`,
-    ``,
-    `Never repeat a line you already said. If the conversation is circling or has`,
-    `run its course, make a decision: act, or say goodbye and move. You may`,
-    `refuse, lie, bargain, or redirect as the character would.`,
+    ...instructions,
     ``,
     rumorBlock,
     ``,
@@ -429,7 +451,10 @@ async function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[]
     { id: "player", name: world.player.name ?? "the player" },
     world.npcs.map((other) => ({ id: other.id, name: other.name }))
   );
-  const memories = [relational, topicMemories].filter(Boolean).join("\n");
+  const showcase = world.showcase === true;
+  const allMemories = [relational, topicMemories].filter(Boolean).join("\n");
+  // showcase: keep the prompt from drowning in piled-up "X told me…" rumors
+  const memories = showcase ? allMemories.split("\n").slice(0, 4).join("\n") : allMemories;
   const here = world.npcs
     .filter((other) => other.id !== npc.id && other.locationId === npc.locationId)
     .map((other) => other.name)
@@ -542,11 +567,15 @@ async function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[]
     identityLines.join("\n"),
     `Your stance toward this character:\n${stanceLines.join("\n")}`,
     charMemories ? `What you specifically remember about ${playerName}:\n${charMemories}` : "",
-    `CAPABILITIES you may use in "action":`,
-    exits ? `Places you can walk to:\n${exits}` : "",
-    held ? `Items you hold:\n${held}` : "",
-    quests ? `Quests you can offer:\n${quests}` : "",
-    memories ? `Your other relevant memories:\n${memories}` : "",
+    ...(showcase
+      ? []
+      : [
+          `CAPABILITIES you may use in "action":`,
+          exits ? `Places you can walk to:\n${exits}` : "",
+          held ? `Items you hold:\n${held}` : "",
+          quests ? `Quests you can offer:\n${quests}` : "",
+        ]),
+    memories ? `${showcase ? "What you've heard around the plaza" : "Your other relevant memories"}:\n${memories}` : "",
     conversation ? `Conversation so far:\n${conversation}` : "",
     ``,
     `${playerName} says: "${playerText}"`,
