@@ -61,6 +61,14 @@ async function loadEngine(): Promise<KokoroEngine> {
   return enginePromise;
 }
 
+/** Begin downloading the voice model now (idempotent) so it's ready before first use. */
+export function kokoroPreload(): void {
+  if (disabled) return;
+  void loadEngine().catch(() => {
+    // failure already flips the download store to "error"; sayNpc falls back to Web Speech
+  });
+}
+
 /** Speak a line with Kokoro. Returns false (and self-disables) on any failure. */
 export async function kokoroSpeak(text: string, voice = DEFAULT_VOICE): Promise<boolean> {
   if (disabled || !text.trim()) return false;

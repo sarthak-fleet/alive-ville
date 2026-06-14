@@ -8,6 +8,7 @@ import { Hud } from "./hud/Hud.tsx";
 import { LoadScreen } from "./hud/LoadScreen.tsx";
 import { Onboarding } from "./hud/Onboarding.tsx";
 import { StartFlow } from "./hud/StartFlow.tsx";
+import { kokoroPreload } from "./platform/kokoro.ts";
 import { GameWorld } from "./scene/GameWorld.tsx";
 import { useUiStore } from "./store/ui.ts";
 import { useWorldStore } from "./store/world.ts";
@@ -28,16 +29,18 @@ export function App() {
     return disconnect;
   }, []);
 
-  // Preload the in-browser LLM at app start (when WebGPU is present) so it's
-  // downloading in the background during the title/start screen and is ready by
-  // the time the player reaches their first conversation — no first-dialogue
-  // stall. Progress shows in the DownloadsIndicator. load() is idempotent.
+  // Preload the in-browser models at app start so they download in the background
+  // during the title/start screen and are ready by the player's first conversation
+  // — no first-use stall. Progress shows in the DownloadsIndicator. Both loaders
+  // are idempotent. The brain needs WebGPU; Kokoro has a WASM fallback so it
+  // always preloads (it self-disables to Web Speech if it can't load).
   useEffect(() => {
     void (async () => {
       const brain = useLocalBrain.getState();
       const caps = brain.caps ?? (await brain.detect());
       if (caps.webgpu && useLocalBrain.getState().status === "idle") void useLocalBrain.getState().load();
     })();
+    kokoroPreload();
   }, []);
 
   // Remove the inline HTML splash as soon as React has mounted — the
