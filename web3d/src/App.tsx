@@ -2,6 +2,7 @@ import "./hud/hud.css";
 
 import { useEffect } from "react";
 
+import { DownloadsIndicator } from "./hud/DownloadsIndicator.tsx";
 import { Hud } from "./hud/Hud.tsx";
 import { LoadScreen } from "./hud/LoadScreen.tsx";
 import { Onboarding } from "./hud/Onboarding.tsx";
@@ -62,6 +63,7 @@ export function App() {
       {gamePhase === "playing" ? <Hud /> : null}
       <Onboarding />
       <StartFlow />
+      <DownloadsIndicator />
     </div>
   );
 }

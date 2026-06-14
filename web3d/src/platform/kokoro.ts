@@ -8,11 +8,22 @@
  * to Web Speech — never throws.
  */
 
+import { create } from "zustand";
+
 const MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
 const DEFAULT_VOICE = "af_heart";
 
 type KokoroAudio = { toBlob: () => Blob };
 type KokoroEngine = { generate: (text: string, opts: { voice: string }) => Promise<KokoroAudio> };
+
+/** Download/readiness status for the in-browser Kokoro voice model. */
+export type KokoroStatus = "idle" | "loading" | "ready" | "error";
+interface KokoroDownloadState {
+  status: KokoroStatus;
+  /** 0..1 of the file currently transferring */
+  progress: number;
+}
+export const useKokoroDownload = create<KokoroDownloadState>(() => ({ status: "idle", progress: 0 }));
 
 let enginePromise: Promise<KokoroEngine> | null = null;
 let current: HTMLAudioElement | null = null;
@@ -25,14 +36,27 @@ export function kokoroAvailable(): boolean {
 
 async function loadEngine(): Promise<KokoroEngine> {
   enginePromise ??= (async () => {
-    const mod = (await import("kokoro-js")) as unknown as {
-      KokoroTTS: { from_pretrained: (id: string, opts: Record<string, unknown>) => Promise<KokoroEngine> };
-    };
-    const webgpu = typeof navigator !== "undefined" && "gpu" in navigator;
-    return mod.KokoroTTS.from_pretrained(MODEL_ID, {
-      dtype: webgpu ? "fp32" : "q8",
-      device: webgpu ? "webgpu" : "wasm",
-    });
+    useKokoroDownload.setState({ status: "loading", progress: 0 });
+    try {
+      const mod = (await import("kokoro-js")) as unknown as {
+        KokoroTTS: { from_pretrained: (id: string, opts: Record<string, unknown>) => Promise<KokoroEngine> };
+      };
+      const webgpu = typeof navigator !== "undefined" && "gpu" in navigator;
+      const engine = await mod.KokoroTTS.from_pretrained(MODEL_ID, {
+        dtype: webgpu ? "fp32" : "q8",
+        device: webgpu ? "webgpu" : "wasm",
+        progress_callback: (event: { status?: string; progress?: number }) => {
+          if (typeof event.progress === "number") {
+            useKokoroDownload.setState({ status: "loading", progress: Math.min(1, event.progress / 100) });
+          }
+        },
+      });
+      useKokoroDownload.setState({ status: "ready", progress: 1 });
+      return engine;
+    } catch (error) {
+      useKokoroDownload.setState({ status: "error", progress: 0 });
+      throw error;
+    }
   })();
   return enginePromise;
 }
