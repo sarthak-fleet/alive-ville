@@ -127,6 +127,21 @@ export function Dialogue() {
     return () => window.removeEventListener("keydown", onKey);
   }, [closeDialogue]);
 
+  // Local-first: the moment the player starts a conversation, begin loading the
+  // in-browser LLM (when WebGPU is present). The first turns stream from the
+  // cloud while it downloads (progress shown by DownloadsIndicator); once it's
+  // resident, submit() prefers it — zero server calls, no rate limits. load() is
+  // idempotent, so re-opening dialogues never re-downloads.
+  useEffect(() => {
+    if (!dialogueNpcId) return;
+    void (async () => {
+      const brain = useLocalBrain.getState();
+      if (brain.status !== "unknown" && brain.status !== "idle") return;
+      const caps = brain.caps ?? (await brain.detect());
+      if (caps.webgpu && useLocalBrain.getState().status === "idle") void useLocalBrain.getState().load();
+    })();
+  }, [dialogueNpcId]);
+
   // Portrait state: "static" → "api" → "letter"
   // Must be before any early-return to satisfy rules of hooks.
   const [portraitStage, setPortraitStage] = useState<"static" | "api" | "letter">("static");
