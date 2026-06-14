@@ -2,6 +2,7 @@ import "./hud/hud.css";
 
 import { useEffect } from "react";
 
+import { useLocalBrain } from "./ai/local-llm.ts";
 import { DownloadsIndicator } from "./hud/DownloadsIndicator.tsx";
 import { Hud } from "./hud/Hud.tsx";
 import { LoadScreen } from "./hud/LoadScreen.tsx";
@@ -25,6 +26,18 @@ export function App() {
   useEffect(() => {
     const disconnect = useWorldStore.getState().connectLive();
     return disconnect;
+  }, []);
+
+  // Preload the in-browser LLM at app start (when WebGPU is present) so it's
+  // downloading in the background during the title/start screen and is ready by
+  // the time the player reaches their first conversation — no first-dialogue
+  // stall. Progress shows in the DownloadsIndicator. load() is idempotent.
+  useEffect(() => {
+    void (async () => {
+      const brain = useLocalBrain.getState();
+      const caps = brain.caps ?? (await brain.detect());
+      if (caps.webgpu && useLocalBrain.getState().status === "idle") void useLocalBrain.getState().load();
+    })();
   }, []);
 
   // Remove the inline HTML splash as soon as React has mounted — the
