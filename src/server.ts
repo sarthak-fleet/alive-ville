@@ -777,6 +777,8 @@ interface BundledWorld {
   blurb: string;
   kind: "world" | "source";
   file: string;
+  /** anime worlds are beta while the showcase leans on stylized CC0 asset packs */
+  beta: boolean;
 }
 
 let bundledWorldsCache: BundledWorld[] | null = null;
@@ -805,6 +807,7 @@ function listBundledWorlds(): BundledWorld[] {
           blurb: String(raw["synopsis"] ?? (raw["story"] as { premise?: string } | undefined)?.premise ?? "").slice(0, 160),
           kind: isSource ? "source" : "world",
           file: `${dir}${file}`,
+          beta: Boolean(raw["beta"]) || dir.includes("/anime/"),
         });
       } catch {
         // unreadable file; skip

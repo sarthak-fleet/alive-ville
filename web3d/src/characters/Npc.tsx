@@ -23,12 +23,12 @@ import { useUiStore } from "../store/ui.ts";
 import { findDistrictPath, type WorldModel } from "../worldgen/index.ts";
 import type { PlacedNpcSpawn } from "../worldgen/placements.ts";
 import { rngFor } from "../worldgen/rng.ts";
+import { ArchetypeCharacter } from "./ArchetypeCharacter.tsx";
+import { pickArchetype } from "./archetypes.ts";
 import { useBanterStore } from "./banter.ts";
 import type { CharacterAnimationHandle } from "./CharacterModel.tsx";
 import { followersStore } from "./followers.ts";
 import { RiggedCharacter } from "./RiggedCharacter.tsx";
-import { pickVrm } from "./vrm.ts";
-import { VrmCharacter } from "./VrmCharacter.tsx";
 
 const WALK_SPEED = 1.15;
 const TRAVEL_SPEED = 3.4;
@@ -82,14 +82,13 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     return base.accentColor === base.color ? { ...base, accentColor: fallback.accent } : base;
   }, [npc.appearance, npc.id]);
   const personaText = `${npc.name} ${npc.role ?? ""} ${npc.description ?? ""}`;
-  // VRM avatars (anime-styled, MToon, with hair/skirt spring-bone physics)
-  // are the primary rig for matched personas — see VrmCharacter.tsx + vrm.ts.
-  // When no keyword matches we fall back to the procedural UAL mannequin so
-  // procedural identity (hair / cape / face plane) keeps driving variety on
-  // unknown personas. The old Quaternius archetype path is superseded; both
-  // ArchetypeCharacter.tsx and archetypes.ts remain on disk for rollback.
-  const vrmKey = useMemo(
-    () => pickVrm(personaText, npc.role ?? "", npc.appearance?.visualTags ?? []),
+  // Quaternius archetype rigs (CC0, fully animated, per-instance cloned) are the
+  // primary models — far higher quality + variety than the procedural mannequin,
+  // which stays as the fallback for personas no archetype matches. The anime VRM
+  // path (VrmCharacter.tsx + vrm.ts) is shelved as beta while we lean on the
+  // stronger stylized asset libraries.
+  const archetypeKey = useMemo(
+    () => pickArchetype(personaText, npc.role ?? "", npc.appearance?.visualTags ?? []),
     [personaText, npc.role, npc.appearance?.visualTags]
   );
   const inDialogue = useUiStore((state) => state.dialogueNpcId === npc.id);
@@ -331,15 +330,12 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     return () => window.clearTimeout(t);
   }, [defeated]);
 
-  // If this NPC's VRM fails to load/parse, drop to the procedural rig instead
-  // of rendering nothing.
-  const [vrmFailed, setVrmFailed] = useState(false);
   if (corpseHidden) return null;
 
   return (
     <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
-      {vrmKey && !vrmFailed ? (
-        <VrmCharacter ref={animation} vrmKey={vrmKey} onError={() => setVrmFailed(true)} />
+      {archetypeKey ? (
+        <ArchetypeCharacter ref={animation} archetype={archetypeKey} />
       ) : (
         <RiggedCharacter ref={animation} visual={visual} appearance={npc.appearance} seedId={npc.id} personaText={personaText} />
       )}
