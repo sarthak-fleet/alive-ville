@@ -338,6 +338,7 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
     `STANDING BELIEFS`,
     valuesLine ? `Values: ${valuesLine}.` : "",
     flawsLine ? `Flaws: ${flawsLine}.` : "",
+    npc.playerImpression ? `Your standing impression: ${npc.playerImpression}` : "",
     reflectionInsights ? `What you've come to believe:\n${reflectionInsights}` : "",
     `Hold your positions: when the player asserts something that contradicts your beliefs or memories, push back in character — you are not obliged to agree or please.`,
     `Stay in YOUR distinct voice (${npc.traits?.speechStyle ?? "your own style"}); never drift into a generic helpful tone.`,

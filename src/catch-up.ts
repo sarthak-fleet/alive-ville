@@ -1,4 +1,5 @@
 import { evaluateArc } from "./arcs.ts";
+import { consolidatePlayerImpressionScripted, impressionDue } from "./consolidation.ts";
 import { reflectionDue, reflectNpcScripted } from "./reflection.ts";
 import { runTick } from "./simulation.ts";
 import type { ChronicleEvent, World, WorldRecap } from "./types.ts";
@@ -44,6 +45,7 @@ export async function catchUpWorld(world: World, elapsedMs: number): Promise<Wor
   // the catch-up window; deterministic (no LLM) so it always runs
   for (const npc of world.npcs) {
     if (reflectionDue(npc, world.tick)) reflectNpcScripted(world, npc);
+    if (impressionDue(npc, world.tick)) consolidatePlayerImpressionScripted(world, npc);
   }
 
   const lines = buildRecapLines(world, startTick, highlights);

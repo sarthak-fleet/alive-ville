@@ -36,7 +36,13 @@ export async function embed(text: string): Promise<number[] | null> {
         "content-type": "application/json",
         ...(process.env["LLM_API_KEY"] ? { authorization: `Bearer ${process.env["LLM_API_KEY"]}` } : {}),
       },
-      body: JSON.stringify({ model: process.env["LLM_MODEL_EMBED"] ?? "text-embedding-3-small", input: text }),
+      // free-ai gateway embedding ids: @cf/baai/bge-* (Workers AI, free), voyage-*,
+      // or text-embedding-004 (Gemini). bge-base is the free default; project_id is required.
+      body: JSON.stringify({
+        model: process.env["LLM_MODEL_EMBED"] ?? "@cf/baai/bge-base-en-v1.5",
+        input: text,
+        project_id: process.env["LLM_PROJECT_ID"] ?? "ai-game",
+      }),
     });
     if (!response.ok) {
       embeddingsDisabled = true;

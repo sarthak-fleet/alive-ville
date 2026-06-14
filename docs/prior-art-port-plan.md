@@ -45,11 +45,17 @@ below are permissively licensed (copyable WITH attribution).
    (`dialogue.ts`). Zero-regression: with no `/embeddings` endpoint it falls back to
    keyword. Tests in `tests/memory-retrieval.test.ts`. **Activates automatically once
    the gateway exposes `/embeddings` (set `LLM_MODEL_EMBED` if needed).** Pattern from
-   AI Town `embeddingsCache.ts` (MIT). Next refinement: a *local* WebGPU embedder
+   AI Town `embeddingsCache.ts` (MIT). **Confirmed: the `free-ai` gateway DOES serve
+   `/v1/embeddings`** (Workers AI `@cf/baai/bge-*`, Voyage, Gemini `text-embedding-004`);
+   `embed()` now defaults to `@cf/baai/bge-base-en-v1.5` + sends `project_id`, so it
+   activates against the live gateway. Next refinement: a *local* WebGPU embedder
    (transformers.js, reuse `capabilities.ts`) so recall works with no server.
-2. **Sleep-time consolidation (Letta)** — a nightly cloud-tier pass that reflects on the
-   day and rewrites each NPC's standing opinion of the player. Off the live path; fits the
-   tiered router. (Reflection exists; this makes it *consolidate* across sessions.)
+2. ~~**Sleep-time consolidation (Letta)**~~ **SHIPPED (2026-06-14).** `src/consolidation.ts`
+   distils each NPC's player-related memories + reflections into a standing
+   `npc.playerImpression`, injected into the dialogue "STANDING BELIEFS" block. Runs
+   deterministically in offline catch-up (`catch-up.ts` — the literal "sleep"); LLM
+   version (`consolidatePlayerImpression`) ready to wire into the live loop next to
+   reflection. Tests in `tests/consolidation.test.ts`. Letta pattern (Apache-2.0).
 3. **mem0 single-pass atomic fact extraction** — replace the regex importance heuristic
    (`agents.ts:254`) with one cheap LLM call emitting atomic facts + importance. Steal the
    prompt shape; skip the graph store.

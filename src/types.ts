@@ -166,6 +166,7 @@ export interface AgentPlan {
   nextActionHint?: string;
   schedule?: ScheduleBlock[];
   lastReflectionTick?: number;
+  lastImpressionTick?: number;
 }
 
 export interface CharacterAppearance {
@@ -239,6 +240,8 @@ export interface Npc {
   talkingToPlayerUntilTick?: number;
   /** when set, NPC pathfinds toward the player's location each tick */
   followingPlayer?: boolean;
+  /** consolidated standing impression of the player (Letta sleep-time pattern); injected into dialogue */
+  playerImpression?: string;
 }
 
 export interface Location {
