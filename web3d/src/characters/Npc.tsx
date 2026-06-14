@@ -291,14 +291,17 @@ export function Npc({ npc, worldId, spawn, model, quests }: NpcProps) {
     }
 
     const distance = node.position.distanceTo(s.wanderTarget);
-    if (distance < 0.15) {
+    if (distance < 0.12) {
       animation.current?.setSpeed(0);
     } else {
       const direction = s.wanderTarget.clone().sub(node.position).normalize();
-      node.position.addScaledVector(direction, Math.min(WALK_SPEED * delta, distance));
-      s.heading = dampAngle(s.heading, Math.atan2(direction.x, direction.z), 10, delta);
+      // ease speed down on approach so the walk ramps into idle instead of
+      // snapping; feed the SAME speed to the animation so feet match the body
+      const speed = Math.min(WALK_SPEED, distance * 1.8);
+      node.position.addScaledVector(direction, speed * delta);
+      s.heading = dampAngle(s.heading, Math.atan2(direction.x, direction.z), 7, delta);
       node.rotation.y = s.heading;
-      animation.current?.setSpeed(WALK_SPEED);
+      animation.current?.setSpeed(speed);
     }
     syncRegistry(npc.id, node.position);
   });

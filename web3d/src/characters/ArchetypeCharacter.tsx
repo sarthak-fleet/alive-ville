@@ -243,7 +243,9 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
         currentLocomotion.current = next.clip;
       }
       if (next.baseSpeed) {
-        action.timeScale = THREE.MathUtils.clamp(speed / next.baseSpeed, 0.7, 1.6);
+        // Track actual move speed so the feet don't skate. The old 1.6 cap left
+        // fast running sliding (body ~7.8 m/s vs clip ~5.4 m/s); widen the range.
+        action.timeScale = THREE.MathUtils.clamp(speed / next.baseSpeed, 0.55, 2.4);
       }
     });
 

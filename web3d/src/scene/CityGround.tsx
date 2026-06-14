@@ -7,7 +7,7 @@ import type { WorldModel } from "../worldgen/index.ts";
 import { crosswalkTexture, speckleTexture, streetTexture } from "./textures.ts";
 import { toonGradientMap, toonMaterial } from "./toon.ts";
 
-const APRON = 30;
+const APRON = 14;
 const manholeMat = new THREE.MeshBasicMaterial({ color: "#23272f" });
 const manholeRimMat = new THREE.MeshBasicMaterial({ color: "#3b414d" });
 

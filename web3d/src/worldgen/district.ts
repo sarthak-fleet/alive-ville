@@ -263,19 +263,20 @@ function generateScatter(
     });
   };
 
-  const bushCount = 3 + Math.floor(rng() * 4); // 3-6
+  // Denser ground cover — the plots read as bare otherwise (FPS is headroom).
+  const bushCount = 6 + Math.floor(rng() * 5); // 6-10
   for (let i = 0; i < bushCount; i += 1) place("bush", i, shiftColor("#4e8f4a", range(rng, -0.1, 0.15)), palette.accent);
 
-  const grassCount = 2 + Math.floor(rng() * 3); // 2-4
+  const grassCount = 7 + Math.floor(rng() * 6); // 7-12
   for (let i = 0; i < grassCount; i += 1) place("grass", i, shiftColor("#6fae5c", range(rng, -0.1, 0.15)), palette.accent);
 
-  const flowerCount = 4 + Math.floor(rng() * 5); // 4-8
+  const flowerCount = 8 + Math.floor(rng() * 7); // 8-14
   for (let i = 0; i < flowerCount; i += 1) place("flower", i, pick(rng, FLOWER_COLORS), "#3f7e44");
 
-  const rockCount = isNatureBiome ? 2 + Math.floor(rng() * 3) : 1 + Math.floor(rng() * 2); // 1-3 (2-4 nature)
+  const rockCount = isNatureBiome ? 3 + Math.floor(rng() * 4) : 2 + Math.floor(rng() * 3); // 2-4 (3-6 nature)
   for (let i = 0; i < rockCount; i += 1) place("rock", i, shiftColor(ROCK_COLOR, range(rng, -0.12, 0.1)), palette.accent);
 
-  if (rng() > 0.5) place("mushroom", 0, "#cc3a3a", "#f7f1d3");
+  if (rng() > 0.35) place("mushroom", 0, "#cc3a3a", "#f7f1d3");
 
   return out;
 }
