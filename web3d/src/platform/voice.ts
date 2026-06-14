@@ -37,9 +37,10 @@ export function isVoiceEnabled(): boolean {
 /** Speak an NPC line only when the player has turned voice on. Kokoro first, Web Speech fallback. */
 export function sayNpc(text: string): void {
   if (!ttsEnabled) return;
-  void kokoroSpeak(text).then((ok) => {
+  void (async () => {
+    const ok = await kokoroSpeak(text);
     if (!ok) speak(text);
-  });
+  })();
 }
 
 export function ttsSupported(): boolean {
