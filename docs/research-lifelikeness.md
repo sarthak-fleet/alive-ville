@@ -38,7 +38,7 @@ Honorable mentions outside the top 10: Action Awareness (PIANO) as a coherence s
 
 ### Missing relative to evidence-backed mechanisms
 
-- **No reflection layer.** Mechanism #1 by evidence weight, and Aliveville has none. NPCs accumulate memories but never synthesize beliefs. The Smallville ablation is the largest single-intervention effect in the literature.
+- ~~**No reflection layer.**~~ **SHIPPED (stale note).** `src/reflection.ts` (`reflectionDue` importance-gated trigger + `reflectNpc` LLM synthesis + `reflectNpcScripted` no-LLM fallback) is wired into the live server (`server.ts`), the production Worker DO (`session-do.ts`), and offline catch-up (`catch-up.ts`), with 14 tests. Beliefs are stored as `reflection`-tagged memories and consumed by the dialogue "STANDING BELIEFS" block. Mechanism #1 is implemented — this note predated it.
 - **No sycophancy anchor in dialogue prompts.** SHARP-style drift is the default failure mode of LLM role-play; without restated standing beliefs per turn, NPCs will fold to player framing.
 - **No divergence pressure across NPCs.** With a single dialogue model, the Replicant Effect (cosine >0.85) is the predicted attractor. Trait/value/flaw fields exist but aren't enforced as divergence constraints at generation time.
 - **No coherence/Action-Awareness check.** Tick sim moves bodies; LLM writes dialogue. Nothing currently verifies "what this NPC just said is consistent with what its body is doing / where it is / who it is with." Player study 2512.07388 says this directly costs believability.

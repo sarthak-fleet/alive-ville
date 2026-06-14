@@ -345,14 +345,36 @@ function tokenize(text: string): string[] {
   return text.toLowerCase().split(/\W+/).filter(Boolean);
 }
 
+// Memory retrieval score, ported from Generative Agents / "Smallville"
+// (joonspk-research/generative_agents, Apache-2.0) and AI Town
+// (a16z-infra/ai-town, MIT): combine normalized recency × importance × relevance
+// instead of raw additive scores. recency uses exponential decay over ticks;
+// each axis is normalized to ~[0,1] and weighted, so a salient/recent memory
+// still surfaces even without a keyword hit (closer to true GA retrieval).
+const MEMORY_RECENCY_DECAY = 0.97; // per tick; lower = forgets faster
+const MEMORY_W_RELEVANCE = 1.0;
+const MEMORY_W_IMPORTANCE = 1.0;
+const MEMORY_W_RECENCY = 1.0;
+const MEMORY_W_EMOTION = 0.3;
+
 function scoreMemory(currentTick: number, memory: Memory, terms: string[]): number {
   const text = memory.text.toLowerCase();
-  const termScore = terms.reduce((score, term) => score + (text.includes(term) ? 10 : 0), 0);
-  const tagScore = (memory.meta?.tags ?? []).reduce((score, tag) => score + (terms.includes(tag.toLowerCase()) ? 6 : 0), 0);
-  const importance = memory.meta?.importance ?? 1;
-  const recency = Math.max(0, 8 - Math.max(0, currentTick - memory.tick));
-  const emotion = memory.meta?.emotionalWeight ?? 0;
-  return termScore + tagScore + importance + recency + emotion;
+  const tags = (memory.meta?.tags ?? []).map((tag) => tag.toLowerCase());
+  // relevance: fraction of query terms hit by text or tags, in [0,1]
+  const hits = terms.length === 0 ? 0 : terms.filter((term) => text.includes(term) || tags.includes(term)).length;
+  const relevance = terms.length === 0 ? 0 : hits / terms.length;
+  // importance: poignancy ~1–10 → [0,1]
+  const importance = Math.min(1, Math.max(0, (memory.meta?.importance ?? 1) / 10));
+  // recency: exponential decay since the memory was formed, in (0,1]
+  const recency = MEMORY_RECENCY_DECAY ** Math.max(0, currentTick - memory.tick);
+  // emotion: small bonus for emotionally charged memories, in [0,1]
+  const emotion = Math.min(1, Math.abs(memory.meta?.emotionalWeight ?? 0) / 10);
+  return (
+    MEMORY_W_RELEVANCE * relevance +
+    MEMORY_W_IMPORTANCE * importance +
+    MEMORY_W_RECENCY * recency +
+    MEMORY_W_EMOTION * emotion
+  );
 }
 
 function averageSuspicion(npc: Npc): number {
