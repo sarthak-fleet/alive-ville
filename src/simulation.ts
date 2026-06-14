@@ -11,6 +11,7 @@ import { awardXp, reassignArcRoles, XP_FIGHT_WON, XP_QUEST_COMPLETE } from "./ar
 import { recordChronicle } from "./chronicle.ts";
 import { combatMoveFor, combatMovesFor } from "./combat.ts";
 import { executeConfrontations } from "./confrontations.ts";
+import { embed } from "./llm/embeddings.ts";
 import { sanitizePlayerName } from "./player-defaults.ts";
 import { recordPlayerWitnessed, tagBestedThePlayer } from "./player-rumors.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
@@ -1043,6 +1044,30 @@ export function validateAction(world: World, action: Action | unknown): Validati
 
 export function retrieveMemories(world: World, npcId: string, query: string, limit = 3) {
   return retrieveRelevantMemories(world, npcId, query, limit);
+}
+
+/** Embed at most this many recent memories per call (bounds the first-turn burst). */
+const MAX_MEMORIES_TO_EMBED = 40;
+
+/**
+ * Semantic memory recall: embeds the query and (lazily, cached) the NPC's recent
+ * memories, then ranks by cosine relevance. Falls back to keyword `retrieveMemories`
+ * when embeddings are unavailable (no endpoint/error) — zero regression.
+ */
+export async function retrieveMemoriesSemantic(world: World, npcId: string, query: string, limit = 3) {
+  const queryEmbedding = await embed(query);
+  if (!queryEmbedding) return retrieveMemories(world, npcId, query, limit);
+  const npc = world.npcs.find((candidate) => candidate.id === npcId);
+  if (npc) {
+    const recent = npc.memories.slice(-MAX_MEMORIES_TO_EMBED).filter((memory) => !memory.meta?.embedding);
+    await Promise.all(
+      recent.map(async (memory) => {
+        const vector = await embed(memory.text);
+        if (vector) memory.meta = { ...(memory.meta ?? {}), embedding: vector };
+      })
+    );
+  }
+  return retrieveRelevantMemories(world, npcId, query, limit, queryEmbedding);
 }
 
 export function proposeNpcActions(world: World): Action[] {

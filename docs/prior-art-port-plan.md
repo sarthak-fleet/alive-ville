@@ -37,10 +37,16 @@ below are permissively licensed (copyable WITH attribution).
   `tests/memory-retrieval.test.ts` (4 tests). Fills mechanism #3.
 
 ## Remaining steals — prioritized, genuinely missing
-1. **Embeddings for true relevance** *(upgrades what just shipped)* — the new scorer's
-   relevance is keyword-only. Add a small local embedding model (transformers.js, WebGPU)
-   for semantic recall; reuse `capabilities.ts`. Steal mem0's vector layer / AI Town's
-   `embeddingsCache.ts`. **Highest leverage for "deep memory."**
+1. ~~**Embeddings for true relevance.**~~ **SHIPPED (2026-06-14).** `src/llm/embeddings.ts`
+   (OpenAI-compatible `/embeddings` via the gateway, graceful null fallback) +
+   `src/llm/cosine.ts`; `scoreMemory` now uses cosine relevance when vectors exist
+   (else keyword); `retrieveMemoriesSemantic` (simulation.ts) embeds query + recent
+   memories (cached on `meta.embedding`) and is wired into the dialogue prompt
+   (`dialogue.ts`). Zero-regression: with no `/embeddings` endpoint it falls back to
+   keyword. Tests in `tests/memory-retrieval.test.ts`. **Activates automatically once
+   the gateway exposes `/embeddings` (set `LLM_MODEL_EMBED` if needed).** Pattern from
+   AI Town `embeddingsCache.ts` (MIT). Next refinement: a *local* WebGPU embedder
+   (transformers.js, reuse `capabilities.ts`) so recall works with no server.
 2. **Sleep-time consolidation (Letta)** — a nightly cloud-tier pass that reflects on the
    day and rewrites each NPC's standing opinion of the player. Off the live path; fits the
    tiered router. (Reflection exists; this makes it *consolidate* across sessions.)

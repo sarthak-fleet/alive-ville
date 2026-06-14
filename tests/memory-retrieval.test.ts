@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 
 import { retrieveRelevantMemories } from "../src/agents.ts";
+import { cosineSimilarity } from "../src/llm/cosine.ts";
 import type { Memory, World } from "../src/types.ts";
 
 const fixture = (): World => JSON.parse(readFileSync(new URL("../worlds/village.json", import.meta.url), "utf8")) as World;
@@ -51,5 +52,22 @@ describe("memory retrieval (Generative Agents scorer)", () => {
     const top = retrieveRelevantMemories(world, npcId(), "unrelated-query-xyz", 1);
     expect(top).toHaveLength(1);
     expect(top[0]!.text).toBe("A vivid recent thing.");
+  });
+});
+
+describe("semantic recall (embeddings)", () => {
+  test("cosineSimilarity: identical=1, orthogonal=0", () => {
+    expect(cosineSimilarity([1, 0, 0], [1, 0, 0])).toBeCloseTo(1);
+    expect(cosineSimilarity([1, 0], [0, 1])).toBeCloseTo(0);
+    expect(cosineSimilarity([], [1])).toBe(0);
+  });
+
+  test("with a query embedding, the semantically-closest memory ranks first (no keyword overlap)", () => {
+    const world = withMemories([
+      { tick: 100, text: "aaa", meta: { importance: 5, embedding: [0, 1] } }, // orthogonal to query
+      { tick: 100, text: "bbb", meta: { importance: 5, embedding: [0.95, 0.05] } }, // close to query
+    ]);
+    const top = retrieveRelevantMemories(world, npcId(), "zzz", 2, [1, 0]);
+    expect(top[0]!.text).toBe("bbb");
   });
 });

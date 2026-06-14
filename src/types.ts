@@ -86,6 +86,8 @@ export interface MemoryMeta {
   chronicleId?: string;
   /** who this memory is primarily about (used for rumors-about-the-player injection) */
   subject?: ActorId | "player";
+  /** cached embedding vector for semantic recall (computed lazily; absent ⇒ keyword scoring) */
+  embedding?: number[];
 }
 
 export type AgentNeedKey = "safety" | "trust" | "resources" | "status" | "rest" | "curiosity" | "revenge" | "duty";

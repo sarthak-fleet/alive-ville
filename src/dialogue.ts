@@ -4,7 +4,7 @@ import { checkCoherence } from "./coherence.ts";
 import { completeText, type CompleteTextResult, isLlmEnabled, streamText } from "./llm/router.ts";
 import { divergenceNudges, rightNowFor, voiceFingerprint } from "./npc-voice.ts";
 import { questObjectiveBlockText, questObjectiveMet } from "./quest-objectives.ts";
-import { applyAction, locationName, retrieveMemories, validateAction } from "./simulation.ts";
+import { applyAction, locationName, retrieveMemoriesSemantic, validateAction } from "./simulation.ts";
 import type { Action, Npc, World } from "./types.ts";
 
 const HISTORY_LIMIT = 24;
@@ -141,7 +141,7 @@ export async function generateDialogueReply(
 
   const history = historyFor(world.id, npcId, options.historyKey);
   const system = buildDialogueSystem(world, npc);
-  const user = buildDialogueUser(world, npc, history, playerText);
+  const user = await buildDialogueUser(world, npc, history, playerText);
 
   // When streaming, buffer tokens internally so we can coherence-check before
   // the player sees anything.  The heldBackTokenizer strips the @@ control tail
@@ -410,8 +410,8 @@ export function buildDialogueSystem(world: World, npc: Npc): string {
     .join("\n");
 }
 
-function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], playerText: string): string {
-  const memories = retrieveMemories(world, npc.id, playerText, MEMORY_LIMIT)
+async function buildDialogueUser(world: World, npc: Npc, history: DialogueTurn[], playerText: string): Promise<string> {
+  const memories = (await retrieveMemoriesSemantic(world, npc.id, playerText, MEMORY_LIMIT))
     .map((memory) => `- (t${memory.tick}) ${memory.text}`)
     .join("\n");
   const here = world.npcs

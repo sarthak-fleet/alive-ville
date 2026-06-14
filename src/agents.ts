@@ -1,3 +1,4 @@
+import { cosineSimilarity } from "./llm/cosine.ts";
 import { phasePressureRevealText, planRevealText, quietWorldRevealText } from "./story-context.ts";
 import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, ScheduleBlock, World } from "./types.ts";
 
@@ -156,12 +157,12 @@ export function counterplayForTension(worldId: string, tensionId: string): strin
   return hints[worldId]?.[tensionId] ?? "find proof, help an involved NPC, or confront the source directly";
 }
 
-export function retrieveRelevantMemories(world: World, npcId: string, query: string, limit = 5): RetrievedMemory[] {
+export function retrieveRelevantMemories(world: World, npcId: string, query: string, limit = 5, queryEmbedding?: number[]): RetrievedMemory[] {
   const npc = world.npcs.find((candidate) => candidate.id === npcId);
   if (!npc) return [];
   const terms = tokenize(query);
   return [...npc.memories]
-    .map((memory) => ({ ...memory, score: scoreMemory(world.tick, memory, terms) }))
+    .map((memory) => ({ ...memory, score: scoreMemory(world.tick, memory, terms, queryEmbedding) }))
     .filter((memory) => memory.score > 0)
     .sort((a, b) => b.score - a.score || b.tick - a.tick)
     .slice(0, limit);
@@ -357,12 +358,18 @@ const MEMORY_W_IMPORTANCE = 1.0;
 const MEMORY_W_RECENCY = 1.0;
 const MEMORY_W_EMOTION = 0.3;
 
-function scoreMemory(currentTick: number, memory: Memory, terms: string[]): number {
+function scoreMemory(currentTick: number, memory: Memory, terms: string[], queryEmbedding?: number[]): number {
   const text = memory.text.toLowerCase();
   const tags = (memory.meta?.tags ?? []).map((tag) => tag.toLowerCase());
-  // relevance: fraction of query terms hit by text or tags, in [0,1]
-  const hits = terms.length === 0 ? 0 : terms.filter((term) => text.includes(term) || tags.includes(term)).length;
-  const relevance = terms.length === 0 ? 0 : hits / terms.length;
+  // relevance: semantic cosine when both vectors exist (AI Town pattern),
+  // else fraction of query terms hit by text or tags, both in [0,1].
+  let relevance: number;
+  if (queryEmbedding && memory.meta?.embedding) {
+    relevance = (cosineSimilarity(queryEmbedding, memory.meta.embedding) + 1) / 2;
+  } else {
+    const hits = terms.length === 0 ? 0 : terms.filter((term) => text.includes(term) || tags.includes(term)).length;
+    relevance = terms.length === 0 ? 0 : hits / terms.length;
+  }
   // importance: poignancy ~1–10 → [0,1]
   const importance = Math.min(1, Math.max(0, (memory.meta?.importance ?? 1) / 10));
   // recency: exponential decay since the memory was formed, in (0,1]
