@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 
+import { sanitizeReply } from "../../../src/dialogue-sanitize.ts";
 import { useLocalBrain } from "../ai/local-llm.ts";
 import { buildNpcSystemPrompt, buildNpcUserPrompt } from "../ai/npc-prompt.ts";
 import { type DialogueResponse, fetchDialogueHistory, postDialogue, postDialogueChoose, postDialogueStream, type StoryOption } from "../api/client.ts";
@@ -215,7 +216,8 @@ export function Dialogue() {
         try {
           const system = buildNpcSystemPrompt(npc, world);
           const user = buildNpcUserPrompt(npc, world, lines, text, world.player.name ?? "You");
-          const reply = await brain.generate(system, user);
+          const raw = await brain.generate(system, user);
+          const reply = sanitizeReply(raw, npc.name, world.player.name ?? "");
           if (reply) {
             talkBlip();
             pushLine({ speaker: "npc", speakerName: npc.name, text: reply });

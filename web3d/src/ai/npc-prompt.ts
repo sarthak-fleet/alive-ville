@@ -63,6 +63,9 @@ export function buildNpcUserPrompt(npc: Npc, world: World, lines: DialogueLineLi
     memories ? `What you remember that's relevant:\n${memories}` : "",
     transcript,
     `${playerName}: ${playerText}`,
+    // clear "your turn" cue so the model replies as the NPC instead of
+    // continuing the transcript / writing the player's next line
+    `${npc.name} (reply with ONLY your own spoken line):`,
   ]
     .filter(Boolean)
     .join("\n");

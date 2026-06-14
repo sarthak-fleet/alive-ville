@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { sanitizeReply } from "../src/dialogue.ts";
+import { sanitizeReply } from "../src/dialogue-sanitize.ts";
 
 describe("sanitizeReply", () => {
   test("strips a wrongly-prefixed player name (model ventriloquising the player)", () => {

@@ -18,9 +18,25 @@ import { type Capabilities, detectCapabilities } from "./capabilities.ts";
 
 export type LocalBrainStatus = "unknown" | "unsupported" | "idle" | "loading" | "ready" | "generating" | "error";
 
-/** Preference order; first id present in web-llm's prebuilt config wins. Small models load fast. */
-const MODELS_F16 = ["Qwen2.5-0.5B-Instruct-q4f16_1-MLC", "Llama-3.2-1B-Instruct-q4f16_1-MLC"];
-const MODELS_F32 = ["Qwen2.5-0.5B-Instruct-q4f32_1-MLC", "Llama-3.2-1B-Instruct-q4f32_1-MLC"];
+/**
+ * Preference order; first id present in web-llm's prebuilt config wins. We lead
+ * with a full 8B (Llama-3.1-8B, ~4.6GB q4) — the showcase is meant to flex what
+ * a top browser + GPU can run locally, so we don't downscale for weak machines
+ * (they error out and fall back to the cloud gateway). The smaller entries are
+ * only reached if the 8B id is ever absent from the prebuilt config.
+ */
+const MODELS_F16 = [
+  "Llama-3.1-8B-Instruct-q4f16_1-MLC",
+  "Qwen2.5-7B-Instruct-q4f16_1-MLC",
+  "Llama-3.2-3B-Instruct-q4f16_1-MLC",
+  "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+];
+const MODELS_F32 = [
+  "Llama-3.1-8B-Instruct-q4f32_1-MLC",
+  "Qwen2.5-7B-Instruct-q4f32_1-MLC",
+  "Llama-3.2-3B-Instruct-q4f32_1-MLC",
+  "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+];
 
 /** The engine is not serializable, so it lives outside the store as a singleton. */
 let engine: MLCEngineInterface | null = null;

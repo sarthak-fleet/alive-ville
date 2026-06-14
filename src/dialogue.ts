@@ -1,6 +1,7 @@
 import { memoryMetaFromText } from "./agents.ts";
 import { recordChronicle } from "./chronicle.ts";
 import { checkCoherence } from "./coherence.ts";
+import { sanitizeReply } from "./dialogue-sanitize.ts";
 import { completeText, type CompleteTextResult, isLlmEnabled, streamText } from "./llm/router.ts";
 import { relationalContext } from "./memory-relational.ts";
 import { divergenceNudges, rightNowFor, voiceFingerprint } from "./npc-voice.ts";
@@ -12,7 +13,6 @@ const HISTORY_LIMIT = 24;
 const MEMORY_LIMIT = Number(process.env["LLM_MEMORY_LIMIT"] ?? 5);
 /** ticks the NPC stays locked after each dialogue exchange (~24 s at 4 s/tick) */
 const LOCK_TICKS = 6;
-const REPLY_MAX_CHARS = 420;
 const DEFLECTION_LINE = "I'd rather not talk about that right now.";
 const PACED_FLUSH_CHUNK_CHARS = 24;
 const PACED_FLUSH_DELAY_MS = 14;
@@ -671,30 +671,6 @@ function normalizeAction(
   }
 }
 
-export function sanitizeReply(raw: string, npcName: string, playerName = ""): string {
-  let text = raw.trim();
-  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  // labels the model wrongly prefixes its reply with, or uses to fake extra turns
-  const labels = [npcName, playerName, "Player", "Wanderer", "NPC", "You"].filter((l) => l && l.length <= 40);
-  const labelAlt = labels.map(esc).join("|");
-  // strip a leading speaker label ("Wanderer:", "Old Doran:", …)
-  text = text.replace(new RegExp(`^\\s*(?:${labelAlt})\\s*:\\s*`, "i"), "").trim();
-  // stop transcript continuation: drop from the first later "<Speaker>:" line onward,
-  // so the model can't ventriloquise both sides of the conversation
-  const turnRe = new RegExp(`^\\s*(?:${labelAlt})\\s*:`, "i");
-  const lines = text.split(/\r?\n/);
-  const kept: string[] = [];
-  for (let i = 0; i < lines.length; i += 1) {
-    if (i > 0 && turnRe.test(lines[i]!)) break;
-    kept.push(lines[i]!);
-  }
-  text = kept.join(" ").replace(/\s+/g, " ").trim();
-  if ((text.startsWith('"') && text.endsWith('"')) || (text.startsWith("“") && text.endsWith("”"))) {
-    text = text.slice(1, -1).trim();
-  }
-  if (text.length > REPLY_MAX_CHARS) text = `${text.slice(0, REPLY_MAX_CHARS - 1).trimEnd()}…`;
-  return text;
-}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
