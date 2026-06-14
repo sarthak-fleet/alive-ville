@@ -263,7 +263,7 @@ export class GameSessionDO {
     if (path === "/api/state" && request.method === "GET") return json(200, engine.state);
     if (path === "/api/worlds" && request.method === "GET") {
       return json(200, {
-        worlds: BUNDLED_WORLDS.map(({ id, name, blurb, kind }) => ({ id, name, blurb, kind })),
+        worlds: BUNDLED_WORLDS.map(({ id, name, blurb, kind, beta, showcase }) => ({ id, name, blurb, kind, beta, showcase })),
         currentId: engine.state.id,
       });
     }

@@ -3,6 +3,7 @@ import type { World } from "../../src/types.ts";
 import { worldSourceToWorld } from "../../src/world-ingest.ts";
 import demonSlayerSource from "../../worlds/demon-slayer-source.json";
 import onePunchMan from "../../worlds/one-punch-man.json";
+import showcase from "../../worlds/showcase.json";
 import village from "../../worlds/village.json";
 
 export interface BundledWorld {
@@ -10,6 +11,8 @@ export interface BundledWorld {
   name: string;
   blurb: string;
   kind: "world" | "source";
+  beta: boolean;
+  showcase: boolean;
   raw: Record<string, unknown>;
 }
 
@@ -20,12 +23,15 @@ function entryFor(raw: Record<string, unknown>): BundledWorld {
     name: String(raw["title"] ?? raw["name"]),
     blurb: String(raw["synopsis"] ?? (raw["story"] as { premise?: string } | undefined)?.premise ?? "").slice(0, 160),
     kind: isSource ? "source" : "world",
+    beta: Boolean(raw["beta"]),
+    showcase: Boolean(raw["showcase"]),
     raw,
   };
 }
 
 export const BUNDLED_WORLDS: BundledWorld[] = [
   entryFor(village as Record<string, unknown>),
+  entryFor(showcase as Record<string, unknown>),
   entryFor(demonSlayerSource as Record<string, unknown>),
   entryFor(onePunchMan as Record<string, unknown>),
   entryFor(opmIngestSource as Record<string, unknown>),
