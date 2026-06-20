@@ -5,8 +5,9 @@
 <script>
     import * as THREE from 'three';
 
+    function initThreeAmbient() {
     const container = document.getElementById('three-ambient');
-    if (container) {
+    if (!container) return;
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
         camera.position.z = 800;
@@ -168,4 +169,13 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     }
+
+    const schedule = (fn: () => void) => {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(fn, { timeout: 4000 });
+        } else {
+            setTimeout(fn, 1);
+        }
+    };
+    schedule(initThreeAmbient);
 </script>

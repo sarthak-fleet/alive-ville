@@ -448,7 +448,7 @@ import '../styles/global.css';
     <!-- HERO -->
     <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
         <div class="absolute inset-0 z-0 overflow-hidden">
-            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150">
+            <video preload="none" loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150" data-hero-video>
                 <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
             </video>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#010102]/90 to-[#010102]"></div>
@@ -655,6 +655,18 @@ import '../styles/global.css';
     <script>
         import * as THREE from 'three';
         document.addEventListener('DOMContentLoaded', () => {
+            const heroVideo = document.querySelector<HTMLVideoElement>('[data-hero-video]');
+            if (heroVideo) {
+                const playHero = () => {
+                    void heroVideo.play().catch(() => {});
+                };
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(playHero, { timeout: 2500 });
+                } else {
+                    setTimeout(playHero, 1);
+                }
+            }
+
             // --- 99.9999% MAGNETIC CURSOR & INTERACTION ---
             const cursor = document.getElementById('custom-cursor');
             const follower = document.getElementById('cursor-follower');
@@ -701,25 +713,33 @@ import '../styles/global.css';
                 }
             });
 
-            // --- TEXT SCRAMBLE ---
-            const scrambleElements = document.querySelectorAll('.scramble-text');
-            scrambleElements.forEach((el: any) => {
-                const finalValue = el.dataset.value;
-                const chars = '!<>-_\\/[]{}—=+*^?#________';
-                let iteration = 0;
-                const interval = setInterval(() => {
-                    el.innerText = finalValue.split('').map((char: string, index: number) => {
-                        if (index < iteration) return finalValue[index];
-                        return chars[Math.floor(Math.random() * chars.length)];
-                    }).join('');
-                    if (iteration >= finalValue.length) clearInterval(interval);
-                    iteration += 1 / 3;
-                }, 40);
-            });
+            // --- TEXT SCRAMBLE (defer — hero h1 must paint as ASHMENT first) ---
+            const runScramble = () => {
+                const scrambleElements = document.querySelectorAll('.scramble-text');
+                scrambleElements.forEach((el: any) => {
+                    const finalValue = el.dataset.value;
+                    const chars = '!<>-_\\/[]{}—=+*^?#________';
+                    let iteration = 0;
+                    const interval = setInterval(() => {
+                        el.innerText = finalValue.split('').map((char: string, index: number) => {
+                            if (index < iteration) return finalValue[index];
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        }).join('');
+                        if (iteration >= finalValue.length) clearInterval(interval);
+                        iteration += 1 / 3;
+                    }, 40);
+                });
+            };
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(runScramble, { timeout: 3000 });
+            } else {
+                setTimeout(runScramble, 1);
+            }
 
-            // --- BENTO THREE.JS LOGIC ---
-            const bentoCanvases = document.querySelectorAll('.bento-canvas');
-            bentoCanvases.forEach((canvas: any) => {
+            // --- BENTO THREE.JS LOGIC (below-fold — init when visible) ---
+            const initBentoCanvas = (canvas: any) => {
+                if (canvas.dataset.ready === '1') return;
+                canvas.dataset.ready = '1';
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
@@ -750,7 +770,15 @@ import '../styles/global.css';
                     camera.aspect = canvas.clientWidth / canvas.clientHeight;
                     camera.updateProjectionMatrix();
                 });
-            });
+            };
+
+            const bentoCanvases = document.querySelectorAll('.bento-canvas');
+            const bentoObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) initBentoCanvas(entry.target);
+                });
+            }, { rootMargin: '120px' });
+            bentoCanvases.forEach((canvas) => bentoObserver.observe(canvas));
 
             // --- REVEAL ANIMATIONS ---
             const revealObserver = new IntersectionObserver((entries) => {
