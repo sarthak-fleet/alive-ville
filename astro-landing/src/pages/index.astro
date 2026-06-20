@@ -17,33 +17,6 @@ import '../styles/global.css';
     <meta property="og:image" content="https://aliveville.com/assets/ashment_intro_square.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://aliveville.com/assets/ashment_intro_square.jpg" />
-    <!--
-        Original fonts URL loaded FOUR families on the LCP critical
-        path. psi-swarm flagged the resulting render-delay at 4.0s
-        (desktop p75 LCP 6.0s, of which 72% was waiting for fonts +
-        the opacity:0 reveal animation).
-
-        Two fixes:
-        1. Inter weight axis collapsed from 100..900 (9 weights) to
-           400/500/700 — what the page actually uses for body, links,
-           and bold spans. Cuts the woff2 file count from 9 to 3.
-        2. The whole stylesheet loads with media="print" then swaps to
-           "all" via onload, so it never blocks the initial render.
-           Hero h1 "ASHMENT" paints in the serif fallback first and
-           swaps to Cinzel Decorative when the woff2 arrives.
-    -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"
-        media="print"
-        onload="this.media='all'">
-    <noscript>
-        <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap">
-    </noscript>
     <style>
         :root {
             --accent: #f8d44e;
@@ -51,9 +24,10 @@ import '../styles/global.css';
             --bg: #010102;
             --surface: #0a0a0c;
             --border: rgba(255, 255, 255, 0.04);
-            --font-main: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --font-display: 'Cinzel Decorative', serif;
+            /* System stack — zero font fetch on LCP path for sub-300ms. */
+            --font-main: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            --font-display: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
         }
 
         body {
