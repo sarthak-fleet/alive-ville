@@ -433,8 +433,6 @@ import '../styles/global.css';
             <span>PROTOCOL_X_RUN</span>
         </div>
     </div>
-    <ThreeBackground />
-
     <nav id="main-nav">
         <div class="logo">ASHMENT</div>
         <div class="nav-links">
@@ -477,6 +475,8 @@ import '../styles/global.css';
             <div class="w-[1px] h-24 bg-gradient-to-b from-white via-white/50 to-transparent"></div>
         </div>
     </section>
+
+    <ThreeBackground />
 
     <!-- BENTO FEATURES -->
     <section class="max-w-7xl mx-auto px-6 py-40" id="features">
@@ -653,7 +653,6 @@ import '../styles/global.css';
     </footer>
 
     <script>
-        import * as THREE from 'three';
         document.addEventListener('DOMContentLoaded', () => {
             const heroVideo = document.querySelector<HTMLVideoElement>('[data-hero-video]');
             if (heroVideo) {
@@ -737,9 +736,15 @@ import '../styles/global.css';
             }
 
             // --- BENTO THREE.JS LOGIC (below-fold — init when visible) ---
-            const initBentoCanvas = (canvas: any) => {
+            let threeModule: typeof import('three') | null = null;
+            const loadThree = async () => {
+                if (!threeModule) threeModule = await import('three');
+                return threeModule;
+            };
+            const initBentoCanvas = async (canvas: any) => {
                 if (canvas.dataset.ready === '1') return;
                 canvas.dataset.ready = '1';
+                const THREE = await loadThree();
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });

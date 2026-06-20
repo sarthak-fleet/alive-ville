@@ -3,9 +3,8 @@
 <div id="three-ambient" class="fixed inset-0 w-full h-full z-0 pointer-events-none mix-blend-screen opacity-50"></div>
 
 <script>
-    import * as THREE from 'three';
-
-    function initThreeAmbient() {
+    async function initThreeAmbient() {
+    const THREE = await import('three');
     const container = document.getElementById('three-ambient');
     if (!container) return;
         const scene = new THREE.Scene();
