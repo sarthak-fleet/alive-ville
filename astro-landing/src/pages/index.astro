@@ -377,6 +377,39 @@ import '../styles/global.css';
     </style>
 </head>
 <body>
+    <!-- HERO first in DOM so h1 is the earliest paint target (nav/overlays are fixed). -->
+    <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <video preload="none" loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150" data-hero-video>
+                <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#010102]/90 to-[#010102]"></div>
+        </div>
+
+        <div class="relative z-10 max-w-6xl mx-auto text-center space-y-12">
+            <div class="flex justify-center">
+                <span class="tag border-white/20 text-white/60">Browser-playable AI world — no install</span>
+            </div>
+            <h1 class="hero-title animate-reveal">
+                <span class="gradient-text scramble-text" data-value="ASHMENT">ASHMENT</span>
+            </h1>
+            <p class="max-w-3xl mx-auto text-xl text-white/40 font-light leading-relaxed animate-reveal" style="animation-delay: 0.2s">
+                Walk a 3D town where 5 AI agents live their own day — remembering people, holding grudges, and gossiping while you explore.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-8 pt-8 animate-reveal" style="animation-delay: 0.4s">
+                <a href="/game/" class="play-cta magnetic-target">▶ Play Now</a>
+                <button class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all border-b border-white/0 hover:border-white/20 pb-1 magnetic-target" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
+                    SEE HOW IT WORKS
+                </button>
+            </div>
+        </div>
+
+        <div class="absolute bottom-16 left-1/2 -translate-x-1/2 opacity-20 flex flex-col items-center gap-6">
+            <span class="font-mono text-[0.5rem] uppercase tracking-[0.5em] text-white/40">Continuum Scroll</span>
+            <div class="w-[1px] h-24 bg-gradient-to-b from-white via-white/50 to-transparent"></div>
+        </div>
+    </section>
+
     <div id="custom-cursor"></div>
     <div id="cursor-follower"></div>
     <div class="chromatic-layer"></div>
@@ -416,39 +449,6 @@ import '../styles/global.css';
         </div>
         <a href="/game/" class="btn-pro magnetic-target">PLAY IN BROWSER</a>
     </nav>
-
-    <!-- HERO -->
-    <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
-        <div class="absolute inset-0 z-0 overflow-hidden">
-            <video preload="none" loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150" data-hero-video>
-                <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
-            </video>
-            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#010102]/90 to-[#010102]"></div>
-        </div>
-
-        <div class="relative z-10 max-w-6xl mx-auto text-center space-y-12">
-            <div class="flex justify-center">
-                <span class="tag border-white/20 text-white/60">Browser-playable AI world — no install</span>
-            </div>
-            <h1 class="hero-title animate-reveal">
-                <span class="gradient-text scramble-text" data-value="ASHMENT">ASHMENT</span>
-            </h1>
-            <p class="max-w-3xl mx-auto text-xl text-white/40 font-light leading-relaxed animate-reveal" style="animation-delay: 0.2s">
-                Walk a 3D town where 5 AI agents live their own day — remembering people, holding grudges, and gossiping while you explore.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center gap-8 pt-8 animate-reveal" style="animation-delay: 0.4s">
-                <a href="/game/" class="play-cta magnetic-target">▶ Play Now</a>
-                <button class="font-mono text-[0.6rem] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-all border-b border-white/0 hover:border-white/20 pb-1 magnetic-target" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'})">
-                    SEE HOW IT WORKS
-                </button>
-            </div>
-        </div>
-
-        <div class="absolute bottom-16 left-1/2 -translate-x-1/2 opacity-20 flex flex-col items-center gap-6">
-            <span class="font-mono text-[0.5rem] uppercase tracking-[0.5em] text-white/40">Continuum Scroll</span>
-            <div class="w-[1px] h-24 bg-gradient-to-b from-white via-white/50 to-transparent"></div>
-        </div>
-    </section>
 
     <ThreeBackground />
 
