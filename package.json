@@ -24,15 +24,14 @@
     "portraits:pregen": "tsx scripts/pregen-portraits.ts",
     "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build:3d",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check ."
   },
   "devDependencies": {
     "@eslint/js": "9.39.4",
     "@playwright/test": "^1.59.1",
-    "@saas-maker/eslint-config": "1.0.7",
-    "@saas-maker/prettier-config": "1.0.1",
-    "@saas-maker/test-config": "0.2.0",
-    "@saas-maker/tsconfig": "1.0.1",
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -41,14 +40,17 @@
     "@vitest/ui": "^4.1.5",
     "eslint": "9.39.4",
     "lightningcss": "^1.32.0",
-    "prettier": "3.8.3",
-    "prettier-plugin-tailwindcss": "0.8.0",
     "r3f-perf": "^7.2.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.11",
     "vitest": "^4.1.5",
-    "wrangler": "^4.99.0"
+    "wrangler": "^4.99.0",
+    "@biomejs/biome": "2.5.0",
+    "typescript-eslint": "8.59.0",
+    "globals": "17.5.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -70,6 +72,5 @@
     "react-dom": "^19.2.6",
     "three": "^0.184.0",
     "zustand": "^5.0.13"
-  },
-  "prettier": "@saas-maker/prettier-config"
+  }
 }

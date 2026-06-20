@@ -160,7 +160,7 @@ const debug = await page.evaluate(() => {
     const npcReg = g.npcRegistry;
     const npcCount = npcReg && typeof npcReg.size === "number" ? npcReg.size : null;
     const cs = g.cameraState;
-    let npcSample: any[] = [];
+    const npcSample: any[] = [];
     if (npcReg && typeof npcReg.forEach === "function") {
       let i = 0;
       npcReg.forEach((actor: any, id: string) => {

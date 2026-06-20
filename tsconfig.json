@@ -1,10 +1,13 @@
 {
-  "extends": "@saas-maker/tsconfig/base.json",
   "compilerOptions": {
     "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
     "useDefineForClassFields": true,
     "strict": true,
@@ -19,13 +22,30 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@react-three/postprocessing": ["./web3d/src/types/react-three-postprocessing.d.ts"]
+      "@react-three/postprocessing": [
+        "./web3d/src/types/react-three-postprocessing.d.ts"
+      ]
     },
     "noEmit": true,
     "declaration": false,
     "sourceMap": true,
-    "types": ["node", "vite/client"]
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "web3d/**/*", "tests/**/*", "vite.web3d.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "web3d/**/*",
+    "tests/**/*",
+    "vite.web3d.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
