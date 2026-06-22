@@ -261,7 +261,7 @@ The remaining CC0 base layer is small and well-defined.
   AccuRIG or Mesh2Motion instead.
 - **MakeHuman** — character creator, not an asset library; out of scope.
 - **Sketchfab non-CC0** — license noise; we have a strict CC0 default.
-- **3D AI Studio / Meshy / Tripo paid tiers** — see `docs/future-prd.md` §5;
+- **3D AI Studio / Meshy / Tripo paid tiers** — see `docs/archive/future-prd-deferred-north-star-2026-06-12.md` §5;
   premium asset gen is a separate roadmap item.
 
 ### Concrete pull order (`scripts/` or manual)
@@ -461,7 +461,7 @@ End of day delta: items 4, 17, 32, 34 ✅; items 7.3, 7.4, 7.6 closed.
    enough?
 4. *(Out of scope for this audit, parking lot)* extending Z-Image-Turbo to
    interior wall art / banners — not part of "basic mechanics," revisit
-   alongside `docs/future-prd.md` §5 asset pipeline work.
+   alongside `docs/archive/future-prd-deferred-north-star-2026-06-12.md` §5 asset pipeline work.
 
 ---
 

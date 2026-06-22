@@ -3,12 +3,14 @@
 **Status**: Draft — 2026-06-14
 **Owner**: Engineering (fleet)
 **Goal in one line**: Turn "an impressive sandbox you wander" into "a game with a loop that pulls you forward and stakes you feel" — *before* any frontier-tech work.
-**Gate**: This blocks `docs/web-frontier-prd.md`. The capability flex does not start until the slice in §4 is fun (§5 bar).
+**Gate**: This blocks `docs/archive/future-prd-deferred-north-star-2026-06-12.md`
+and any XL content/lifelikeness work. (Web-frontier capability code shipped
+2026-06-14 — see `docs/archive/web-frontier-prd-shipped-2026-06-14.md`.)
 **Related (do not duplicate)**:
 - `docs/web3d-architecture.md` — current client modules
 - `tests/gameplay-loop.test.ts` + `worlds/village.json` — the current "first playable" loop
 - `src/probes/` + `pnpm probe:lifelikeness` — eval harness (extend for fun, not just lifelikeness)
-- `docs/future-prd.md` — content/lifelikeness north-star (this plan is the playability prerequisite)
+- `docs/archive/future-prd-deferred-north-star-2026-06-12.md` — content/lifelikeness north-star (deferred until this gate clears)
 
 ---
 
@@ -145,4 +147,4 @@ What's **NOT done — needs a playtest (your verdict, per §5), not more code**:
 **This PRD is closed as "spine built, fun-tuning playtest-gated."** It is NOT
 "the game is now good" — that judgment is the next session's, with you driving.
 
-Only after this bar is met does `docs/web-frontier-prd.md` Phase 0 begin.
+Only after this bar is met should work from the deferred future PRD resume.

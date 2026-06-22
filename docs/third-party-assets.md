@@ -104,7 +104,7 @@ Skipped sources (license unclear or prohibits redistribution): AliciaSolid (Dwan
 
 ## Future Asset Pipeline (2026+)
 
-See `docs/future-prd.md` §5 for the full hybrid strategy. This section will be expanded as the pipeline lands.
+See `docs/archive/future-prd-deferred-north-star-2026-06-12.md` §5 for the full hybrid strategy. This section will be expanded as the pipeline lands.
 
 ### Curated CC0 High-Fidelity (priority base layer)
 - **Poly Haven** (https://polyhaven.com/models): Hundreds of hyper-real PBR models (props, furniture, nature, industrial, etc.) + textures/HDRIs. **CC0**. Primary source for detailed environmental dressing and reference. No login required; excellent Blender addon.
@@ -127,7 +127,7 @@ See `docs/future-prd.md` §5 for the full hybrid strategy. This section will be 
 - Generation happens at compile/creator time (cached), never per-player-session.
 - Preserve current runtime procedural strengths (canvas facades, palette mapping, deterministic worldgen) + Quaternius rig as the animation/attachment base.
 - Target visual language remains stylized/toon (MeshToon + generated textures) with optional higher-fidelity props for hero moments.
-- See also `docs/future-prd.md` for pipeline requirements (determinism, perf budgets, LOD, licensing audit, fandom consistency via ingest prompts/references).
+- See also `docs/archive/future-prd-deferred-north-star-2026-06-12.md` for pipeline requirements (determinism, perf budgets, LOD, licensing audit, fandom consistency via ingest prompts/references).
 
 Current usage remains minimal binary assets (procedural + the one Quaternius GLB). The hybrid pipeline is the major upcoming vertical.
 

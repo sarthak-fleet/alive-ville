@@ -1,6 +1,9 @@
 # Aliveville Web-Frontier PRD: The Platform Capability Showcase
 
-**Status**: Draft — 2026-06-14
+**Status**: Shipped (archived 2026-06-20) — all code AC closed; headless smoke
+re-verified 2026-06-20 (`pnpm playtest:game`, zero console/page errors). Real-device
+GPU/AI/VR verification and deploy remain manual follow-ups, not PRD blockers.
+**Canonical home**: this archive file (supersedes `docs/web-frontier-prd.md`).
 **Owner**: Engineering (fleet)
 **Goal in one line**: Make Aliveville the broadest *legible* demonstration of the modern web platform — every frontier capability used for a real in-game reason, and made visible.
 **⚠️ Prerequisite gate**: Do NOT start Phase 0 until the core game is fun. A
@@ -11,7 +14,7 @@ clear its §5 acceptance bar before touching anything below.
 - `PROJECT_STATUS.md` — current baseline (M1–M4 shipped)
 - `docs/web3d-architecture.md` — current WebGL client (R3F + Three + Rapier)
 - `docs/local-llm.md` — existing local-LLM notes (extend, don't restate)
-- `docs/future-prd.md` — the *content/lifelikeness* north-star (orthogonal axis to this doc)
+- `docs/archive/future-prd-deferred-north-star-2026-06-12.md` — content/lifelikeness north-star (deferred; orthogonal axis)
 - `docs/roadmap.md` — sequencing
 - **`../tinygpt`** — sibling repo; source of most in-browser compute plumbing (see §4)
 
@@ -113,8 +116,12 @@ Web Speech voice, WebXR), Phase 5 (PWA), + the r3f-perf profiler.
   **WebNN inference path** (redundant with web-llm).
 
 **Needs you (cannot be done solo):** real-device verification of the GPU/AI
-features, and a **deploy** to `aliveville.com/game`. Until then this is "shipped to
-`main`, unverified on hardware, undeployed" — not "live".
+features, and a **deploy** to `aliveville.com/game`. PRD closed — these are ops
+follow-ups, not open AC.
+
+**Headless re-verification (2026-06-20):** `pnpm dev:server` + `pnpm dev` +
+`pnpm playtest:game` — exit 0, zero console/page errors. Software WebGL (SwiftShader)
+does not exercise WebGPU local-LLM/compute; that remains a real-device check only.
 
 ### Phase 2 — WebGPU render + compute *(visual flex; higher effort, mostly fresh)*
 - Swap Three.js `WebGLRenderer` → **`WebGPURenderer` + TSL** node materials.

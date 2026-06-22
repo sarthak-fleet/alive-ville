@@ -1,7 +1,7 @@
 /**
  * local-llm.ts — NPC brain that runs an LLM fully in the browser on WebGPU.
  *
- * Keystone of docs/web-frontier-prd.md: inference happens client-side via
+ * Keystone of docs/archive/web-frontier-prd-shipped-2026-06-14.md: inference happens client-side via
  * @mlc-ai/web-llm — zero server round-trip. web-llm is dynamically imported so
  * the ~MB runtime is code-split out of the main bundle and only fetched when the
  * user opts in. Capability-gated by ai/capabilities.ts; a no-op when WebGPU is

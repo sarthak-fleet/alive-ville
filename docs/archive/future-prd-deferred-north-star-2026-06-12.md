@@ -1,6 +1,9 @@
 # Aliveville Future PRD: Living 3D Fandom Worlds (2026–2028)
 
-**Status**: Draft — 2026-06-12  
+**Status**: Deferred north-star (archived 2026-06-20) — NOT an active sprint.  
+**Gate**: `docs/core-gameplay-fix.md` §5 playtest bar is **not met** (fun verdict pending).  
+Do not implement XL features from this doc until the gate clears.  
+**Canonical home**: this archive file (supersedes `docs/future-prd.md`).
 **Owner**: Product + Engineering (fleet)  
 **Supersedes**: `docs/archive/init.md` (original research-phase brief)  
 **Related (do not duplicate)**:  
@@ -302,7 +305,10 @@ Each phase must ship with updated probes, docs, and at least one "hero playtest"
 
 ---
 
-**Next immediate actions after PRD review**:
+**Deferred (2026-06-20):** All "next immediate actions" below are parked until
+`docs/core-gameplay-fix.md` §5 clears. This PRD remains the durable north star for
+*planning only* — not current execution.
+
 1. Create `docs/asset-pipeline.md` (detailed implementation spec + catalog schema).
 2. Update `docs/third-party-assets.md` with the new curated + generator sources and usage policy.
 3. Wire the first Chronicle provenance fields + a minimal recap rewrite as a spike.

@@ -76,7 +76,7 @@ Technologies and patterns that were genuinely new during this build, with one-li
 
 ---
 
-# Frontier web platform — planned (see ../web-frontier-prd.md)
+# Frontier web platform — shipped (see ../archive/web-frontier-prd-shipped-2026-06-14.md)
 
 Not in this repo's code yet. Reference implementations live in the sibling repo
 `../../tinygpt` (a from-scratch in-browser ML engine); gotchas below are cited
