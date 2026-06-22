@@ -53,37 +53,40 @@ describe("buildVariation", () => {
     expect(a).toEqual(b);
   });
 
-  it("giant persona pushes heightScale up", () => {
+  it("heightScale stays uniform across personas (deliberately no height variation)", () => {
+    // d177b5a made NPC heights uniform: seeded height jitter read as a
+    // rendering bug at distance. Silhouette variety comes from widthScale +
+    // body-shape decor instead. Giant/child/lanky no longer change height.
     const base = buildVariation("npc-x", "a villager");
     const giant = buildVariation("npc-x", "a towering giant");
-    expect(giant.heightScale).toBeGreaterThan(base.heightScale);
-    expect(giant.heightScale).toBeGreaterThan(1.0);
+    expect(base.heightScale).toBe(1);
+    expect(giant.heightScale).toBe(1);
   });
 
-  it("child persona shrinks heightScale", () => {
+  it("child persona shrinks widthScale", () => {
     const v = buildVariation("npc-y", "a small child kid");
-    expect(v.heightScale).toBeLessThan(1.0);
-  });
-
-  it("lanky persona raises height and narrows width", () => {
-    const v = buildVariation("npc-z", "a lanky thin person");
-    expect(v.heightScale).toBeGreaterThan(1.0);
+    expect(v.heightScale).toBe(1);
     expect(v.widthScale).toBeLessThan(1.0);
   });
 
-  it("height scale stays within sane bounds for any persona override", () => {
+  it("lanky persona narrows width (height stays uniform)", () => {
+    const v = buildVariation("npc-z", "a lanky thin person");
+    expect(v.heightScale).toBe(1);
+    expect(v.widthScale).toBeLessThan(1.0);
+  });
+
+  it("scales stay within sane bounds for any persona override", () => {
     const personas = ["a child kid", "a tower giant", "a lanky thin person", "a villager", "a broad warrior"];
     for (const p of personas) {
       const v = buildVariation("test-seed", p);
-      expect(v.heightScale).toBeGreaterThanOrEqual(0.68);
-      expect(v.heightScale).toBeLessThanOrEqual(1.22);
+      expect(v.heightScale).toBe(1);
       expect(v.widthScale).toBeGreaterThanOrEqual(0.78);
       expect(v.widthScale).toBeLessThanOrEqual(1.12);
     }
   });
 
-  it("different seeds yield different scales (distribution spread)", () => {
-    const scales = ["s1", "s2", "s3", "s4", "s5", "s6"].map((s) => buildVariation(s, "a villager").heightScale);
+  it("different seeds yield different widthScales (distribution spread)", () => {
+    const scales = ["s1", "s2", "s3", "s4", "s5", "s6"].map((s) => buildVariation(s, "a villager").widthScale);
     const distinct = new Set(scales.map((x) => x.toFixed(3)));
     expect(distinct.size).toBeGreaterThanOrEqual(3);
   });
