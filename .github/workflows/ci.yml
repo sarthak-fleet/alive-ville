@@ -19,7 +19,7 @@ jobs:
           if node -e "const pm=require('./package.json').packageManager||''; process.exit(pm.startsWith('pnpm@')?0:1)"; then
             corepack install
           else
-            corepack prepare pnpm@10.32.1 --activate
+            corepack prepare pnpm@10.33.2 --activate
           fi
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
