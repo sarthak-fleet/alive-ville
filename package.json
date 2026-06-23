@@ -71,7 +71,8 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "three": "^0.184.0",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.13",
+    "web-vitals": "^4.2.4"
   },
   "packageManager": "pnpm@10.33.2"
 }
