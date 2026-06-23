@@ -8,7 +8,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "biome check .",
     "build": "vite build --config vite.web3d.config.ts",
     "dev": "vite --config vite.web3d.config.ts",
     "build:3d": "vite build --config vite.web3d.config.ts",
@@ -23,6 +23,7 @@
     "playtest:all": "pnpm playtest:astro-landing",
     "portraits:pregen": "tsx scripts/pregen-portraits.ts",
     "verify:readiness": "pnpm typecheck && pnpm lint && pnpm test && pnpm build:3d",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "format": "biome format --write .",
@@ -30,7 +31,6 @@
     "check": "biome check ."
   },
   "devDependencies": {
-    "@eslint/js": "9.39.4",
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.6.2",
     "@types/react": "^19.2.14",
@@ -38,7 +38,7 @@
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/ui": "^4.1.5",
-    "eslint": "9.39.4",
+    "@vitest/coverage-v8": "^4.1.9",
     "lightningcss": "^1.32.0",
     "r3f-perf": "^7.2.3",
     "tsx": "^4.21.0",
@@ -46,11 +46,7 @@
     "vite": "^8.0.11",
     "vitest": "^4.1.5",
     "wrangler": "^4.99.0",
-    "@biomejs/biome": "2.5.0",
-    "typescript-eslint": "8.59.0",
-    "globals": "17.5.0",
-    "eslint-plugin-react-hooks": "7.1.1",
-    "eslint-plugin-react-refresh": "0.5.2"
+    "@biomejs/biome": "2.5.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
