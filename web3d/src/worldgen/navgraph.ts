@@ -1,4 +1,4 @@
-import type { DistrictModel, NavGraph, NavNode, StreetModel } from "./model.ts";
+import type { DistrictModel, NavGraph, NavNode, StreetModel } from './model.ts';
 
 /**
  * Waypoint graph over courtyards, gates, and street polylines. Small and exact:
@@ -47,7 +47,8 @@ export function buildNavGraph(districts: DistrictModel[], streets: StreetModel[]
         districtId,
       });
       if (previous) connect(previous, nodeId);
-      if (isGate && districtId && courtyardNode[districtId]) connect(nodeId, courtyardNode[districtId]!);
+      if (isGate && districtId && courtyardNode[districtId])
+        connect(nodeId, courtyardNode[districtId]!);
       previous = nodeId;
     }
   }
@@ -60,7 +61,11 @@ export function buildNavGraph(districts: DistrictModel[], streets: StreetModel[]
  * Returns world-space waypoints (courtyard centers included), or null if the
  * districts are not street-connected.
  */
-export function findDistrictPath(nav: NavGraph, fromDistrictId: string, toDistrictId: string): Array<{ x: number; z: number }> | null {
+export function findDistrictPath(
+  nav: NavGraph,
+  fromDistrictId: string,
+  toDistrictId: string
+): Array<{ x: number; z: number }> | null {
   const startId = nav.courtyardNode[fromDistrictId];
   const goalId = nav.courtyardNode[toDistrictId];
   if (!startId || !goalId) return null;

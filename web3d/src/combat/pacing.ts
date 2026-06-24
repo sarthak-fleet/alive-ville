@@ -32,7 +32,7 @@ export const CHIP_DAMAGE = 5;
  * player below this threshold. Only server-authoritative hits (full strike
  * flag set to false) can finish the player.
  */
-export const CHIP_HP_FLOOR_FRACTION = 0.10;
+export const CHIP_HP_FLOOR_FRACTION = 0.1;
 
 /**
  * Returns the next chip delay in milliseconds using the provided rng function.

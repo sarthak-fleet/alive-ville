@@ -1,28 +1,26 @@
-import { existsSync, mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, mkdirSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_HERO_APPEARANCE } from "./player-defaults.ts";
-import type { Npc, World } from "./types.ts";
+import { DEFAULT_HERO_APPEARANCE } from './player-defaults.ts';
+import type { Npc, World } from './types.ts';
 
 // ---------------------------------------------------------------------------
 // Style constants
 
 const STYLE_LOCK =
-  "anime character portrait, bust shot, clean cel shading, soft toon lighting, plain dark background, single character, facing viewer";
+  'anime character portrait, bust shot, clean cel shading, soft toon lighting, plain dark background, single character, facing viewer';
 
 // Modal deployment URL — read per-call so tests can stub the env. The
 // Z-Image-Turbo container loads the model once and stays warm for ~2 min
 // between calls; cold start ~30s.
 function portraitUrl(): string {
-  return process.env["PORTRAIT_URL"] ?? "";
+  return process.env['PORTRAIT_URL'] ?? '';
 }
 
 // Portraits directory relative to project root (web3d/public so vite copies it)
-const PORTRAITS_DIR = fileURLToPath(
-  new URL("../web3d/public/assets/portraits", import.meta.url)
-);
+const PORTRAITS_DIR = fileURLToPath(new URL('../web3d/public/assets/portraits', import.meta.url));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,14 +30,17 @@ function fnv32(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
-    h = (Math.imul(h, 0x01000193) >>> 0);
+    h = Math.imul(h, 0x01000193) >>> 0;
   }
   return h;
 }
 
 /** Slugify a string to filesystem-safe lowercase characters. */
 function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ export function portraitPrompt(subject: PortraitSubject): string {
   const parts: string[] = [STYLE_LOCK];
 
   // Name + role anchor
-  const nameRole = [subject.name, subject.role].filter(Boolean).join(", ");
+  const nameRole = [subject.name, subject.role].filter(Boolean).join(', ');
   if (nameRole) parts.push(nameRole);
 
   const app = subject.appearance ?? {};
@@ -79,13 +80,13 @@ export function portraitPrompt(subject: PortraitSubject): string {
 
   // Up to 3 visual tags
   const tags = (app.visualTags ?? []).slice(0, 3);
-  if (tags.length) parts.push(tags.join(", "));
+  if (tags.length) parts.push(tags.join(', '));
 
   // Up to 2 personality traits for expression flavour
   const personality = (subject.traits?.personality ?? []).slice(0, 2);
-  if (personality.length) parts.push(`${personality.join(", ")} expression`);
+  if (personality.length) parts.push(`${personality.join(', ')} expression`);
 
-  return parts.join(", ");
+  return parts.join(', ');
 }
 
 /** Deterministic integer seed for a given (worldId, npcId) pair. */
@@ -106,8 +107,8 @@ export function portraitPath(npcId: string, worldId: string): string {
 /** Subject descriptor for the default player hero. */
 export function heroSubject(playerName?: string): PortraitSubject {
   return {
-    name: playerName ?? "The Wanderer",
-    role: "protagonist",
+    name: playerName ?? 'The Wanderer',
+    role: 'protagonist',
     appearance: DEFAULT_HERO_APPEARANCE,
   };
 }
@@ -115,9 +116,7 @@ export function heroSubject(playerName?: string): PortraitSubject {
 // ---------------------------------------------------------------------------
 // Generation
 
-export type GenerateResult =
-  | { ok: true; file: string }
-  | { ok: false; reason: string };
+export type GenerateResult = { ok: true; file: string } | { ok: false; reason: string };
 
 /**
  * Calls the Modal portrait endpoint and writes the returned PNG to disk.
@@ -130,7 +129,7 @@ export async function generatePortrait(
 ): Promise<GenerateResult> {
   const url = portraitUrl();
   if (!url) {
-    return { ok: false, reason: "generator_unavailable" };
+    return { ok: false, reason: 'generator_unavailable' };
   }
 
   try {
@@ -153,16 +152,20 @@ export async function generatePortrait(
     // We handle that manually because Node's default fetch keeps the POST
     // method when following 303, which Modal's polling endpoint rejects.
     let response = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ prompt, seed, width: 512, height: 512, steps: 9 }),
       signal: controller.signal,
-      redirect: "manual",
+      redirect: 'manual',
     });
     while (response.status === 303 || response.status === 302) {
-      const location = response.headers.get("location");
+      const location = response.headers.get('location');
       if (!location) return { ok: false, reason: `redirect_no_location` };
-      response = await fetch(location, { method: "GET", signal: controller.signal, redirect: "manual" });
+      response = await fetch(location, {
+        method: 'GET',
+        signal: controller.signal,
+        redirect: 'manual',
+      });
     }
     if (!response.ok) {
       return { ok: false, reason: `http_${response.status}` };
@@ -172,7 +175,7 @@ export async function generatePortrait(
     return { ok: true, file };
   } catch (err) {
     const error = err as NodeJS.ErrnoException & { name?: string };
-    if (error.name === "AbortError") return { ok: false, reason: "timeout" };
+    if (error.name === 'AbortError') return { ok: false, reason: 'timeout' };
     return { ok: false, reason: error.message };
   } finally {
     clearTimeout(timer);
@@ -189,7 +192,7 @@ interface QueueEntry {
   resolve: (result: GenerateResult) => void;
 }
 
-const queue: QueueEntry[] = new Array<QueueEntry>();
+const queue: QueueEntry[] = [] as QueueEntry[];
 const inflight = new Set<string>(); // filenames currently generating
 let running = false;
 
@@ -227,7 +230,7 @@ export function queuePortrait(
         if (!inflight.has(key)) {
           clearInterval(id);
           const file = portraitPath(npcId, worldId);
-          resolve(existsSync(file) ? { ok: true, file } : { ok: false, reason: "dedup_miss" });
+          resolve(existsSync(file) ? { ok: true, file } : { ok: false, reason: 'dedup_miss' });
         }
       }, 200);
     });
@@ -271,5 +274,5 @@ export function queueNpcPortrait(npc: Npc, world: World): Promise<GenerateResult
 }
 
 export function queueHeroPortrait(world: World, playerName?: string): Promise<GenerateResult> {
-  return queuePortrait("player", world.id, heroSubject(playerName));
+  return queuePortrait('player', world.id, heroSubject(playerName));
 }

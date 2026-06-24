@@ -30,7 +30,11 @@
     "durationSeconds": 5,
     "unlock": { "kind": "quest_done", "questId": "rekindle_forge" },
     "triggers": [
-      { "kind": "quest_completed", "questId": "rekindle_forge", "textIncludes": "Rekindle the old forge is complete" },
+      {
+        "kind": "quest_completed",
+        "questId": "rekindle_forge",
+        "textIncludes": "Rekindle the old forge is complete"
+      },
       { "kind": "manual" }
     ]
   },
@@ -49,7 +53,11 @@
     "durationSeconds": 5,
     "unlock": { "kind": "quest_done", "questId": "return_shears" },
     "triggers": [
-      { "kind": "quest_completed", "questId": "return_shears", "textIncludes": "Return the pruning shears is complete" },
+      {
+        "kind": "quest_completed",
+        "questId": "return_shears",
+        "textIncludes": "Return the pruning shears is complete"
+      },
       { "kind": "manual" }
     ]
   },
@@ -68,7 +76,11 @@
     "durationSeconds": 5,
     "unlock": { "kind": "quest_done", "questId": "bridge_whisper" },
     "triggers": [
-      { "kind": "quest_completed", "questId": "bridge_whisper", "textIncludes": "Listen at the old bridge is complete" },
+      {
+        "kind": "quest_completed",
+        "questId": "bridge_whisper",
+        "textIncludes": "Listen at the old bridge is complete"
+      },
       { "kind": "manual" }
     ]
   },

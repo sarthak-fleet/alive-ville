@@ -1,20 +1,20 @@
-import { Billboard, Outlines, Text } from "@react-three/drei";
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { memo, Suspense, useEffect, useMemo, useRef } from "react";
-import * as THREE from "three";
+import { Billboard, Outlines, Text } from '@react-three/drei';
+import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { memo, Suspense, useEffect, useMemo, useRef } from 'react';
+import * as THREE from 'three';
 
-import { stableHash } from "../mapping/visuals.ts";
-import { shiftColor } from "../worldgen/district.ts";
-import type { BuildingModel, DistrictModel, ItemPlacement, PropModel } from "../worldgen/index.ts";
-import type { InteractablePlacement } from "../worldgen/model.ts";
-import { mulberry32, seedFromString } from "../worldgen/rng.ts";
-import { BUILDING_ASSETS, NATURE_ASSETS, pickAsset } from "./asset-registry.ts";
-import { ToonGlb } from "./kenneyGlb.tsx";
-import { registerOccluder, unregisterOccluder } from "./occlusion.ts";
-import { facadeMaterial, lightPoolTexture, pavingTexture, speckleTexture } from "./textures.ts";
-import { toonGradientMap, toonMaterial } from "./toon.ts";
+import { stableHash } from '../mapping/visuals.ts';
+import { shiftColor } from '../worldgen/district.ts';
+import type { BuildingModel, DistrictModel, ItemPlacement, PropModel } from '../worldgen/index.ts';
+import type { InteractablePlacement } from '../worldgen/model.ts';
+import { mulberry32, seedFromString } from '../worldgen/rng.ts';
+import { BUILDING_ASSETS, NATURE_ASSETS, pickAsset } from './asset-registry.ts';
+import { ToonGlb } from './kenneyGlb.tsx';
+import { registerOccluder, unregisterOccluder } from './occlusion.ts';
+import { facadeMaterial, lightPoolTexture, pavingTexture, speckleTexture } from './textures.ts';
+import { toonGradientMap, toonMaterial } from './toon.ts';
 
-const OUTLINE = "#101421";
+const OUTLINE = '#101421';
 const OUTLINE_THICKNESS = 0.035;
 const CORNERS: Array<[number, number]> = [
   [-1, -1],
@@ -23,7 +23,13 @@ const CORNERS: Array<[number, number]> = [
   [1, 1],
 ];
 
-export const District = memo(function District({ district, night }: { district: DistrictModel; night: boolean }) {
+export const District = memo(function District({
+  district,
+  night,
+}: {
+  district: DistrictModel;
+  night: boolean;
+}) {
   const cx = district.origin.x + district.width / 2;
   const cz = district.origin.z + district.depth / 2;
   return (
@@ -40,7 +46,12 @@ export const District = memo(function District({ district, night }: { district: 
         />
       ) : null}
       {district.buildings.map((building) => (
-        <Building key={building.id} building={building} night={night} courtyard={district.courtyard} />
+        <Building
+          key={building.id}
+          building={building}
+          night={night}
+          courtyard={district.courtyard}
+        />
       ))}
       {/* fill the empty courtyard plaza with a centerpiece */}
       <CourtyardCenterpiece courtyard={district.courtyard} accent={district.palette.accent} />
@@ -49,7 +60,14 @@ export const District = memo(function District({ district, night }: { district: 
       ))}
       {/* billboard: a flat Text reads mirrored from behind */}
       <Billboard position={[cx, 11, cz]}>
-        <Text fontSize={1.1} color="#ffffff" outlineWidth={0.06} outlineColor={OUTLINE} anchorX="center" fillOpacity={0.85}>
+        <Text
+          fontSize={1.1}
+          color="#ffffff"
+          outlineWidth={0.06}
+          outlineColor={OUTLINE}
+          anchorX="center"
+          fillOpacity={0.85}
+        >
           {district.name}
         </Text>
       </Billboard>
@@ -60,10 +78,16 @@ export const District = memo(function District({ district, night }: { district: 
 // A stone tiered fountain at the courtyard center — anchors the otherwise-empty
 // plaza. The player spawns ~courtyardRadius*0.5 off-center, so the dead-center
 // placement never traps them.
-const STONE = "#9b958a";
-const STONE_DARK = "#7d776c";
-const WATER = "#5aa6c8";
-function CourtyardCenterpiece({ courtyard, accent }: { courtyard: { x: number; z: number; radius: number }; accent: string }) {
+const STONE = '#9b958a';
+const STONE_DARK = '#7d776c';
+const WATER = '#5aa6c8';
+function CourtyardCenterpiece({
+  courtyard,
+  accent,
+}: {
+  courtyard: { x: number; z: number; radius: number };
+  accent: string;
+}) {
   if (courtyard.radius < 3) return null;
   const stone = toonMaterial(STONE);
   const stoneDark = toonMaterial(STONE_DARK);
@@ -123,16 +147,37 @@ function Ground({ district, cx, cz }: { district: DistrictModel; cx: number; cz:
       <mesh position={[cx, 0.004, cz]} receiveShadow material={plotMat}>
         <boxGeometry args={[district.width, 0.008, district.depth]} />
       </mesh>
-      <mesh position={[district.courtyard.x, 0.018, district.courtyard.z]} receiveShadow material={walkMat}>
-        <cylinderGeometry args={[district.courtyard.radius + 2, district.courtyard.radius + 2, 0.02, 40]} />
+      <mesh
+        position={[district.courtyard.x, 0.018, district.courtyard.z]}
+        receiveShadow
+        material={walkMat}
+      >
+        <cylinderGeometry
+          args={[district.courtyard.radius + 2, district.courtyard.radius + 2, 0.02, 40]}
+        />
       </mesh>
     </group>
   );
 }
 
-function Building({ building, night, courtyard }: { building: BuildingModel; night: boolean; courtyard: { x: number; z: number } }) {
+function Building({
+  building,
+  night,
+  courtyard,
+}: {
+  building: BuildingModel;
+  night: boolean;
+  courtyard: { x: number; z: number };
+}) {
   const roofMat = toonMaterial(building.roofColor);
-  const facade = facadeMaterial(building.bodyColor, building.accentColor, building.floors, building.id, night, toonGradientMap());
+  const facade = facadeMaterial(
+    building.bodyColor,
+    building.accentColor,
+    building.floors,
+    building.id,
+    night,
+    toonGradientMap()
+  );
   const buildingRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
@@ -156,7 +201,11 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
         });
       }
       if (rng() > 0.45) {
-        antenna = { x: (rng() - 0.5) * (building.width - 1), z: (rng() - 0.5) * (building.depth - 1), height: 1.6 + rng() * 1.6 };
+        antenna = {
+          x: (rng() - 0.5) * (building.width - 1),
+          z: (rng() - 0.5) * (building.depth - 1),
+          height: 1.6 + rng() * 1.6,
+        };
       }
     }
     // awning over the courtyard-facing face on low buildings
@@ -165,9 +214,17 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
       const dx = courtyard.x - building.x;
       const dz = courtyard.z - building.z;
       if (Math.abs(dx) > Math.abs(dz)) {
-        awning = { x: (Math.sign(dx) * building.width) / 2 + Math.sign(dx) * 0.35, z: 0, rotY: dx > 0 ? Math.PI / 2 : -Math.PI / 2 };
+        awning = {
+          x: (Math.sign(dx) * building.width) / 2 + Math.sign(dx) * 0.35,
+          z: 0,
+          rotY: dx > 0 ? Math.PI / 2 : -Math.PI / 2,
+        };
       } else {
-        awning = { x: 0, z: (Math.sign(dz) * building.depth) / 2 + Math.sign(dz) * 0.35, rotY: dz > 0 ? 0 : Math.PI };
+        awning = {
+          x: 0,
+          z: (Math.sign(dz) * building.depth) / 2 + Math.sign(dz) * 0.35,
+          rotY: dz > 0 ? 0 : Math.PI,
+        };
       }
     }
     return { roofBoxes, antenna, awning };
@@ -227,20 +284,32 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
           </mesh>
         ) : null}
         {extras.roofBoxes.map((box, index) => (
-          <mesh key={index} position={[box.x, building.height + 0.5 + box.size / 2, box.z]} castShadow material={toonMaterial(shiftColor(building.roofColor, 0.15))}>
+          <mesh
+            key={index}
+            position={[box.x, building.height + 0.5 + box.size / 2, box.z]}
+            castShadow
+            material={toonMaterial(shiftColor(building.roofColor, 0.15))}
+          >
             <boxGeometry args={[box.size, box.size, box.size]} />
           </mesh>
         ))}
         {extras.antenna ? (
           <mesh
-            position={[extras.antenna.x, building.height + 0.5 + extras.antenna.height / 2, extras.antenna.z]}
-            material={toonMaterial("#39414f")}
+            position={[
+              extras.antenna.x,
+              building.height + 0.5 + extras.antenna.height / 2,
+              extras.antenna.z,
+            ]}
+            material={toonMaterial('#39414f')}
           >
             <cylinderGeometry args={[0.035, 0.05, extras.antenna.height, 6]} />
           </mesh>
         ) : null}
         {extras.awning ? (
-          <group position={[extras.awning.x, 2.5, extras.awning.z]} rotation={[0, extras.awning.rotY, 0]}>
+          <group
+            position={[extras.awning.x, 2.5, extras.awning.z]}
+            rotation={[0, extras.awning.rotY, 0]}
+          >
             <mesh rotation={[0.45, 0, 0]} castShadow material={toonMaterial(building.accentColor)}>
               <boxGeometry args={[2.6, 0.07, 1]} />
             </mesh>
@@ -257,10 +326,13 @@ function Building({ building, night, courtyard }: { building: BuildingModel; nig
 
 function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
   const baseMat = toonMaterial(prop.color);
-  const accentMat = toonMaterial(prop.accentColor, prop.kind === "lamp" ? prop.accentColor : undefined);
+  const accentMat = toonMaterial(
+    prop.accentColor,
+    prop.kind === 'lamp' ? prop.accentColor : undefined
+  );
   return (
     <group position={[prop.x, 0, prop.z]} rotation={[0, prop.rotationY, 0]}>
-      {prop.kind === "lamp" ? (
+      {prop.kind === 'lamp' ? (
         <>
           <mesh position={[0, 1.6, 0]} castShadow material={baseMat}>
             <cylinderGeometry args={[0.07, 0.1, 3.2, 8]} />
@@ -282,17 +354,17 @@ function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
             </mesh>
           ) : null}
         </>
-      ) : prop.kind === "bench" ? (
+      ) : prop.kind === 'bench' ? (
         <mesh position={[0, 0.3, 0]} castShadow material={baseMat}>
           <boxGeometry args={[1.8, 0.6, 0.6]} />
         </mesh>
-      ) : prop.kind === "planter" ? (
+      ) : prop.kind === 'planter' ? (
         <Planter prop={prop} baseMat={baseMat} />
-      ) : prop.kind === "crate" ? (
+      ) : prop.kind === 'crate' ? (
         <mesh position={[0, 0.45, 0]} castShadow material={baseMat}>
           <boxGeometry args={[0.9, 0.9, 0.9]} />
         </mesh>
-      ) : prop.kind === "dummy" ? (
+      ) : prop.kind === 'dummy' ? (
         <>
           <mesh position={[0, 0.9, 0]} castShadow material={baseMat}>
             <cylinderGeometry args={[0.16, 0.2, 1.8, 8]} />
@@ -301,7 +373,7 @@ function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
             <sphereGeometry args={[0.3, 10, 8]} />
           </mesh>
         </>
-      ) : prop.kind === "stall" ? (
+      ) : prop.kind === 'stall' ? (
         <>
           <mesh position={[0, 0.55, 0]} castShadow material={baseMat}>
             <boxGeometry args={[2, 1.1, 1]} />
@@ -316,19 +388,19 @@ function Prop({ prop, night }: { prop: PropModel; night: boolean }) {
             <cylinderGeometry args={[0.05, 0.05, 1.4, 6]} />
           </mesh>
         </>
-      ) : prop.kind === "tree" ? (
+      ) : prop.kind === 'tree' ? (
         <Tree prop={prop} />
-      ) : prop.kind === "bush" ? (
+      ) : prop.kind === 'bush' ? (
         <NatureProp prop={prop} kind="bush" baseMat={baseMat} targetHeight={0.75} />
-      ) : prop.kind === "grass" ? (
+      ) : prop.kind === 'grass' ? (
         <NatureProp prop={prop} kind="grass" baseMat={baseMat} targetHeight={0.5} />
-      ) : prop.kind === "flower" ? (
+      ) : prop.kind === 'flower' ? (
         <NatureProp prop={prop} kind="flower" baseMat={baseMat} targetHeight={0.4} />
-      ) : prop.kind === "rock" ? (
+      ) : prop.kind === 'rock' ? (
         <NatureProp prop={prop} kind="rock" baseMat={baseMat} targetHeight={0.5} />
-      ) : prop.kind === "mushroom" ? (
+      ) : prop.kind === 'mushroom' ? (
         <NatureProp prop={prop} kind="mushroom" baseMat={baseMat} targetHeight={0.5} />
-      ) : prop.kind === "fence" ? (
+      ) : prop.kind === 'fence' ? (
         <Fence prop={prop} baseMat={baseMat} />
       ) : (
         // sign
@@ -384,7 +456,12 @@ function Tree({ prop }: { prop: PropModel }) {
   const targetHeight = 3.2 * scale;
   return (
     <Suspense fallback={proceduralTree}>
-      <ToonGlb url={treeUrl} targetHeight={targetHeight} rotationY={((hash >> 8) % 360) * (Math.PI / 180)} outline={false} />
+      <ToonGlb
+        url={treeUrl}
+        targetHeight={targetHeight}
+        rotationY={((hash >> 8) % 360) * (Math.PI / 180)}
+        outline={false}
+      />
     </Suspense>
   );
 }
@@ -401,7 +478,7 @@ function NatureProp({
   targetHeight,
 }: {
   prop: PropModel;
-  kind: "bush" | "grass" | "flower" | "rock" | "mushroom";
+  kind: 'bush' | 'grass' | 'flower' | 'rock' | 'mushroom';
   baseMat: THREE.Material;
   targetHeight: number;
 }) {
@@ -471,7 +548,7 @@ function Planter({ prop, baseMat }: { prop: PropModel; baseMat: THREE.Material }
       <mesh position={[0, 0.3, 0]} castShadow material={baseMat}>
         <boxGeometry args={[1.2, 0.6, 1.2]} />
       </mesh>
-      <mesh position={[0, 0.95, 0]} castShadow material={toonMaterial("#5d9c59")}>
+      <mesh position={[0, 0.95, 0]} castShadow material={toonMaterial('#5d9c59')}>
         <sphereGeometry args={[0.55, 10, 8]} />
       </mesh>
     </>
@@ -489,12 +566,19 @@ export function ItemMarker({ item }: { item: ItemPlacement }) {
   const material = toonMaterial(item.visual.color, item.visual.emissiveColor);
   return (
     <group position={[item.x, 0, item.z]}>
-      <mesh position={[0, 0.7, 0]} castShadow material={material} userData={{ interaction: { kind: "item", id: item.itemId, label: item.name, verb: "Pick up" } }}>
-        {item.visual.shape === "note" ? (
+      <mesh
+        position={[0, 0.7, 0]}
+        castShadow
+        material={material}
+        userData={{
+          interaction: { kind: 'item', id: item.itemId, label: item.name, verb: 'Pick up' },
+        }}
+      >
+        {item.visual.shape === 'note' ? (
           <boxGeometry args={[0.5, 0.04, 0.36]} />
-        ) : item.visual.shape === "gear" ? (
+        ) : item.visual.shape === 'gear' ? (
           <torusGeometry args={[0.28, 0.1, 8, 12]} />
-        ) : item.visual.shape === "core" ? (
+        ) : item.visual.shape === 'core' ? (
           <octahedronGeometry args={[0.32]} />
         ) : (
           <icosahedronGeometry args={[0.26]} />
@@ -506,10 +590,20 @@ export function ItemMarker({ item }: { item: ItemPlacement }) {
 }
 
 export function InteractableMarker({ prop }: { prop: InteractablePlacement }) {
-  const material = toonMaterial(prop.inspected ? "#5b6678" : "#cfd8e8", prop.inspected ? undefined : prop.accentColor);
+  const material = toonMaterial(
+    prop.inspected ? '#5b6678' : '#cfd8e8',
+    prop.inspected ? undefined : prop.accentColor
+  );
   return (
     <group position={[prop.x, 0, prop.z]}>
-      <mesh position={[0, 0.55, 0]} castShadow material={material} userData={{ interaction: { kind: "prop", id: prop.propId, label: prop.name, verb: "Inspect" } }}>
+      <mesh
+        position={[0, 0.55, 0]}
+        castShadow
+        material={material}
+        userData={{
+          interaction: { kind: 'prop', id: prop.propId, label: prop.name, verb: 'Inspect' },
+        }}
+      >
         <boxGeometry args={[0.8, 1.1, 0.8]} />
         <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} />
       </mesh>

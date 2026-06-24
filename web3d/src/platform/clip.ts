@@ -17,31 +17,38 @@ export function setCaptureCanvas(canvas: HTMLCanvasElement | null): void {
 
 export function clipSupported(): boolean {
   return (
-    typeof MediaRecorder !== "undefined" &&
+    typeof MediaRecorder !== 'undefined' &&
     Boolean(captureCanvas) &&
-    typeof captureCanvas?.captureStream === "function"
+    typeof captureCanvas?.captureStream === 'function'
   );
 }
 
 export function isRecording(): boolean {
-  return recorder?.state === "recording";
+  return recorder?.state === 'recording';
 }
 
 /** Begin recording. Returns false if unsupported or already recording. */
 export function startClip(): boolean {
-  if (!captureCanvas || typeof captureCanvas.captureStream !== "function" || typeof MediaRecorder === "undefined") return false;
+  if (
+    !captureCanvas ||
+    typeof captureCanvas.captureStream !== 'function' ||
+    typeof MediaRecorder === 'undefined'
+  )
+    return false;
   if (recorder) return false;
   const stream = captureCanvas.captureStream(30);
   chunks = [];
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+    ? 'video/webm;codecs=vp9'
+    : 'video/webm';
   recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
   recorder.ondataavailable = (event) => {
     if (event.data.size > 0) chunks.push(event.data);
   };
   recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: "video/webm" });
+    const blob = new Blob(chunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = `aliveville-clip-${Date.now()}.webm`;
     anchor.click();

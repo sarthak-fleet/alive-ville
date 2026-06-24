@@ -29,25 +29,34 @@ export interface Capabilities {
 
 /** Tiny module containing a single `i8x16` SIMD op — validates only on SIMD-capable engines. */
 const WASM_SIMD_PROBE = new Uint8Array([
-  0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11,
+  0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15,
+  253, 98, 11,
 ]);
 
 function detectWasmSimd(): boolean {
   try {
-    return typeof WebAssembly === "object" && WebAssembly.validate(WASM_SIMD_PROBE);
+    return typeof WebAssembly === 'object' && WebAssembly.validate(WASM_SIMD_PROBE);
   } catch {
     return false;
   }
 }
 
 /** Synchronous probes that need no GPU adapter. */
-export function detectSyncCapabilities(): Omit<Capabilities, "webgpu" | "shaderF16" | "timestampQuery"> {
-  const coi = typeof globalThis !== "undefined" && Boolean((globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated);
+export function detectSyncCapabilities(): Omit<
+  Capabilities,
+  'webgpu' | 'shaderF16' | 'timestampQuery'
+> {
+  const coi =
+    typeof globalThis !== 'undefined' &&
+    Boolean((globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated);
   return {
     wasmSimd: detectWasmSimd(),
-    wasmThreads: typeof SharedArrayBuffer !== "undefined" && coi,
-    webnn: typeof navigator !== "undefined" && "ml" in navigator,
-    opfs: typeof navigator !== "undefined" && Boolean(navigator.storage) && typeof navigator.storage.getDirectory === "function",
+    wasmThreads: typeof SharedArrayBuffer !== 'undefined' && coi,
+    webnn: typeof navigator !== 'undefined' && 'ml' in navigator,
+    opfs:
+      typeof navigator !== 'undefined' &&
+      Boolean(navigator.storage) &&
+      typeof navigator.storage.getDirectory === 'function',
     crossOriginIsolated: coi,
   };
 }
@@ -55,7 +64,7 @@ export function detectSyncCapabilities(): Omit<Capabilities, "webgpu" | "shaderF
 /** Full detection. Requests a WebGPU adapter (async) then reads its feature flags. */
 export async function detectCapabilities(): Promise<Capabilities> {
   const sync = detectSyncCapabilities();
-  const gpu = typeof navigator !== "undefined" ? (navigator as { gpu?: GPU }).gpu : undefined;
+  const gpu = typeof navigator !== 'undefined' ? (navigator as { gpu?: GPU }).gpu : undefined;
   if (!gpu) {
     return { ...sync, webgpu: false, shaderF16: false, timestampQuery: false };
   }
@@ -67,8 +76,8 @@ export async function detectCapabilities(): Promise<Capabilities> {
     return {
       ...sync,
       webgpu: true,
-      shaderF16: adapter.features.has("shader-f16"),
-      timestampQuery: adapter.features.has("timestamp-query"),
+      shaderF16: adapter.features.has('shader-f16'),
+      timestampQuery: adapter.features.has('timestamp-query'),
     };
   } catch {
     return { ...sync, webgpu: false, shaderF16: false, timestampQuery: false };

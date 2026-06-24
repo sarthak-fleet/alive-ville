@@ -105,7 +105,17 @@
       "goals": ["make every visitor feel at home", "be the first to know the news"],
       "relationships": { "pip": 4, "doran": 3, "sable": 2, "bram": 1, "wynne": 0 },
       "memories": [
-        { "tick": 0, "text": "Bram has been quieter than usual this week, and twice forgot to open the forge.", "meta": { "importance": 4, "tags": ["bram"], "visibility": "shared", "subject": "bram", "sourceActorId": "world" } }
+        {
+          "tick": 0,
+          "text": "Bram has been quieter than usual this week, and twice forgot to open the forge.",
+          "meta": {
+            "importance": 4,
+            "tags": ["bram"],
+            "visibility": "shared",
+            "subject": "bram",
+            "sourceActorId": "world"
+          }
+        }
       ]
     },
     {
@@ -135,7 +145,12 @@
       "goals": ["leave town quietly without a scene", "avoid talking about the forge"],
       "relationships": { "doran": 3, "maren": 1, "sable": -1, "wynne": 0, "pip": 2 },
       "secrets": [
-        { "id": "bram_leaving", "text": "Bram has secretly sold the forge and plans to leave Lanternmere for good before the festival.", "risk": 80, "knownBy": ["bram"] }
+        {
+          "id": "bram_leaving",
+          "text": "Bram has secretly sold the forge and plans to leave Lanternmere for good before the festival.",
+          "risk": 80,
+          "knownBy": ["bram"]
+        }
       ],
       "memories": []
     },
@@ -166,7 +181,17 @@
       "goals": ["learn what everyone is hiding", "confirm her suspicion about Bram"],
       "relationships": { "maren": 2, "wynne": 1, "doran": 1, "pip": 0, "bram": -1 },
       "memories": [
-        { "tick": 0, "text": "I saw Bram loading crates onto a cart behind the forge after midnight. He's hiding something.", "meta": { "importance": 6, "tags": ["bram", "secret"], "visibility": "shared", "subject": "bram", "sourceActorId": "sable" } }
+        {
+          "tick": 0,
+          "text": "I saw Bram loading crates onto a cart behind the forge after midnight. He's hiding something.",
+          "meta": {
+            "importance": 6,
+            "tags": ["bram", "secret"],
+            "visibility": "shared",
+            "subject": "bram",
+            "sourceActorId": "sable"
+          }
+        }
       ]
     },
     {

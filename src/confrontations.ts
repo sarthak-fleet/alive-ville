@@ -1,5 +1,5 @@
-import { recordChronicle } from "./chronicle.ts";
-import type { AgentGoal, Npc, World } from "./types.ts";
+import { recordChronicle } from './chronicle.ts';
+import type { AgentGoal, Npc, World } from './types.ts';
 
 /**
  * Consequences move bodies: an NPC who turned against someone doesn't sit on
@@ -11,7 +11,7 @@ import type { AgentGoal, Npc, World } from "./types.ts";
  */
 
 export interface ConfrontationEvent {
-  kind: "approach" | "confrontation";
+  kind: 'approach' | 'confrontation';
   actorId: string;
   targetId: string;
   text: string;
@@ -29,20 +29,20 @@ export function executeConfrontations(world: World): ConfrontationEvent[] {
     const holderId = match?.[2];
     const holder = holderId ? world.npcs.find((entry) => entry.id === holderId) : undefined;
     if (!holder || holder.combat?.defeated) {
-      ambition.status = "abandoned";
+      ambition.status = 'abandoned';
       continue;
     }
 
     if (npc.locationId !== holder.locationId) {
       const next = nextHop(world, npc.locationId, holder.locationId);
       if (!next) {
-        ambition.status = "blocked";
-        ambition.blocker = "no route";
+        ambition.status = 'blocked';
+        ambition.blocker = 'no route';
         continue;
       }
       npc.locationId = next;
       events.push({
-        kind: "approach",
+        kind: 'approach',
         actorId: npc.id,
         targetId: holder.id,
         text: `${npc.name} goes looking for ${holder.name}.`,
@@ -51,10 +51,10 @@ export function executeConfrontations(world: World): ConfrontationEvent[] {
     }
 
     // face to face: the confrontation happens
-    ambition.status = "satisfied";
+    ambition.status = 'satisfied';
     const line = `${npc.name} confronts ${holder.name}: "I know what you've been hiding."`;
     const confrontChronicle = recordChronicle(world, {
-      kind: "confrontation",
+      kind: 'confrontation',
       text: line,
       actorId: npc.id,
       targetId: holder.id,
@@ -63,12 +63,24 @@ export function executeConfrontations(world: World): ConfrontationEvent[] {
     npc.memories.push({
       tick: world.tick,
       text: `I confronted ${holder.name} about the secret. It is in the open between us now.`,
-      meta: { importance: 6, visibility: "shared", sourceActorId: holder.id, tags: ["confrontation"], chronicleId: confrontChronicle.id },
+      meta: {
+        importance: 6,
+        visibility: 'shared',
+        sourceActorId: holder.id,
+        tags: ['confrontation'],
+        chronicleId: confrontChronicle.id,
+      },
     });
     holder.memories.push({
       tick: world.tick,
       text: `${npc.name} confronted me — they know my secret. I must decide what to do about them.`,
-      meta: { importance: 7, visibility: "private", sourceActorId: npc.id, tags: ["confrontation"], chronicleId: confrontChronicle.id },
+      meta: {
+        importance: 7,
+        visibility: 'private',
+        sourceActorId: npc.id,
+        tags: ['confrontation'],
+        chronicleId: confrontChronicle.id,
+      },
     });
     // the accused resents being cornered
     holder.relationships = {
@@ -86,16 +98,20 @@ export function executeConfrontations(world: World): ConfrontationEvent[] {
       witness.memories.push({
         tick: world.tick,
         text: `I watched ${npc.name} confront ${holder.name} in public. Something serious is between them.`,
-        meta: { importance: 5, visibility: "shared", tags: ["confrontation"] },
+        meta: { importance: 5, visibility: 'shared', tags: ['confrontation'] },
       });
     }
-    events.push({ kind: "confrontation", actorId: npc.id, targetId: holder.id, text: line });
+    events.push({ kind: 'confrontation', actorId: npc.id, targetId: holder.id, text: line });
   }
   return events;
 }
 
 function activeConfrontation(npc: Npc): AgentGoal | null {
-  return (npc.ambitions ?? []).find((goal) => (goal.status ?? "active") === "active" && CONFRONT_ID.test(goal.id)) ?? null;
+  return (
+    (npc.ambitions ?? []).find(
+      (goal) => (goal.status ?? 'active') === 'active' && CONFRONT_ID.test(goal.id)
+    ) ?? null
+  );
 }
 
 /** BFS next hop over the exit graph (exits are mostly bidirectional) */
@@ -104,7 +120,8 @@ function nextHop(world: World, from: string, to: string): string | null {
   const neighbors = new Map<string, string[]>();
   for (const exit of world.exits ?? []) {
     neighbors.set(exit.from, [...(neighbors.get(exit.from) ?? []), exit.to]);
-    if (exit.bidirectional !== false) neighbors.set(exit.to, [...(neighbors.get(exit.to) ?? []), exit.from]);
+    if (exit.bidirectional !== false)
+      neighbors.set(exit.to, [...(neighbors.get(exit.to) ?? []), exit.from]);
   }
   const previous = new Map<string, string>();
   const queue = [from];

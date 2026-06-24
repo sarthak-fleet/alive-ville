@@ -5,25 +5,25 @@
  *
  * Usage: tsx scripts/probe-portrait.ts
  */
-import { existsSync, unlinkSync } from "node:fs";
+import { existsSync, unlinkSync } from 'node:fs';
 
-import { generatePortrait, portraitPath } from "../src/portraits.ts";
+import { generatePortrait, portraitPath } from '../src/portraits.ts';
 
 async function main() {
-  const npcId = "probe";
-  const worldId = "probe-world";
+  const npcId = 'probe';
+  const worldId = 'probe-world';
   const subject = {
-    name: "Mira",
-    role: "herbalist",
+    name: 'Mira',
+    role: 'herbalist',
     appearance: {
-      hair: "braided auburn hair",
-      outfit: "green apron",
-      visualTags: ["apron", "herbs"],
+      hair: 'braided auburn hair',
+      outfit: 'green apron',
+      visualTags: ['apron', 'herbs'],
     },
-    traits: { personality: ["warm"] },
+    traits: { personality: ['warm'] },
   };
 
-  console.info("Probe → calling Modal endpoint…");
+  console.info('Probe → calling Modal endpoint…');
   const t0 = Date.now();
   const result = await generatePortrait(npcId, worldId, subject);
   const dt = ((Date.now() - t0) / 1000).toFixed(1);

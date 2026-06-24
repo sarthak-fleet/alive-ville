@@ -1,12 +1,12 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
-import { mulberry32, seedFromString } from "../worldgen/rng.ts";
+import { mulberry32, seedFromString } from '../worldgen/rng.ts';
 
 function makeCanvas(width: number, height: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  return [canvas, canvas.getContext("2d")!];
+  return [canvas, canvas.getContext('2d')!];
 }
 
 function asTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
@@ -17,7 +17,7 @@ function asTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
 }
 
 function shade(hex: string, amount: number): string {
-  const value = Number.parseInt(hex.replace("#", ""), 16);
+  const value = Number.parseInt(hex.replace('#', ''), 16);
   const channels = [16, 8, 0].map((shift) => {
     const channel = (value >> shift) & 0xff;
     const next = amount >= 0 ? channel + (255 - channel) * amount : channel * (1 + amount);
@@ -36,7 +36,12 @@ export interface FacadeMaps {
 
 const facadeCache = new Map<string, FacadeMaps>();
 
-export function facadeMaps(bodyColor: string, accentColor: string, floors: number, seedId: string): FacadeMaps {
+export function facadeMaps(
+  bodyColor: string,
+  accentColor: string,
+  floors: number,
+  seedId: string
+): FacadeMaps {
   const key = `${bodyColor}:${accentColor}:${floors}:${seedId}`;
   const cached = facadeCache.get(key);
   if (cached) return cached;
@@ -54,7 +59,7 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
   gradient.addColorStop(1, shade(bodyColor, -0.08));
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
-  glow.fillStyle = "#000000";
+  glow.fillStyle = '#000000';
   glow.fillRect(0, 0, width, height);
 
   // wall coursing: brick rows or panel seams, picked per building
@@ -87,15 +92,15 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
 
   // gentle wall noise + grime streaks from ledges
   for (let i = 0; i < 240; i += 1) {
-    ctx.fillStyle = `rgba(${rng() > 0.5 ? "255,255,255" : "0,0,0"}, ${0.015 + rng() * 0.03})`;
+    ctx.fillStyle = `rgba(${rng() > 0.5 ? '255,255,255' : '0,0,0'}, ${0.015 + rng() * 0.03})`;
     ctx.fillRect(rng() * width, rng() * height, 3 + rng() * 14, 3 + rng() * 8);
   }
   for (let i = 0; i < 8; i += 1) {
     const gx = rng() * width;
     const gy = rng() * height;
     const streak = ctx.createLinearGradient(0, gy, 0, gy + 40 + rng() * 60);
-    streak.addColorStop(0, "rgba(0,0,0,0.1)");
-    streak.addColorStop(1, "rgba(0,0,0,0)");
+    streak.addColorStop(0, 'rgba(0,0,0,0.1)');
+    streak.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = streak;
     ctx.fillRect(gx, gy, 5 + rng() * 10, 40 + rng() * 60);
   }
@@ -105,8 +110,8 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
     [width - 18, width],
   ] as const) {
     const edge = ctx.createLinearGradient(x0, 0, x1, 0);
-    edge.addColorStop(x0 === 0 ? 0 : 1, "rgba(0,0,0,0.22)");
-    edge.addColorStop(x0 === 0 ? 1 : 0, "rgba(0,0,0,0)");
+    edge.addColorStop(x0 === 0 ? 0 : 1, 'rgba(0,0,0,0.22)');
+    edge.addColorStop(x0 === 0 ? 1 : 0, 'rgba(0,0,0,0)');
     ctx.fillStyle = edge;
     ctx.fillRect(x0, 0, 18, height);
   }
@@ -118,7 +123,7 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
     const top = height - (floor + 1) * floorPx;
 
     // floor trim line with a light catch above it
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
     ctx.fillRect(0, top, width, 3);
     ctx.fillStyle = shade(bodyColor, -0.28);
     ctx.fillRect(0, top + 3, width, 5);
@@ -145,20 +150,20 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
       for (const cx of [width * 0.18, width * 0.82]) {
         ctx.fillStyle = shade(bodyColor, -0.4);
         ctx.fillRect(cx - 58, top + 44, 116, 68);
-        ctx.fillStyle = "#202b3c";
+        ctx.fillStyle = '#202b3c';
         ctx.fillRect(cx - 52, top + 50, 104, 56);
         // glass sheen
-        ctx.fillStyle = "rgba(180,210,255,0.12)";
+        ctx.fillStyle = 'rgba(180,210,255,0.12)';
         ctx.beginPath();
         ctx.moveTo(cx - 52, top + 106);
         ctx.lineTo(cx - 10, top + 50);
         ctx.lineTo(cx + 14, top + 50);
         ctx.lineTo(cx - 28, top + 106);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.14)";
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
         ctx.fillRect(cx - 58, top + 112, 116, 4); // sill
         if (rng() > 0.45) {
-          glow.fillStyle = "rgba(255, 214, 150, 0.95)";
+          glow.fillStyle = 'rgba(255, 214, 150, 0.95)';
           glow.fillRect(cx - 50, top + 52, 100, 52);
         }
       }
@@ -172,18 +177,18 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
       const wx = cx - wWidth / 2;
       const wy = top + (floorPx - wHeight) / 2 + 8;
       // header shadow + frame
-      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
       ctx.fillRect(wx - 6, wy - 8, wWidth + 12, 6);
       ctx.fillStyle = shade(bodyColor, -0.38);
       ctx.fillRect(wx - 6, wy - 6, wWidth + 12, wHeight + 12);
       // glass
       const glass = ctx.createLinearGradient(0, wy, 0, wy + wHeight);
-      glass.addColorStop(0, "#2b3a52");
-      glass.addColorStop(1, "#16202f");
+      glass.addColorStop(0, '#2b3a52');
+      glass.addColorStop(1, '#16202f');
       ctx.fillStyle = glass;
       ctx.fillRect(wx, wy, wWidth, wHeight);
       // sheen + mullions
-      ctx.fillStyle = "rgba(180,210,255,0.1)";
+      ctx.fillStyle = 'rgba(180,210,255,0.1)';
       ctx.beginPath();
       ctx.moveTo(wx, wy + wHeight);
       ctx.lineTo(wx + wWidth * 0.55, wy);
@@ -194,23 +199,25 @@ export function facadeMaps(bodyColor: string, accentColor: string, floors: numbe
       ctx.fillRect(wx, wy + wHeight / 2 - 1.5, wWidth, 3);
       ctx.fillRect(wx + wWidth / 2 - 1.5, wy, 3, wHeight);
       // sill with light catch
-      ctx.fillStyle = "rgba(255,255,255,0.16)";
+      ctx.fillStyle = 'rgba(255,255,255,0.16)';
       ctx.fillRect(wx - 6, wy + wHeight + 6, wWidth + 12, 4);
       // occasional AC unit under a window
       if (rng() > 0.78) {
         ctx.fillStyle = shade(bodyColor, -0.5);
         ctx.fillRect(wx + 6, wy + wHeight + 12, 26, 14);
-        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
         ctx.fillRect(wx + 6, wy + wHeight + 12, 26, 3);
       }
       // lit at night? (some windows warm, a few cool)
       if (rng() > 0.55) {
         const cool = rng() > 0.82;
-        glow.fillStyle = cool ? "rgba(170, 215, 255, 0.8)" : `rgba(255, ${200 + Math.floor(rng() * 40)}, 140, 0.95)`;
+        glow.fillStyle = cool
+          ? 'rgba(170, 215, 255, 0.8)'
+          : `rgba(255, ${200 + Math.floor(rng() * 40)}, 140, 0.95)`;
         glow.fillRect(wx, wy, wWidth, wHeight);
         // half-lit rooms: sometimes only one pane glows
         if (rng() > 0.6) {
-          glow.fillStyle = "#000000";
+          glow.fillStyle = '#000000';
           glow.fillRect(wx + (rng() > 0.5 ? wWidth / 2 : 0), wy, wWidth / 2, wHeight);
         }
       }
@@ -237,10 +244,10 @@ export function facadeMaterial(
   if (cached) return cached;
   const maps = facadeMaps(bodyColor, accentColor, floors, seedId);
   const material = new THREE.MeshToonMaterial({
-    color: new THREE.Color("#ffffff"),
+    color: new THREE.Color('#ffffff'),
     map: maps.map,
     gradientMap,
-    emissive: new THREE.Color("#ffd9a0"),
+    emissive: new THREE.Color('#ffd9a0'),
     emissiveMap: maps.emissiveMap,
     emissiveIntensity: night ? 1.35 : 0,
   });
@@ -257,14 +264,14 @@ export function streetTexture(): THREE.CanvasTexture {
   if (asphaltTexture) return asphaltTexture;
   const rng = mulberry32(7);
   const [canvas, ctx] = makeCanvas(128, 128);
-  ctx.fillStyle = "#454a56";
+  ctx.fillStyle = '#454a56';
   ctx.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 240; i += 1) {
-    ctx.fillStyle = `rgba(${rng() > 0.5 ? "255,255,255" : "0,0,0"}, ${0.02 + rng() * 0.05})`;
+    ctx.fillStyle = `rgba(${rng() > 0.5 ? '255,255,255' : '0,0,0'}, ${0.02 + rng() * 0.05})`;
     ctx.fillRect(rng() * 128, rng() * 128, 1 + rng() * 3, 1 + rng() * 3);
   }
   // center dashes run along v
-  ctx.fillStyle = "rgba(235, 225, 190, 0.8)";
+  ctx.fillStyle = 'rgba(235, 225, 190, 0.8)';
   ctx.fillRect(61, 8, 6, 38);
   ctx.fillRect(61, 78, 6, 38);
   asphaltTexture = asTexture(canvas);
@@ -294,14 +301,19 @@ export function pavingTexture(baseColor: string): THREE.CanvasTexture {
       ctx.fillStyle = shade(baseColor, tone);
       ctx.fillRect(px + 1.5, py + 1.5, tile - 3, tile - 3);
       // soft top-light bevel
-      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
       ctx.fillRect(px + 1.5, py + 1.5, tile - 3, 3);
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
       ctx.fillRect(px + 1.5, py + tile - 4.5, tile - 3, 3);
       // surface speckle
       if (rng() > 0.4) {
-        ctx.fillStyle = `rgba(${rng() > 0.5 ? "255,255,255" : "0,0,0"}, ${0.03 + rng() * 0.05})`;
-        ctx.fillRect(px + 4 + rng() * (tile - 12), py + 4 + rng() * (tile - 12), 3 + rng() * 5, 2 + rng() * 4);
+        ctx.fillStyle = `rgba(${rng() > 0.5 ? '255,255,255' : '0,0,0'}, ${0.03 + rng() * 0.05})`;
+        ctx.fillRect(
+          px + 4 + rng() * (tile - 12),
+          py + 4 + rng() * (tile - 12),
+          3 + rng() * 5,
+          2 + rng() * 4
+        );
       }
     }
   }
@@ -325,7 +337,7 @@ export function plankTexture(baseColor: string): THREE.CanvasTexture {
     ctx.fillStyle = shade(baseColor, -0.06 + rng() * 0.14);
     ctx.fillRect(0, y, size, row);
     // joints
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.fillRect(0, y, size, 2);
     const joints = 2 + Math.floor(rng() * 2);
     for (let j = 0; j < joints; j += 1) {
@@ -349,7 +361,7 @@ let zebraTexture: THREE.CanvasTexture | null = null;
 export function crosswalkTexture(): THREE.CanvasTexture {
   if (zebraTexture) return zebraTexture;
   const [canvas, ctx] = makeCanvas(128, 64);
-  ctx.fillStyle = "rgba(235, 235, 225, 0.85)";
+  ctx.fillStyle = 'rgba(235, 235, 225, 0.85)';
   for (let x = 6; x < 128; x += 24) {
     ctx.fillRect(x, 4, 13, 56);
   }
@@ -364,9 +376,9 @@ export function lightPoolTexture(): THREE.CanvasTexture {
   if (poolTexture) return poolTexture;
   const [canvas, ctx] = makeCanvas(128, 128);
   const gradient = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
-  gradient.addColorStop(0, "rgba(255,255,255,0.85)");
-  gradient.addColorStop(0.45, "rgba(255,255,255,0.32)");
-  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  gradient.addColorStop(0, 'rgba(255,255,255,0.85)');
+  gradient.addColorStop(0.45, 'rgba(255,255,255,0.32)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 128, 128);
   poolTexture = asTexture(canvas);
@@ -396,15 +408,20 @@ export function brickTexture(baseColor: string): THREE.CanvasTexture {
       ctx.fillStyle = shade(baseColor, tone);
       ctx.fillRect(px + 2, py + 2, brickW - 4, brickH - 4);
       // top light catch
-      ctx.fillStyle = "rgba(255,255,255,0.07)";
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
       ctx.fillRect(px + 2, py + 2, brickW - 4, 3);
       // bottom shadow
-      ctx.fillStyle = "rgba(0,0,0,0.12)";
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
       ctx.fillRect(px + 2, py + brickH - 4, brickW - 4, 3);
       // surface speckle (soot)
       if (rng() > 0.55) {
         ctx.fillStyle = `rgba(0,0,0,${0.06 + rng() * 0.1})`;
-        ctx.fillRect(px + 4 + rng() * (brickW - 10), py + 4 + rng() * (brickH - 8), 4 + rng() * 8, 2 + rng() * 4);
+        ctx.fillRect(
+          px + 4 + rng() * (brickW - 10),
+          py + 4 + rng() * (brickH - 8),
+          4 + rng() * 8,
+          2 + rng() * 4
+        );
       }
     }
   }
@@ -433,9 +450,9 @@ export function tileTexture(baseColor: string): THREE.CanvasTexture {
       const tone = -0.04 + rng() * 0.12;
       ctx.fillStyle = shade(baseColor, tone);
       ctx.fillRect(px + 2, py + 2, tile - 4, tile - 4);
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
       ctx.fillRect(px + 2, py + 2, tile - 4, 4);
-      ctx.fillStyle = "rgba(0,0,0,0.07)";
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
       ctx.fillRect(px + 2, py + tile - 6, tile - 4, 4);
     }
   }

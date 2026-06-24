@@ -26,27 +26,22 @@
 // NodeNext (VRMUtils has no `.d.ts`; VRMHumanBoneName lives in a nested
 // @pixiv/three-vrm-core package that NodeNext can't traverse). They DO
 // exist at runtime — grab them via a namespace import + cast.
-import * as threeVrm from "@pixiv/three-vrm";
-import {
-  MToonMaterial,
-  type VRM,
-  VRMLoaderPlugin,
-} from "@pixiv/three-vrm";
-import { Outlines } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import * as threeVrm from '@pixiv/three-vrm';
+import { MToonMaterial, type VRM, VRMLoaderPlugin } from '@pixiv/three-vrm';
+import { Outlines } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import { scaledDelta } from "../controls/runtime.ts";
-import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
-import { type VrmKey,VRMS } from "./vrm.ts";
+import { scaledDelta } from '../controls/runtime.ts';
+import type { CharacterAnimationHandle, CombatAnimKind } from './CharacterModel.tsx';
+import { type VrmKey, VRMS } from './vrm.ts';
 
 interface VRMUtilsLike {
   removeUnnecessaryJoints: (scene: THREE.Object3D) => void;
 }
-const VRMUtils: VRMUtilsLike = (threeVrm as unknown as { VRMUtils: VRMUtilsLike })
-  .VRMUtils;
+const VRMUtils: VRMUtilsLike = (threeVrm as unknown as { VRMUtils: VRMUtilsLike }).VRMUtils;
 const VRMHumanBoneName: Record<string, string> = (
   threeVrm as unknown as { VRMHumanBoneName: Record<string, string> }
 ).VRMHumanBoneName;
@@ -123,7 +118,7 @@ function setupVrm(vrmInstance: VRM): VrmSetup {
 
   // VRM 0.x faces -Z; VRM 1.0 faces +Z. Detect via meta.metaVersion.
   const metaVersion = (vrmInstance.meta as { metaVersion?: string } | undefined)?.metaVersion;
-  const vrm0 = !metaVersion || metaVersion.startsWith("0");
+  const vrm0 = !metaVersion || metaVersion.startsWith('0');
 
   // Normalize to ~1.7m height.
   vrmInstance.scene.updateMatrixWorld(true);
@@ -132,24 +127,27 @@ function setupVrm(vrmInstance: VRM): VrmSetup {
   const normalize = Number.isFinite(rawHeight) && rawHeight > 0.01 ? TARGET_HEIGHT / rawHeight : 1;
 
   // Bone refs for procedural locomotion + combat poses.
-  const humanoid = vrmInstance.humanoid as unknown as {
-    getNormalizedBoneNode: (name: string) => THREE.Object3D | null;
-  } | undefined;
-  const get = (name: string): THREE.Object3D | null => humanoid?.getNormalizedBoneNode(name) ?? null;
+  const humanoid = vrmInstance.humanoid as unknown as
+    | {
+        getNormalizedBoneNode: (name: string) => THREE.Object3D | null;
+      }
+    | undefined;
+  const get = (name: string): THREE.Object3D | null =>
+    humanoid?.getNormalizedBoneNode(name) ?? null;
   const bn = VRMHumanBoneName;
   const bones: BoneMap = {
-    hips: get(bn["Hips"]!),
-    spine: get(bn["Spine"]!),
-    chest: get(bn["Chest"]!) ?? get(bn["UpperChest"]!),
-    head: get(bn["Head"]!),
-    leftUpperArm: get(bn["LeftUpperArm"]!),
-    rightUpperArm: get(bn["RightUpperArm"]!),
-    leftLowerArm: get(bn["LeftLowerArm"]!),
-    rightLowerArm: get(bn["RightLowerArm"]!),
-    leftUpperLeg: get(bn["LeftUpperLeg"]!),
-    rightUpperLeg: get(bn["RightUpperLeg"]!),
-    leftLowerLeg: get(bn["LeftLowerLeg"]!),
-    rightLowerLeg: get(bn["RightLowerLeg"]!),
+    hips: get(bn['Hips']!),
+    spine: get(bn['Spine']!),
+    chest: get(bn['Chest']!) ?? get(bn['UpperChest']!),
+    head: get(bn['Head']!),
+    leftUpperArm: get(bn['LeftUpperArm']!),
+    rightUpperArm: get(bn['RightUpperArm']!),
+    leftLowerArm: get(bn['LeftLowerArm']!),
+    rightLowerArm: get(bn['RightLowerArm']!),
+    leftUpperLeg: get(bn['LeftUpperLeg']!),
+    rightUpperLeg: get(bn['RightUpperLeg']!),
+    leftLowerLeg: get(bn['LeftLowerLeg']!),
+    rightLowerLeg: get(bn['RightLowerLeg']!),
   };
 
   // Collect MToon materials for emissive flash / telegraph pulses.
@@ -163,7 +161,14 @@ function setupVrm(vrmInstance: VRM): VrmSetup {
     }
   });
 
-  return { vrm: vrmInstance, root: vrmInstance.scene, bones, mtoonMaterials, normalizeScale: normalize, isVrm0: vrm0 };
+  return {
+    vrm: vrmInstance,
+    root: vrmInstance.scene,
+    bones,
+    mtoonMaterials,
+    normalizeScale: normalize,
+    isVrm0: vrm0,
+  };
 }
 
 interface CombatPose {
@@ -381,9 +386,9 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
         // defeated: tween hips toward floor + forward rotation. Don't touch
         // limbs — the pose collapse from gravity is enough for v1.
         if (bones.hips) {
-          bones.hips.position.y +=
-            (-0.6 - bones.hips.position.y) * Math.min(1, delta * 4);
-          bones.hips.rotation.x += (Math.PI * 0.45 - bones.hips.rotation.x) * Math.min(1, delta * 5);
+          bones.hips.position.y += (-0.6 - bones.hips.position.y) * Math.min(1, delta * 4);
+          bones.hips.rotation.x +=
+            (Math.PI * 0.45 - bones.hips.rotation.x) * Math.min(1, delta * 5);
         }
       }
 
@@ -404,7 +409,7 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
       if (expressions) {
         const aaValue = talkingRef.current ? 0.4 + 0.4 * Math.sin(now * 0.018) : 0;
         try {
-          expressions.setValue("aa", Math.max(0, aaValue));
+          expressions.setValue('aa', Math.max(0, aaValue));
         } catch {
           // expression not present on this VRM — skip cleanly.
         }
@@ -417,16 +422,13 @@ export const VrmCharacter = forwardRef<CharacterAnimationHandle, VrmCharacterPro
         const mat = mtoonMaterials[i]!;
         const orig = originalEmissive[i]!;
         if (flashing) {
-          mat.emissive.set("#ff4030");
+          mat.emissive.set('#ff4030');
           mat.emissiveIntensity = 0.85;
         } else if (telegraphing) {
           const pulse = 0.28 + Math.sin(now * 0.018) * 0.18;
-          mat.emissive.set("#ff8830");
+          mat.emissive.set('#ff8830');
           mat.emissiveIntensity = pulse;
-        } else if (
-          mat.emissiveIntensity !== orig.intensity ||
-          !mat.emissive.equals(orig.color)
-        ) {
+        } else if (mat.emissiveIntensity !== orig.intensity || !mat.emissive.equals(orig.color)) {
           mat.emissive.copy(orig.color);
           mat.emissiveIntensity = orig.intensity;
         }

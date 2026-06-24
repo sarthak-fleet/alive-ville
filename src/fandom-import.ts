@@ -1,5 +1,5 @@
-import { completeText, streamText } from "./llm/router.ts";
-import { validateWorldIngestSource, type WorldIngestSource } from "./world-ingest.ts";
+import { completeText, streamText } from './llm/router.ts';
+import { validateWorldIngestSource, type WorldIngestSource } from './world-ingest.ts';
 
 /**
  * Type a fandom name → playable world. Three steps:
@@ -9,10 +9,10 @@ import { validateWorldIngestSource, type WorldIngestSource } from "./world-inges
  */
 
 const LONG_CALL_MS = 90_000;
-const RESEARCH_MODEL = (): string | undefined => process.env["LLM_MODEL_RESEARCH"] ?? undefined;
+const RESEARCH_MODEL = (): string | undefined => process.env['LLM_MODEL_RESEARCH'] ?? undefined;
 const EXTRACT_CHAR_CAP = 900;
 // fandom's edge 502s non-browser user agents
-const WIKI_UA = "Mozilla/5.0 (compatible; AlivevilleWorldImport/1.0)";
+const WIKI_UA = 'Mozilla/5.0 (compatible; AlivevilleWorldImport/1.0)';
 
 interface FandomPlan {
   wikis: string[];
@@ -59,25 +59,37 @@ Rules: ground everything in the notes; palette hex colors must match described o
 export async function fandomToWorldSource(query: string): Promise<FandomImportResult> {
   const notes: string[] = [];
 
-  const planResult = await completeText({ tier: "quest", system: PLAN_SYSTEM, user: query.trim().slice(0, 120), timeoutMs: 30_000, model: RESEARCH_MODEL() });
-  if (!("text" in planResult) || !planResult.text) {
-    throw new Error(`plan_failed: ${"error" in planResult && planResult.error ? planResult.error : "reason" in planResult ? planResult.reason : "empty"}`);
+  const planResult = await completeText({
+    tier: 'quest',
+    system: PLAN_SYSTEM,
+    user: query.trim().slice(0, 120),
+    timeoutMs: 30_000,
+    model: RESEARCH_MODEL(),
+  });
+  if (!('text' in planResult) || !planResult.text) {
+    throw new Error(
+      `plan_failed: ${'error' in planResult && planResult.error ? planResult.error : 'reason' in planResult ? planResult.reason : 'empty'}`
+    );
   }
   const plan = parseJsonObject<FandomPlan>(planResult.text);
   if (!plan?.title || !Array.isArray(plan.characters) || plan.characters.length === 0) {
-    throw new Error("plan_failed: model returned no usable plan");
+    throw new Error('plan_failed: model returned no usable plan');
   }
 
   const wiki = await resolveWiki(plan.wikis ?? []);
-  notes.push(wiki ? `wiki: ${wiki}.fandom.com` : "wiki: none resolved — building from model knowledge");
+  notes.push(
+    wiki ? `wiki: ${wiki}.fandom.com` : 'wiki: none resolved — building from model knowledge'
+  );
 
-  const wanted = [...new Set([...(plan.characters ?? []).slice(0, 8), ...(plan.locations ?? []).slice(0, 6)])].slice(0, 14);
+  const wanted = [
+    ...new Set([...(plan.characters ?? []).slice(0, 8), ...(plan.locations ?? []).slice(0, 6)]),
+  ].slice(0, 14);
   const extracts = wiki ? await fetchExtracts(wiki, wanted) : new Map<string, string>();
   notes.push(`extracts: ${extracts.size}/${wanted.length}`);
 
   const researchLines = wanted.map((name) => {
     const text = extracts.get(name.toLowerCase());
-    return `## ${name}\n${text ? text.slice(0, EXTRACT_CHAR_CAP) : "(no wiki page found — use general knowledge, stay canonical)"}`;
+    return `## ${name}\n${text ? text.slice(0, EXTRACT_CHAR_CAP) : '(no wiki page found — use general knowledge, stay canonical)'}`;
   });
   const user = [
     `Franchise: ${plan.title}`,
@@ -85,32 +97,42 @@ export async function fandomToWorldSource(query: string): Promise<FandomImportRe
     `Antagonist: ${plan.antagonist}`,
     `Research notes:`,
     ...researchLines,
-  ].join("\n\n");
+  ].join('\n\n');
 
   // streamed: the gateway times out non-streaming generations around 45s
-  let buildResult = await streamText({ tier: "quest", system: BUILD_SYSTEM, user, timeoutMs: LONG_CALL_MS, model: RESEARCH_MODEL() });
-  if (!("text" in buildResult) || !buildResult.text) {
+  let buildResult = await streamText({
+    tier: 'quest',
+    system: BUILD_SYSTEM,
+    user,
+    timeoutMs: LONG_CALL_MS,
+    model: RESEARCH_MODEL(),
+  });
+  if (!('text' in buildResult) || !buildResult.text) {
     // gateways choke on large prompts — retry once with tighter notes
-    notes.push("build retry with condensed notes");
-    const condensed = researchLines.map((line) => line.slice(0, 420)).join("\n\n");
+    notes.push('build retry with condensed notes');
+    const condensed = researchLines.map((line) => line.slice(0, 420)).join('\n\n');
     buildResult = await streamText({
-      tier: "quest",
+      tier: 'quest',
       system: BUILD_SYSTEM,
       user: `Franchise: ${plan.title}\n\nSetting: ${plan.synopsis}\n\nAntagonist: ${plan.antagonist}\n\n${condensed}`,
       timeoutMs: LONG_CALL_MS,
       model: RESEARCH_MODEL(),
     });
   }
-  if (!("text" in buildResult) || !buildResult.text) {
-    throw new Error(`build_failed: ${"error" in buildResult && buildResult.error ? buildResult.error : "empty"}`);
+  if (!('text' in buildResult) || !buildResult.text) {
+    throw new Error(
+      `build_failed: ${'error' in buildResult && buildResult.error ? buildResult.error : 'empty'}`
+    );
   }
   const raw = parseJsonObject<WorldIngestSource>(buildResult.text);
-  if (!raw) throw new Error("build_failed: model returned invalid JSON");
+  if (!raw) throw new Error('build_failed: model returned invalid JSON');
 
   const source = coerceWorldSource(raw, plan);
   const issues = validateWorldIngestSource(source);
   if (issues.length > 0) {
-    throw new Error(`build_failed: ${issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ")}`);
+    throw new Error(
+      `build_failed: ${issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`
+    );
   }
   return { source, wiki, notes };
 }
@@ -121,16 +143,19 @@ async function resolveWiki(candidates: string[]): Promise<string | null> {
   for (const candidate of candidates.slice(0, 4)) {
     const sub = candidate
       .toLowerCase()
-      .replace(/\.fandom\.com.*$/, "")
-      .replace(/^https?:\/\//, "")
-      .replace(/[^a-z0-9-]/g, "");
+      .replace(/\.fandom\.com.*$/, '')
+      .replace(/^https?:\/\//, '')
+      .replace(/[^a-z0-9-]/g, '');
     if (!sub) continue;
     try {
-      const res = await fetch(`https://${sub}.fandom.com/api.php?action=query&meta=siteinfo&format=json`, {
-        signal: AbortSignal.timeout(6_000),
-        headers: { "user-agent": WIKI_UA },
-      });
-      if (res.ok && (res.headers.get("content-type") ?? "").includes("json")) return sub;
+      const res = await fetch(
+        `https://${sub}.fandom.com/api.php?action=query&meta=siteinfo&format=json`,
+        {
+          signal: AbortSignal.timeout(6_000),
+          headers: { 'user-agent': WIKI_UA },
+        }
+      );
+      if (res.ok && (res.headers.get('content-type') ?? '').includes('json')) return sub;
     } catch {
       // try the next candidate
     }
@@ -150,10 +175,13 @@ async function fetchExtracts(wiki: string, titles: string[]): Promise<Map<string
         `https://${wiki}.fandom.com/api.php?action=parse&prop=wikitext&section=0&redirects=1&format=json` +
         `&page=${encodeURIComponent(title)}`;
       try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(10_000), headers: { "user-agent": WIKI_UA } });
+        const res = await fetch(url, {
+          signal: AbortSignal.timeout(10_000),
+          headers: { 'user-agent': WIKI_UA },
+        });
         if (!res.ok) return;
-        const data = (await res.json()) as { parse?: { wikitext?: { "*"?: string } } };
-        const raw = data.parse?.wikitext?.["*"];
+        const data = (await res.json()) as { parse?: { wikitext?: { '*'?: string } } };
+        const raw = data.parse?.wikitext?.['*'];
         if (!raw) return;
         const text = stripWikitext(raw);
         if (text.length > 80) out.set(title.toLowerCase(), text);
@@ -169,25 +197,25 @@ function stripWikitext(raw: string): string {
   let text = raw;
   // remove nested templates ({{infobox ...}}) by repeated inner-first stripping
   for (let pass = 0; pass < 6; pass += 1) {
-    const next = text.replace(/\{\{[^{}]*\}\}/g, " ");
+    const next = text.replace(/\{\{[^{}]*\}\}/g, ' ');
     if (next === text) break;
     text = next;
   }
   return text
-    .replace(/<ref[^>]*\/>/g, " ")
-    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\[\[(?:[^\]|]*\|)?([^\]]+)\]\]/g, "$1")
-    .replace(/'{2,}/g, "")
-    .replace(/^=+.*=+$/gm, " ")
-    .replace(/\s+/g, " ")
+    .replace(/<ref[^>]*\/>/g, ' ')
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\[\[(?:[^\]|]*\|)?([^\]]+)\]\]/g, '$1')
+    .replace(/'{2,}/g, '')
+    .replace(/^=+.*=+$/gm, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
 function parseJsonObject<T>(text: string): T | null {
-  const trimmed = text.replace(/```(?:json)?/g, "").trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
+  const trimmed = text.replace(/```(?:json)?/g, '').trim();
+  const start = trimmed.indexOf('{');
+  const end = trimmed.lastIndexOf('}');
   if (start === -1 || end <= start) return null;
   try {
     return JSON.parse(trimmed.slice(start, end + 1)) as T;
@@ -197,23 +225,28 @@ function parseJsonObject<T>(text: string): T | null {
 }
 
 const LOCATION_ROLES = [
-  "hub",
-  "home and healing house",
-  "training and repair site",
-  "garden sanctuary",
-  "threat site",
-  "report station and meeting point",
+  'hub',
+  'home and healing house',
+  'training and repair site',
+  'garden sanctuary',
+  'threat site',
+  'report station and meeting point',
 ];
 
 /** fill the gaps a model leaves so the validator passes on real output */
 function coerceWorldSource(raw: WorldIngestSource, plan: FandomPlan): WorldIngestSource {
-  const title = (raw.title ?? plan.title ?? "Imported World").trim();
+  const title = (raw.title ?? plan.title ?? 'Imported World').trim();
   const source: WorldIngestSource = {
     ...raw,
     title,
-    worldId: (raw.worldId ?? title).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""),
+    worldId: (raw.worldId ?? title)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, ''),
     synopsis: (raw.synopsis ?? plan.synopsis ?? title).trim(),
-    themes: raw.themes?.length ? raw.themes : ["found family", "courage against the dark", "training and growth"],
+    themes: raw.themes?.length
+      ? raw.themes
+      : ['found family', 'courage against the dark', 'training and growth'],
     locations: dedupeByName(raw.locations ?? []).slice(0, 6),
     characters: dedupeByName(raw.characters ?? []).slice(0, 12),
     factions: raw.factions ?? [],
@@ -221,17 +254,34 @@ function coerceWorldSource(raw: WorldIngestSource, plan: FandomPlan): WorldInges
     artifacts: dedupeByName(raw.artifacts ?? []).slice(0, 6),
   };
   // pad locations to 6 with generic spaces so every template slot exists
-  const padNames = ["Quiet Quarter", "Old Workshop", "Hidden Garden", "Wayside Inn", "Broken Crossing", "Outer Grove"];
+  const padNames = [
+    'Quiet Quarter',
+    'Old Workshop',
+    'Hidden Garden',
+    'Wayside Inn',
+    'Broken Crossing',
+    'Outer Grove',
+  ];
   while (source.locations.length < 6) {
     const index = source.locations.length;
-    source.locations.push({ name: `${padNames[index]}`, role: LOCATION_ROLES[index]!, description: `A ${LOCATION_ROLES[index]} of ${title}.` });
+    source.locations.push({
+      name: `${padNames[index]}`,
+      role: LOCATION_ROLES[index]!,
+      description: `A ${LOCATION_ROLES[index]} of ${title}.`,
+    });
   }
-  source.locations = source.locations.map((location, index) => ({ ...location, role: location.role ?? LOCATION_ROLES[index] }));
+  source.locations = source.locations.map((location, index) => ({
+    ...location,
+    role: location.role ?? LOCATION_ROLES[index],
+  }));
   // artifacts power the starter quests — make sure five exist
   while ((source.artifacts ?? []).length < 5) {
     source.artifacts = [
       ...(source.artifacts ?? []),
-      { name: `Keepsake ${source.artifacts!.length + 1} of ${title}`, description: "A small object someone here misses." },
+      {
+        name: `Keepsake ${source.artifacts!.length + 1} of ${title}`,
+        description: 'A small object someone here misses.',
+      },
     ];
   }
   return source;

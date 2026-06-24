@@ -1,8 +1,8 @@
-import { evaluateArc } from "./arcs.ts";
-import { consolidatePlayerImpressionScripted, impressionDue } from "./consolidation.ts";
-import { reflectionDue, reflectNpcScripted } from "./reflection.ts";
-import { runTick } from "./simulation.ts";
-import type { ChronicleEvent, World, WorldRecap } from "./types.ts";
+import { evaluateArc } from './arcs.ts';
+import { consolidatePlayerImpressionScripted, impressionDue } from './consolidation.ts';
+import { reflectionDue, reflectNpcScripted } from './reflection.ts';
+import { runTick } from './simulation.ts';
+import type { ChronicleEvent, World, WorldRecap } from './types.ts';
 
 /**
  * The world advances while you're away: on session return, compressed

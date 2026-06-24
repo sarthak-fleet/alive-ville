@@ -8,10 +8,10 @@
  * survive eviction. Cleared by "clear site data".
  */
 
-import type { World } from "../../../src/types.ts";
+import type { World } from '../../../src/types.ts';
 
-const DIR = "aliveville";
-const SAVES_DIR = "saves";
+const DIR = 'aliveville';
+const SAVES_DIR = 'saves';
 
 export interface SaveMeta {
   /** slot id == filename stem */
@@ -33,9 +33,9 @@ export interface SaveRecord {
 
 export function opfsSupported(): boolean {
   return (
-    typeof navigator !== "undefined" &&
+    typeof navigator !== 'undefined' &&
     Boolean(navigator.storage) &&
-    typeof navigator.storage.getDirectory === "function"
+    typeof navigator.storage.getDirectory === 'function'
   );
 }
 
@@ -56,7 +56,7 @@ function metaFromWorld(world: World, name: string, id: string): SaveMeta {
     name,
     worldId: world.id,
     worldTitle: world.story?.title ?? world.name,
-    playerName: world.player.name ?? "Wanderer",
+    playerName: world.player.name ?? 'Wanderer',
     day: world.clock?.day ?? 1,
     hour: Math.floor(world.clock?.hour ?? 0),
     level: world.player.growth?.level ?? 1,
@@ -69,7 +69,7 @@ export function defaultSaveName(world: World): string {
   const title = world.story?.title ?? world.name;
   const day = world.clock?.day ?? 1;
   const hour = Math.floor(world.clock?.hour ?? 0);
-  return `${title} — day ${day}, ${String(hour).padStart(2, "0")}:00`;
+  return `${title} — day ${day}, ${String(hour).padStart(2, '0')}:00`;
 }
 
 /** Write a NEW save slot holding the full world. Returns its metadata (or null if OPFS is unavailable). */
@@ -93,7 +93,7 @@ export async function listSaves(): Promise<SaveMeta[]> {
   const metas: SaveMeta[] = [];
   const entries = (dir as unknown as { values(): AsyncIterable<FileSystemHandle> }).values();
   for await (const handle of entries) {
-    if (handle.kind !== "file" || !handle.name.endsWith(".json")) continue;
+    if (handle.kind !== 'file' || !handle.name.endsWith('.json')) continue;
     try {
       const file = await (handle as FileSystemFileHandle).getFile();
       const record = JSON.parse(await file.text()) as Partial<SaveRecord>;

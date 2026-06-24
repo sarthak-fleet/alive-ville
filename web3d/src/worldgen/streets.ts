@@ -1,6 +1,6 @@
-import type { Exit, Location } from "../../../src/types.ts";
-import type { GateModel, StreetModel } from "./model.ts";
-import { WORLD_SCALE } from "./model.ts";
+import type { Exit, Location } from '../../../src/types.ts';
+import type { GateModel, StreetModel } from './model.ts';
+import { WORLD_SCALE } from './model.ts';
 
 export const STREET_WIDTH = 5;
 const GRID_STEP = 3;
@@ -19,14 +19,20 @@ export interface StreetLayout {
   gates: GateModel[];
 }
 
-export function generateStreets(locations: Location[], exits: Exit[], bounds: { minX: number; minZ: number; maxX: number; maxZ: number }): StreetLayout {
-  const rects = locations.map((location): Rect => ({
-    id: location.id,
-    minX: location.x * WORLD_SCALE,
-    minZ: location.y * WORLD_SCALE,
-    maxX: (location.x + location.w) * WORLD_SCALE,
-    maxZ: (location.y + location.h) * WORLD_SCALE,
-  }));
+export function generateStreets(
+  locations: Location[],
+  exits: Exit[],
+  bounds: { minX: number; minZ: number; maxX: number; maxZ: number }
+): StreetLayout {
+  const rects = locations.map(
+    (location): Rect => ({
+      id: location.id,
+      minX: location.x * WORLD_SCALE,
+      minZ: location.y * WORLD_SCALE,
+      maxX: (location.x + location.w) * WORLD_SCALE,
+      maxZ: (location.y + location.h) * WORLD_SCALE,
+    })
+  );
   const rectById = new Map(rects.map((rect) => [rect.id, rect]));
 
   const streets: StreetModel[] = [];
@@ -35,7 +41,7 @@ export function generateStreets(locations: Location[], exits: Exit[], bounds: { 
   const seenGates = new Set<string>();
 
   for (const exit of exits) {
-    const pairKey = [exit.from, exit.to].sort().join("--");
+    const pairKey = [exit.from, exit.to].sort().join('--');
     if (seenPairs.has(pairKey)) continue;
     seenPairs.add(pairKey);
     const from = rectById.get(exit.from);
@@ -49,11 +55,26 @@ export function generateStreets(locations: Location[], exits: Exit[], bounds: { 
 
     const route = routeAvoidingPlots(outsideA, outsideB, rects, bounds);
     const points = simplify([gateA, outsideA, ...route, outsideB, gateB]);
-    streets.push({ id: pairKey, fromId: exit.from, toId: exit.to, label: exit.label, points, width: STREET_WIDTH });
+    streets.push({
+      id: pairKey,
+      fromId: exit.from,
+      toId: exit.to,
+      label: exit.label,
+      points,
+      width: STREET_WIDTH,
+    });
 
     for (const gate of [
-      { districtId: exit.from, ...gateA, rotationY: gateA.x === from.minX || gateA.x === from.maxX ? Math.PI / 2 : 0 },
-      { districtId: exit.to, ...gateB, rotationY: gateB.x === to.minX || gateB.x === to.maxX ? Math.PI / 2 : 0 },
+      {
+        districtId: exit.from,
+        ...gateA,
+        rotationY: gateA.x === from.minX || gateA.x === from.maxX ? Math.PI / 2 : 0,
+      },
+      {
+        districtId: exit.to,
+        ...gateB,
+        rotationY: gateB.x === to.minX || gateB.x === to.maxX ? Math.PI / 2 : 0,
+      },
     ]) {
       const key = `${gate.districtId}:${Math.round(gate.x)}:${Math.round(gate.z)}`;
       if (!seenGates.has(key)) {
@@ -79,7 +100,11 @@ function gateToward(rect: Rect, other: Rect): { x: number; z: number } {
   return { x: cx, z: dz > 0 ? rect.maxZ : rect.minZ };
 }
 
-function stepOutward(rect: Rect, gate: { x: number; z: number }, distance: number): { x: number; z: number } {
+function stepOutward(
+  rect: Rect,
+  gate: { x: number; z: number },
+  distance: number
+): { x: number; z: number } {
   if (gate.x === rect.minX) return { x: gate.x - distance, z: gate.z };
   if (gate.x === rect.maxX) return { x: gate.x + distance, z: gate.z };
   if (gate.z === rect.minZ) return { x: gate.x, z: gate.z - distance };
@@ -107,7 +132,10 @@ function routeAvoidingPlots(
     col: Math.round((p.x - minX) / GRID_STEP),
     row: Math.round((p.z - minZ) / GRID_STEP),
   });
-  const toPoint = (col: number, row: number) => ({ x: minX + col * GRID_STEP, z: minZ + row * GRID_STEP });
+  const toPoint = (col: number, row: number) => ({
+    x: minX + col * GRID_STEP,
+    z: minZ + row * GRID_STEP,
+  });
 
   const blocked = (col: number, row: number): boolean => {
     if (col < 0 || row < 0 || col >= cols || row >= rows) return true;
@@ -158,7 +186,12 @@ function routeAvoidingPlots(
       return path;
     }
 
-    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    for (const [dc, dr] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const) {
       const col = current.col + dc;
       const row = current.row + dr;
       const neighborKey = key(col, row);

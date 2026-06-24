@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-import { cameraState, playerPosition } from "../controls/runtime.ts";
-import { useUiStore } from "../store/ui.ts";
-import { useWorldStore } from "../store/world.ts";
-import { introCameraPose, smoothstep } from "./intro-camera.ts";
-import { useDirectorStore } from "./store.ts";
+import { cameraState, playerPosition } from '../controls/runtime.ts';
+import { useUiStore } from '../store/ui.ts';
+import { useWorldStore } from '../store/world.ts';
+import { introCameraPose, smoothstep } from './intro-camera.ts';
+import { useDirectorStore } from './store.ts';
 
-const INTRO_KEY_PREFIX = "aliveville:intro:";
+const INTRO_KEY_PREFIX = 'aliveville:intro:';
 const REDUCED_MOTION_STATIC_MS = 2_000;
 
 /**
@@ -31,14 +31,14 @@ export function IntroCinematic() {
 
   // Trigger: once gamePhase hits "playing" and world is loaded, once per world per browser
   useEffect(() => {
-    if (gamePhase !== "playing" || !world) return;
+    if (gamePhase !== 'playing' || !world) return;
     if (hasTriggeredRef.current) return;
 
     const key = INTRO_KEY_PREFIX + world.id;
     if (localStorage.getItem(key)) return;
 
     hasTriggeredRef.current = true;
-    localStorage.setItem(key, "1");
+    localStorage.setItem(key, '1');
     beginIntroCinema(world.id);
   }, [gamePhase, world, beginIntroCinema]);
 
@@ -53,7 +53,7 @@ export function IntroCinematic() {
       return;
     }
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const startedAt = introCinema.startedAt;
     const durationMs = reducedMotion ? REDUCED_MOTION_STATIC_MS : introCinema.durationMs;
     const endIntro = endIntroCinema;
@@ -64,7 +64,11 @@ export function IntroCinematic() {
       setT(progress);
 
       if (!reducedMotion) {
-        const pose = introCameraPose(progress, { x: playerPosition.x, y: playerPosition.y, z: playerPosition.z });
+        const pose = introCameraPose(progress, {
+          x: playerPosition.x,
+          y: playerPosition.y,
+          z: playerPosition.z,
+        });
         cameraState.override = pose;
       }
 
@@ -102,34 +106,37 @@ export function IntroCinematic() {
       endIntro();
     };
 
-    window.addEventListener("keydown", skip, { once: true });
-    window.addEventListener("pointerdown", skip, { once: true });
+    window.addEventListener('keydown', skip, { once: true });
+    window.addEventListener('pointerdown', skip, { once: true });
     return () => {
-      window.removeEventListener("keydown", skip);
-      window.removeEventListener("pointerdown", skip);
+      window.removeEventListener('keydown', skip);
+      window.removeEventListener('pointerdown', skip);
     };
   }, [introCinema, endIntroCinema]);
 
   if (!introCinema || !world) return null;
 
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const title = world.story?.title ?? world.name;
   // Use premise as logline subtitle if available, else current objective, else default tagline
-  const subtitle = world.story?.premise ?? world.story?.currentObjective ?? "The world is alive. It will not wait for you.";
+  const subtitle =
+    world.story?.premise ??
+    world.story?.currentObjective ??
+    'The world is alive. It will not wait for you.';
   const objective = world.story?.currentObjective ?? null;
 
   if (reducedMotion) {
     return (
       <div className="intro-cinematic" aria-live="polite">
-        <div className="intro-bar top" style={{ animation: "none" }} />
-        <div className="intro-bar bottom" style={{ animation: "none" }} />
+        <div className="intro-bar top" style={{ animation: 'none' }} />
+        <div className="intro-bar bottom" style={{ animation: 'none' }} />
         <div className="intro-title-card" style={{ opacity: 1 }}>
           <div className="intro-title">{title}</div>
           <div className="intro-subtitle">{subtitle}</div>
         </div>
         {objective ? (
-          <div className="intro-objective" style={{ opacity: 1, transform: "translateX(-50%)" }}>
+          <div className="intro-objective" style={{ opacity: 1, transform: 'translateX(-50%)' }}>
             <span className="intro-objective-label">Objective</span>
             {objective}
           </div>
@@ -139,10 +146,7 @@ export function IntroCinematic() {
   }
 
   // Title card: fade in [t=0.08..0.24], hold, fade out [t=0.55..0.72]
-  const titleOpacity = Math.min(
-    smoothstep((t - 0.08) / 0.16),
-    1 - smoothstep((t - 0.55) / 0.17)
-  );
+  const titleOpacity = Math.min(smoothstep((t - 0.08) / 0.16), 1 - smoothstep((t - 0.55) / 0.17));
 
   // Objective callout: slides in [t=0.55..0.70], fades out [t=0.82..0.96]
   const objectiveIn = smoothstep(Math.max(0, (t - 0.55) / 0.15));
@@ -157,7 +161,7 @@ export function IntroCinematic() {
       <div className="intro-bar bottom" />
 
       {/* Title card */}
-      <div className="intro-title-card" style={{ opacity: titleOpacity, pointerEvents: "none" }}>
+      <div className="intro-title-card" style={{ opacity: titleOpacity, pointerEvents: 'none' }}>
         <div className="intro-title">{title}</div>
         <div className="intro-subtitle">{subtitle}</div>
       </div>
@@ -169,7 +173,7 @@ export function IntroCinematic() {
           style={{
             opacity: objectiveOpacity,
             transform: `translateX(-50%) translateY(${objectiveTranslateY}px)`,
-            pointerEvents: "none",
+            pointerEvents: 'none',
           }}
         >
           <span className="intro-objective-label">Objective</span>

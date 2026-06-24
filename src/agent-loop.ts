@@ -1,7 +1,7 @@
-import type { Engine } from "./simulation.ts";
-import type { TickSummary, World } from "./types.ts";
+import type { Engine } from './simulation.ts';
+import type { TickSummary, World } from './types.ts';
 
-export type AgentLoopState = "idle" | "running" | "stopped" | "error";
+export type AgentLoopState = 'idle' | 'running' | 'stopped' | 'error';
 
 export interface AgentLoopCheckpoint {
   tick: number;
@@ -54,9 +54,12 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
   const maxCheckpoints = Math.max(1, options.maxCheckpoints ?? 24);
   const now = options.now ?? (() => new Date());
   const setIntervalFn = options.setIntervalFn ?? ((callback, ms) => setInterval(callback, ms));
-  const clearIntervalFn = options.clearIntervalFn ?? ((handle) => clearInterval(handle as NodeJS.Timeout));
-  const checkpoints: AgentLoopCheckpoint[] = (options.initialCheckpoints ?? []).map(cloneCheckpoint).slice(-maxCheckpoints);
-  let state: AgentLoopState = "idle";
+  const clearIntervalFn =
+    options.clearIntervalFn ?? ((handle) => clearInterval(handle as NodeJS.Timeout));
+  const checkpoints: AgentLoopCheckpoint[] = (options.initialCheckpoints ?? [])
+    .map(cloneCheckpoint)
+    .slice(-maxCheckpoints);
+  let state: AgentLoopState = 'idle';
   let timer: unknown = null;
   let stepping = false;
   let ticksRun = 0;
@@ -64,39 +67,39 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
   let stoppedAt: string | null = null;
   let lastTick: TickSummary | null = null;
   let lastError: string | null = null;
-  let restoredCheckpoint: AgentLoopStatus["restoredCheckpoint"] = null;
+  let restoredCheckpoint: AgentLoopStatus['restoredCheckpoint'] = null;
   let currentStep: Promise<void> | null = null;
   let resolveCurrentStep: (() => void) | null = null;
 
   const loop: AgentLoop = {
     start() {
-      if (state === "running") return status();
-      state = "running";
+      if (state === 'running') return status();
+      state = 'running';
       startedAt = now().toISOString();
       stoppedAt = null;
       lastError = null;
       restoredCheckpoint = null;
       timer = setIntervalFn(() => {
         void loop.step().catch((error) => {
-          if ((error as Error).message === "agent_loop_step_in_progress") return;
-          state = "error";
+          if ((error as Error).message === 'agent_loop_step_in_progress') return;
+          state = 'error';
           lastError = (error as Error).message;
           clearTimer();
         });
       }, intervalMs);
       return status();
     },
-    stop(reason = "stopped") {
+    stop(reason = 'stopped') {
       clearTimer();
-      state = reason === "error" ? "error" : "stopped";
+      state = reason === 'error' ? 'error' : 'stopped';
       stoppedAt = now().toISOString();
       return status();
     },
     async step() {
-      if (stepping) throw new Error("agent_loop_step_in_progress");
+      if (stepping) throw new Error('agent_loop_step_in_progress');
       if (maxTicks !== null && ticksRun >= maxTicks) {
-        loop.stop("max_ticks");
-        throw new Error("agent_loop_max_ticks_reached");
+        loop.stop('max_ticks');
+        throw new Error('agent_loop_max_ticks_reached');
       }
       stepping = true;
       currentStep = new Promise((resolve) => {
@@ -110,10 +113,11 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
         restoredCheckpoint = null;
         options.onTick?.(summary);
         if (ticksRun % checkpointEveryTicks === 0) captureCheckpoint();
-        if (maxTicks !== null && ticksRun >= maxTicks && state === "running") loop.stop("max_ticks");
+        if (maxTicks !== null && ticksRun >= maxTicks && state === 'running')
+          loop.stop('max_ticks');
         return summary;
       } catch (error) {
-        state = "error";
+        state = 'error';
         lastError = (error as Error).message;
         clearTimer();
         throw error;
@@ -126,9 +130,12 @@ export function createAgentLoop(engine: Engine, options: AgentLoopOptions = {}):
     },
     restoreCheckpoint(tick) {
       const checkpoint = findCheckpoint(tick);
-      if (!checkpoint) throw new Error(tick === undefined ? "agent_loop_checkpoint_missing" : "agent_loop_checkpoint_not_found");
+      if (!checkpoint)
+        throw new Error(
+          tick === undefined ? 'agent_loop_checkpoint_missing' : 'agent_loop_checkpoint_not_found'
+        );
       clearTimer();
-      state = "stopped";
+      state = 'stopped';
       stoppedAt = now().toISOString();
       lastTick = null;
       lastError = null;
@@ -208,7 +215,7 @@ function cloneCheckpoint(checkpoint: AgentLoopCheckpoint): AgentLoopCheckpoint {
   };
 }
 
-function checkpointSummary(checkpoint: AgentLoopCheckpoint): AgentLoopStatus["restoredCheckpoint"] {
+function checkpointSummary(checkpoint: AgentLoopCheckpoint): AgentLoopStatus['restoredCheckpoint'] {
   return {
     tick: checkpoint.tick,
     capturedAt: checkpoint.capturedAt,

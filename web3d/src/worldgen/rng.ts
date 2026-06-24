@@ -20,7 +20,7 @@ export function mulberry32(seed: number): Rng {
 }
 
 export function rngFor(...parts: string[]): Rng {
-  return mulberry32(seedFromString(parts.join(":")));
+  return mulberry32(seedFromString(parts.join(':')));
 }
 
 export function pick<T>(rng: Rng, values: readonly T[]): T {

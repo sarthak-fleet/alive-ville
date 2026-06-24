@@ -1,4 +1,4 @@
-import { onLCP, onCLS, onINP, onTTFB, onFCP } from "web-vitals";
+import { onLCP, onCLS, onINP, onTTFB, onFCP } from 'web-vitals';
 
 interface VitalMetric {
   name: string;
@@ -11,8 +11,8 @@ interface VitalMetric {
 function sendToAnalytics(metric: VitalMetric) {
   // Send to PostHog if available, otherwise beacon to a fleet endpoint
   const posthog = (window as any).posthog;
-  if (posthog && typeof posthog.capture === "function") {
-    posthog.capture("web_vital", {
+  if (posthog && typeof posthog.capture === 'function') {
+    posthog.capture('web_vital', {
       name: metric.name,
       value: Math.round(metric.value),
       rating: metric.rating,
@@ -22,10 +22,10 @@ function sendToAnalytics(metric: VitalMetric) {
   } else {
     // Fallback: beacon to fleet analytics endpoint
     const body = JSON.stringify({
-      project: import.meta.env["VITE_PROJECT_SLUG"] ?? "ai-game",
+      project: import.meta.env['VITE_PROJECT_SLUG'] ?? 'ai-game',
       ...metric,
     });
-    navigator.sendBeacon("https://vitals.fleet.workers.dev/collect", body);
+    navigator.sendBeacon('https://vitals.fleet.workers.dev/collect', body);
   }
 }
 

@@ -1,9 +1,9 @@
-import type { World } from "../../../src/types.ts";
-import { generateDistrict } from "./district.ts";
-import { generateDoors } from "./interiors.ts";
-import { WORLD_SCALE, type WorldModel } from "./model.ts";
-import { buildNavGraph } from "./navgraph.ts";
-import { generateStreets } from "./streets.ts";
+import type { World } from '../../../src/types.ts';
+import { generateDistrict } from './district.ts';
+import { generateDoors } from './interiors.ts';
+import { WORLD_SCALE, type WorldModel } from './model.ts';
+import { buildNavGraph } from './navgraph.ts';
+import { generateStreets } from './streets.ts';
 
 export function generateWorldModel(world: World): WorldModel {
   const minX = Math.min(...world.locations.map((l) => l.x), 0) * WORLD_SCALE;
@@ -20,5 +20,15 @@ export function generateWorldModel(world: World): WorldModel {
   return { worldId: world.id, districts, streets, gates, nav, doors, bounds };
 }
 
-export type { BuildingModel, DistrictModel, GateModel, ItemPlacement, NavGraph, NpcSpawn, PropModel, StreetModel, WorldModel } from "./model.ts";
-export { findDistrictPath } from "./navgraph.ts";
+export type {
+  BuildingModel,
+  DistrictModel,
+  GateModel,
+  ItemPlacement,
+  NavGraph,
+  NpcSpawn,
+  PropModel,
+  StreetModel,
+  WorldModel,
+} from './model.ts';
+export { findDistrictPath } from './navgraph.ts';

@@ -1,5 +1,5 @@
-import { recordChronicle } from "./chronicle.ts";
-import type { ArcStage, Npc, World, WorldArc } from "./types.ts";
+import { recordChronicle } from './chronicle.ts';
+import type { ArcStage, Npc, World, WorldArc } from './types.ts';
 
 /**
  * Long-form arcs: every world gets a three-stage journey — train with a
@@ -11,7 +11,11 @@ import type { ArcStage, Npc, World, WorldArc } from "./types.ts";
 export const XP_QUEST_COMPLETE = 40;
 export const XP_FIGHT_WON = 30;
 export const XP_SPAR_WON = 50;
-const STAGE_XP: Record<Exclude<ArcStage, "complete">, number> = { training: 60, trial: 90, confrontation: 200 };
+const STAGE_XP: Record<Exclude<ArcStage, 'complete'>, number> = {
+  training: 60,
+  trial: 90,
+  confrontation: 200,
+};
 const TRIAL_QUESTS_REQUIRED = 2;
 
 export function levelForXp(xp: number): number {
@@ -38,7 +42,9 @@ export function awardXp(world: World, amount: number): XpAward {
 }
 
 function questsDoneByPlayer(world: World): number {
-  return (world.quests ?? []).filter((quest) => quest.status === "done" && quest.acceptedBy === "player").length;
+  return (world.quests ?? []).filter(
+    (quest) => quest.status === 'done' && quest.acceptedBy === 'player'
+  ).length;
 }
 
 function pickMentor(world: World, villainId: string | null): Npc | null {
@@ -46,7 +52,7 @@ function pickMentor(world: World, villainId: string | null): Npc | null {
     (npc) => npc.id !== villainId && npc.id !== world.player.characterId && !npc.combat?.defeated
   );
   if (candidates.length === 0) return null;
-  const questTier = candidates.filter((npc) => npc.tier === "quest");
+  const questTier = candidates.filter((npc) => npc.tier === 'quest');
   const pool = questTier.length > 0 ? questTier : candidates;
   return [...pool].sort((a, b) => (b.combat?.maxHp ?? 0) - (a.combat?.maxHp ?? 0))[0] ?? null;
 }
@@ -60,8 +66,8 @@ export function createArcForWorld(world: World): WorldArc | null {
   const worldName = world.story?.title ?? world.name;
   const arc: WorldArc = {
     id: `arc_${world.id}`,
-    title: `The Path Through ${worldName.split(":")[0]}`,
-    stage: "training",
+    title: `The Path Through ${worldName.split(':')[0]}`,
+    stage: 'training',
     mentorId: mentor.id,
     villainId: villain ? villain.id : null,
     sparWon: false,
@@ -69,8 +75,10 @@ export function createArcForWorld(world: World): WorldArc | null {
     stageTexts: {
       training: `Train with ${mentor.name}: ask for a spar and hold your ground.`,
       trial: `Prove yourself: complete ${TRIAL_QUESTS_REQUIRED} quests for the people here.`,
-      confrontation: villain ? `Face ${villain.name} before their plan is complete.` : "Confront the danger stirring in this world.",
-      complete: "Your legend here is written. The world remembers.",
+      confrontation: villain
+        ? `Face ${villain.name} before their plan is complete.`
+        : 'Confront the danger stirring in this world.',
+      complete: 'Your legend here is written. The world remembers.',
     },
   };
   world.arc = arc;
@@ -89,31 +97,58 @@ export interface ArcAdvance {
 /** Re-derive stage from world state; returns a beat when the stage advanced. */
 export function evaluateArc(world: World): ArcAdvance | null {
   const arc = world.arc;
-  if (!arc || arc.stage === "complete") return null;
+  if (!arc || arc.stage === 'complete') return null;
 
-  if (arc.stage === "training" && arc.sparWon) {
-    return advance(world, arc, "trial", arc.mentorId, `Training complete. ${arc.stageTexts.trial}`);
+  if (arc.stage === 'training' && arc.sparWon) {
+    return advance(world, arc, 'trial', arc.mentorId, `Training complete. ${arc.stageTexts.trial}`);
   }
-  if (arc.stage === "trial" && questsDoneByPlayer(world) - arc.questsDoneBaseline >= TRIAL_QUESTS_REQUIRED) {
+  if (
+    arc.stage === 'trial' &&
+    questsDoneByPlayer(world) - arc.questsDoneBaseline >= TRIAL_QUESTS_REQUIRED
+  ) {
     const focus = arc.villainId ?? arc.mentorId;
-    return advance(world, arc, "confrontation", focus, `The trial is passed. ${arc.stageTexts.confrontation}`);
+    return advance(
+      world,
+      arc,
+      'confrontation',
+      focus,
+      `The trial is passed. ${arc.stageTexts.confrontation}`
+    );
   }
-  if (arc.stage === "confrontation") {
+  if (arc.stage === 'confrontation') {
     const villain = world.npcs.find((npc) => npc.id === arc.villainId);
     if (!arc.villainId || villain?.combat?.defeated) {
-      return advance(world, arc, "complete", arc.villainId ?? arc.mentorId, arc.stageTexts.complete);
+      return advance(
+        world,
+        arc,
+        'complete',
+        arc.villainId ?? arc.mentorId,
+        arc.stageTexts.complete
+      );
     }
   }
   return null;
 }
 
-function advance(world: World, arc: WorldArc, next: ArcStage, focusId: string, text: string): ArcAdvance {
-  const fromStage = arc.stage as Exclude<ArcStage, "complete">;
+function advance(
+  world: World,
+  arc: WorldArc,
+  next: ArcStage,
+  focusId: string,
+  text: string
+): ArcAdvance {
+  const fromStage = arc.stage as Exclude<ArcStage, 'complete'>;
   arc.stage = next;
   const award = awardXp(world, STAGE_XP[fromStage] ?? 0);
   // arc advances are player-caused: the player drove the prerequisites
-  recordChronicle(world, { kind: "arc", text, actorId: focusId, playerCaused: true });
-  return { stage: next, text, xpAwarded: STAGE_XP[fromStage] ?? 0, leveledUp: award.leveledUp, focusId };
+  recordChronicle(world, { kind: 'arc', text, actorId: focusId, playerCaused: true });
+  return {
+    stage: next,
+    text,
+    xpAwarded: STAGE_XP[fromStage] ?? 0,
+    leveledUp: award.leveledUp,
+    focusId,
+  };
 }
 
 /** the player embodied an NPC: arc roles must not point at the player themself */
@@ -130,7 +165,7 @@ export function reassignArcRoles(world: World): void {
   if (arc.villainId && arc.villainId === world.player.characterId) {
     // playing the villain: the confrontation becomes facing the mentor's judgment
     arc.villainId = null;
-    arc.stageTexts.confrontation = "Confront what you have become — or change the ending.";
+    arc.stageTexts.confrontation = 'Confront what you have become — or change the ending.';
   }
 }
 

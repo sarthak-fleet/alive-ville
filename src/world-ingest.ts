@@ -8,8 +8,16 @@ import {
   type AnimeLocationDraft,
   animeSourceToWorld,
   validateAnimeIngestSource,
-} from "./anime-ingest.ts";
-import type { Action, HolderId, InteractableProp, Npc, Quest, RelationshipAxes, World } from "./types.ts";
+} from './anime-ingest.ts';
+import type {
+  Action,
+  HolderId,
+  InteractableProp,
+  Npc,
+  Quest,
+  RelationshipAxes,
+  World,
+} from './types.ts';
 
 export type WorldIngestSource = AnimeIngestSource;
 export type WorldLocationDraft = AnimeLocationDraft;
@@ -23,15 +31,17 @@ export function validateWorldIngestSource(source: WorldIngestSource): WorldInges
   return validateAnimeIngestSource(source).map((issue) => ({
     ...issue,
     message: issue.message
-      .replace(/^Anime title/, "World title")
-      .replace("Duplicate anime source entry", "Duplicate world source entry"),
+      .replace(/^Anime title/, 'World title')
+      .replace('Duplicate anime source entry', 'Duplicate world source entry'),
   }));
 }
 
 export function worldSourceToWorld(source: WorldIngestSource): World {
   const issues = validateWorldIngestSource(source);
   if (issues.length > 0) {
-    throw new Error(`Invalid world ingest source: ${issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ")}`);
+    throw new Error(
+      `Invalid world ingest source: ${issues.map((issue) => `${issue.path}: ${issue.message}`).join('; ')}`
+    );
   }
   return rebrandGenericWorld(animeSourceToWorld(source), source);
 }
@@ -50,47 +60,123 @@ function rebrandGenericWorld(world: World, source: WorldIngestSource): World {
       title: `${source.title}: World Ingest Slice`,
       currentObjective: `Stabilize ${firstLocation} before the core conflict escalates.`,
     },
-    rules: (world.rules ?? []).map((rule) => rule.id === "canon_review"
-      ? { ...rule, text: "World ingest creates a reviewed playable draft; setting fidelity requires human approval before release." }
-      : rule),
+    rules: (world.rules ?? []).map((rule) =>
+      rule.id === 'canon_review'
+        ? {
+            ...rule,
+            text: 'World ingest creates a reviewed playable draft; setting fidelity requires human approval before release.',
+          }
+        : rule
+    ),
   };
   return remapGenericWorldIds(rebranded, source);
 }
 
 function remapGenericWorldIds(world: World, source: WorldIngestSource): World {
-  const reservedIds = new Set(["player", "world", "director"]);
+  const reservedIds = new Set(['player', 'world', 'director']);
   const locationIdMap = idMap([
-    ["square", source.locations[0]?.name ? uniqueSlug(source.locations[0].name, reservedIds) : undefined],
-    ["forge", source.locations[1]?.name ? uniqueSlug(source.locations[1].name, reservedIds) : undefined],
-    ["garden", source.locations[2]?.name ? uniqueSlug(source.locations[2].name, reservedIds) : undefined],
-    ["inn", source.locations[3]?.name ? uniqueSlug(source.locations[3].name, reservedIds) : undefined],
-    ["bridge", source.locations[4]?.name ? uniqueSlug(source.locations[4].name, reservedIds) : undefined],
-    ["wood", source.locations[5]?.name ? uniqueSlug(source.locations[5].name, reservedIds) : undefined],
+    [
+      'square',
+      source.locations[0]?.name ? uniqueSlug(source.locations[0].name, reservedIds) : undefined,
+    ],
+    [
+      'forge',
+      source.locations[1]?.name ? uniqueSlug(source.locations[1].name, reservedIds) : undefined,
+    ],
+    [
+      'garden',
+      source.locations[2]?.name ? uniqueSlug(source.locations[2].name, reservedIds) : undefined,
+    ],
+    [
+      'inn',
+      source.locations[3]?.name ? uniqueSlug(source.locations[3].name, reservedIds) : undefined,
+    ],
+    [
+      'bridge',
+      source.locations[4]?.name ? uniqueSlug(source.locations[4].name, reservedIds) : undefined,
+    ],
+    [
+      'wood',
+      source.locations[5]?.name ? uniqueSlug(source.locations[5].name, reservedIds) : undefined,
+    ],
   ]);
   const npcIdMap = idMap([
-    ["mira", source.characters[0]?.name ? uniqueSlug(source.characters[0].name, reservedIds) : undefined],
-    ["tomas", source.characters[1]?.name ? uniqueSlug(source.characters[1].name, reservedIds) : undefined],
-    ["lena", source.characters[2]?.name ? uniqueSlug(source.characters[2].name, reservedIds) : undefined],
-    ["orrin", source.characters[3]?.name ? uniqueSlug(source.characters[3].name, reservedIds) : undefined],
-    ["pax", source.characters[4]?.name ? uniqueSlug(source.characters[4].name, reservedIds) : undefined],
+    [
+      'mira',
+      source.characters[0]?.name ? uniqueSlug(source.characters[0].name, reservedIds) : undefined,
+    ],
+    [
+      'tomas',
+      source.characters[1]?.name ? uniqueSlug(source.characters[1].name, reservedIds) : undefined,
+    ],
+    [
+      'lena',
+      source.characters[2]?.name ? uniqueSlug(source.characters[2].name, reservedIds) : undefined,
+    ],
+    [
+      'orrin',
+      source.characters[3]?.name ? uniqueSlug(source.characters[3].name, reservedIds) : undefined,
+    ],
+    [
+      'pax',
+      source.characters[4]?.name ? uniqueSlug(source.characters[4].name, reservedIds) : undefined,
+    ],
   ]);
   const itemIdMap = idMap([
-    ["shears", source.artifacts?.[0]?.name ? uniqueSlug(source.artifacts[0].name, reservedIds) : undefined],
-    ["bellows_leather", source.artifacts?.[1]?.name ? uniqueSlug(source.artifacts[1].name, reservedIds) : undefined],
-    ["blue_ember", source.artifacts?.[2]?.name ? uniqueSlug(source.artifacts[2].name, reservedIds) : undefined],
-    ["rumor_note", source.artifacts?.[3]?.name ? uniqueSlug(source.artifacts[3].name, reservedIds) : undefined],
-    ["lantern", source.artifacts?.[4]?.name ? uniqueSlug(source.artifacts[4].name, reservedIds) : undefined],
+    [
+      'shears',
+      source.artifacts?.[0]?.name ? uniqueSlug(source.artifacts[0].name, reservedIds) : undefined,
+    ],
+    [
+      'bellows_leather',
+      source.artifacts?.[1]?.name ? uniqueSlug(source.artifacts[1].name, reservedIds) : undefined,
+    ],
+    [
+      'blue_ember',
+      source.artifacts?.[2]?.name ? uniqueSlug(source.artifacts[2].name, reservedIds) : undefined,
+    ],
+    [
+      'rumor_note',
+      source.artifacts?.[3]?.name ? uniqueSlug(source.artifacts[3].name, reservedIds) : undefined,
+    ],
+    [
+      'lantern',
+      source.artifacts?.[4]?.name ? uniqueSlug(source.artifacts[4].name, reservedIds) : undefined,
+    ],
   ]);
   const questIdMap = idMap([
-    ["return_shears", itemIdMap.get("shears") ? uniqueSlug(`recover ${itemIdMap.get("shears")}`, reservedIds) : undefined],
-    ["rekindle_forge", itemIdMap.get("bellows_leather") ? uniqueSlug(`recover ${itemIdMap.get("bellows_leather")}`, reservedIds) : undefined],
-    ["bridge_whisper", itemIdMap.get("blue_ember") ? uniqueSlug(`recover ${itemIdMap.get("blue_ember")}`, reservedIds) : undefined],
+    [
+      'return_shears',
+      itemIdMap.get('shears')
+        ? uniqueSlug(`recover ${itemIdMap.get('shears')}`, reservedIds)
+        : undefined,
+    ],
+    [
+      'rekindle_forge',
+      itemIdMap.get('bellows_leather')
+        ? uniqueSlug(`recover ${itemIdMap.get('bellows_leather')}`, reservedIds)
+        : undefined,
+    ],
+    [
+      'bridge_whisper',
+      itemIdMap.get('blue_ember')
+        ? uniqueSlug(`recover ${itemIdMap.get('blue_ember')}`, reservedIds)
+        : undefined,
+    ],
   ]);
   const tensionIdMap = idMap([
-    ["overpass_alert", source.conflicts?.[0]?.title ? uniqueSlug(source.conflicts[0].title, reservedIds) : undefined],
+    [
+      'overpass_alert',
+      source.conflicts?.[0]?.title ? uniqueSlug(source.conflicts[0].title, reservedIds) : undefined,
+    ],
   ]);
   const villainPlanIdMap = idMap([
-    ["bridge_whisper_plan", source.conflicts?.[0]?.title ? uniqueSlug(`${source.conflicts[0].title} plan`, reservedIds) : undefined],
+    [
+      'bridge_whisper_plan',
+      source.conflicts?.[0]?.title
+        ? uniqueSlug(`${source.conflicts[0].title} plan`, reservedIds)
+        : undefined,
+    ],
   ]);
 
   return {
@@ -98,15 +184,22 @@ function remapGenericWorldIds(world: World, source: WorldIngestSource): World {
     player: {
       ...world.player,
       locationId: remapId(locationIdMap, world.player.locationId),
-      characterId: world.player.characterId ? remapActorId(npcIdMap, world.player.characterId) : undefined,
+      characterId: world.player.characterId
+        ? remapActorId(npcIdMap, world.player.characterId)
+        : undefined,
     },
-    locations: world.locations.map((location) => ({ ...location, id: remapId(locationIdMap, location.id) })),
+    locations: world.locations.map((location) => ({
+      ...location,
+      id: remapId(locationIdMap, location.id),
+    })),
     exits: world.exits.map((exit) => ({
       ...exit,
       from: remapId(locationIdMap, exit.from),
       to: remapId(locationIdMap, exit.to),
     })),
-    npcs: world.npcs.map((npc) => remapNpc(npc, locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap)),
+    npcs: world.npcs.map((npc) =>
+      remapNpc(npc, locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap)
+    ),
     items: world.items.map((item) => ({
       ...item,
       id: remapId(itemIdMap, item.id),
@@ -114,11 +207,15 @@ function remapGenericWorldIds(world: World, source: WorldIngestSource): World {
       holderId: item.holderId ? remapHolderId(npcIdMap, item.holderId) : undefined,
     })),
     quests: (world.quests ?? []).map((quest) => remapQuest(quest, npcIdMap, questIdMap)),
-    interactables: (world.interactables ?? []).map((prop) => rebrandGenericProp(prop, locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap)),
+    interactables: (world.interactables ?? []).map((prop) =>
+      rebrandGenericProp(prop, locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap)
+    ),
     tensions: (world.tensions ?? []).map((tension) => ({
       ...tension,
       id: remapId(tensionIdMap, tension.id),
-      involvedIds: tension.involvedIds?.map((id) => remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, id)),
+      involvedIds: tension.involvedIds?.map((id) =>
+        remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, id)
+      ),
     })),
     villainPlans: (world.villainPlans ?? []).map((plan) => ({
       ...plan,
@@ -127,8 +224,14 @@ function remapGenericWorldIds(world: World, source: WorldIngestSource): World {
     })),
     eventLog: world.eventLog.map((tick) => ({
       ...tick,
-      actions: tick.actions.map((entry) => ({ ...entry, action: remapAction(entry.action, locationIdMap, npcIdMap, itemIdMap, questIdMap) })),
-      rejected: tick.rejected.map((entry) => ({ ...entry, action: remapAction(entry.action, locationIdMap, npcIdMap, itemIdMap, questIdMap) })),
+      actions: tick.actions.map((entry) => ({
+        ...entry,
+        action: remapAction(entry.action, locationIdMap, npcIdMap, itemIdMap, questIdMap),
+      })),
+      rejected: tick.rejected.map((entry) => ({
+        ...entry,
+        action: remapAction(entry.action, locationIdMap, npcIdMap, itemIdMap, questIdMap),
+      })),
     })),
   };
 }
@@ -143,11 +246,13 @@ function rebrandGenericProp(
 ): InteractableProp {
   return {
     ...prop,
-    id: prop.id.replace(/^anime_/, "world_"),
+    id: prop.id.replace(/^anime_/, 'world_'),
     locationId: remapId(locationIdMap, prop.locationId),
-    clueTags: prop.clueTags?.map((tag) => tag === "anime" ? "world" : tag),
+    clueTags: prop.clueTags?.map((tag) => (tag === 'anime' ? 'world' : tag)),
     relatedQuestId: prop.relatedQuestId ? remapId(questIdMap, prop.relatedQuestId) : undefined,
-    involvedIds: prop.involvedIds?.map((id) => remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, id)),
+    involvedIds: prop.involvedIds?.map((id) =>
+      remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, id)
+    ),
   };
 }
 
@@ -165,59 +270,108 @@ function remapNpc(
     id: nextId,
     locationId: remapId(locationIdMap, npc.locationId),
     relationships: remapRelationshipScores(npc.relationships, npcIdMap),
-    relationshipAxes: npc.relationshipAxes ? remapRelationshipAxes(npc.relationshipAxes, npcIdMap) : undefined,
+    relationshipAxes: npc.relationshipAxes
+      ? remapRelationshipAxes(npc.relationshipAxes, npcIdMap)
+      : undefined,
     ambitions: npc.ambitions?.map((ambition) => ({
       ...ambition,
-      id: ambition.id.replace(npc.id, nextId).replace("_anime_goal_", "_world_goal_"),
-      targetId: ambition.targetId ? remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, ambition.targetId) : undefined,
+      id: ambition.id.replace(npc.id, nextId).replace('_anime_goal_', '_world_goal_'),
+      targetId: ambition.targetId
+        ? remapAnyId(
+            locationIdMap,
+            npcIdMap,
+            itemIdMap,
+            questIdMap,
+            villainPlanIdMap,
+            ambition.targetId
+          )
+        : undefined,
     })),
-    secrets: npc.secrets?.map((secret) => ({ ...secret, id: secret.id.replace(npc.id, nextId), knownBy: secret.knownBy?.map((id) => remapHolderId(npcIdMap, id)) })),
-    plan: npc.plan ? {
-      ...npc.plan,
-      currentIntent: npc.plan.currentIntent ? {
-        ...npc.plan.currentIntent,
-        targetId: npc.plan.currentIntent.targetId
-          ? remapAnyId(locationIdMap, npcIdMap, itemIdMap, questIdMap, villainPlanIdMap, npc.plan.currentIntent.targetId)
-          : undefined,
-      } : undefined,
-      schedule: npc.plan.schedule?.map((block) => ({ ...block, locationId: remapId(locationIdMap, block.locationId) })),
-    } : undefined,
+    secrets: npc.secrets?.map((secret) => ({
+      ...secret,
+      id: secret.id.replace(npc.id, nextId),
+      knownBy: secret.knownBy?.map((id) => remapHolderId(npcIdMap, id)),
+    })),
+    plan: npc.plan
+      ? {
+          ...npc.plan,
+          currentIntent: npc.plan.currentIntent
+            ? {
+                ...npc.plan.currentIntent,
+                targetId: npc.plan.currentIntent.targetId
+                  ? remapAnyId(
+                      locationIdMap,
+                      npcIdMap,
+                      itemIdMap,
+                      questIdMap,
+                      villainPlanIdMap,
+                      npc.plan.currentIntent.targetId
+                    )
+                  : undefined,
+              }
+            : undefined,
+          schedule: npc.plan.schedule?.map((block) => ({
+            ...block,
+            locationId: remapId(locationIdMap, block.locationId),
+          })),
+        }
+      : undefined,
     memories: npc.memories.map((memory) => ({
       ...memory,
-      meta: memory.meta?.sourceActorId ? {
-        ...memory.meta,
-        sourceActorId: remapActorId(npcIdMap, memory.meta.sourceActorId),
-      } : memory.meta,
+      meta: memory.meta?.sourceActorId
+        ? {
+            ...memory.meta,
+            sourceActorId: remapActorId(npcIdMap, memory.meta.sourceActorId),
+          }
+        : memory.meta,
     })),
   };
 }
 
-function remapQuest(quest: Quest, npcIdMap: Map<string, string>, questIdMap: Map<string, string>): Quest {
+function remapQuest(
+  quest: Quest,
+  npcIdMap: Map<string, string>,
+  questIdMap: Map<string, string>
+): Quest {
   return {
     ...quest,
     id: remapId(questIdMap, quest.id),
     giverId: quest.giverId ? remapActorId(npcIdMap, quest.giverId) : undefined,
     acceptedBy: quest.acceptedBy ? remapHolderId(npcIdMap, quest.acceptedBy) : undefined,
-    rewards: quest.rewards?.relationshipDelta ? {
-      ...quest.rewards,
-      relationshipDelta: remapRelationshipScores(quest.rewards.relationshipDelta, npcIdMap),
-    } : quest.rewards,
-    consequences: quest.consequences?.relationshipDelta ? {
-      ...quest.consequences,
-      relationshipDelta: remapRelationshipScores(quest.consequences.relationshipDelta, npcIdMap),
-    } : quest.consequences,
+    rewards: quest.rewards?.relationshipDelta
+      ? {
+          ...quest.rewards,
+          relationshipDelta: remapRelationshipScores(quest.rewards.relationshipDelta, npcIdMap),
+        }
+      : quest.rewards,
+    consequences: quest.consequences?.relationshipDelta
+      ? {
+          ...quest.consequences,
+          relationshipDelta: remapRelationshipScores(
+            quest.consequences.relationshipDelta,
+            npcIdMap
+          ),
+        }
+      : quest.consequences,
   };
 }
 
-function remapRelationshipScores(scores: Record<string, number>, npcIdMap: Map<string, string>): Record<string, number> {
-  return Object.fromEntries(Object.entries(scores).map(([id, score]) => [remapActorId(npcIdMap, id), score]));
+function remapRelationshipScores(
+  scores: Record<string, number>,
+  npcIdMap: Map<string, string>
+): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(scores).map(([id, score]) => [remapActorId(npcIdMap, id), score])
+  );
 }
 
 function remapRelationshipAxes(
   axes: Record<string, RelationshipAxes>,
   npcIdMap: Map<string, string>
 ): Record<string, RelationshipAxes> {
-  return Object.fromEntries(Object.entries(axes).map(([id, value]) => [remapActorId(npcIdMap, id), value]));
+  return Object.fromEntries(
+    Object.entries(axes).map(([id, value]) => [remapActorId(npcIdMap, id), value])
+  );
 }
 
 function remapAction(
@@ -228,11 +382,16 @@ function remapAction(
   questIdMap: Map<string, string>
 ): Action {
   const base = { ...action, actorId: remapActorId(npcIdMap, action.actorId) };
-  if ("targetId" in base && typeof base.targetId === "string") base.targetId = remapActorId(npcIdMap, base.targetId);
-  if ("aboutId" in base && typeof base.aboutId === "string") base.aboutId = remapActorId(npcIdMap, base.aboutId);
-  if ("itemId" in base && typeof base.itemId === "string") base.itemId = remapId(itemIdMap, base.itemId);
-  if ("questId" in base && typeof base.questId === "string") base.questId = remapId(questIdMap, base.questId);
-  if ("locationId" in base && typeof base.locationId === "string") base.locationId = remapId(locationIdMap, base.locationId);
+  if ('targetId' in base && typeof base.targetId === 'string')
+    base.targetId = remapActorId(npcIdMap, base.targetId);
+  if ('aboutId' in base && typeof base.aboutId === 'string')
+    base.aboutId = remapActorId(npcIdMap, base.aboutId);
+  if ('itemId' in base && typeof base.itemId === 'string')
+    base.itemId = remapId(itemIdMap, base.itemId);
+  if ('questId' in base && typeof base.questId === 'string')
+    base.questId = remapId(questIdMap, base.questId);
+  if ('locationId' in base && typeof base.locationId === 'string')
+    base.locationId = remapId(locationIdMap, base.locationId);
   return base;
 }
 
@@ -244,16 +403,19 @@ function remapAnyId(
   villainPlanIdMap: Map<string, string>,
   id: string
 ): string {
-  return remapId(villainPlanIdMap, remapId(questIdMap, remapId(itemIdMap, remapActorId(npcIdMap, remapId(locationIdMap, id)))));
+  return remapId(
+    villainPlanIdMap,
+    remapId(questIdMap, remapId(itemIdMap, remapActorId(npcIdMap, remapId(locationIdMap, id))))
+  );
 }
 
 function remapActorId(npcIdMap: Map<string, string>, id: string): string {
-  if (id === "player" || id === "world" || id === "director") return id;
+  if (id === 'player' || id === 'world' || id === 'director') return id;
   return remapId(npcIdMap, id);
 }
 
 function remapHolderId(npcIdMap: Map<string, string>, id: HolderId): HolderId {
-  return id === "player" ? id : remapActorId(npcIdMap, id);
+  return id === 'player' ? id : remapActorId(npcIdMap, id);
 }
 
 function remapId(idMap: Map<string, string>, id: string): string {
@@ -261,7 +423,7 @@ function remapId(idMap: Map<string, string>, id: string): string {
 }
 
 function idMap(entries: Array<[string, string | undefined]>): Map<string, string> {
-  return new Map(entries.flatMap(([from, to]) => to ? [[from, to]] : []));
+  return new Map(entries.flatMap(([from, to]) => (to ? [[from, to]] : [])));
 }
 
 function uniqueSlug(value: string, reservedIds: Set<string>): string {
@@ -277,11 +439,13 @@ function uniqueSlug(value: string, reservedIds: Set<string>): string {
 }
 
 function slugId(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .replace(/_{2,}/g, "_") || "world_id";
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/['’]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_{2,}/g, '_') || 'world_id'
+  );
 }

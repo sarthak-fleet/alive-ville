@@ -1,60 +1,140 @@
 export type ActorId = string;
-export type HolderId = ActorId | "player";
+export type HolderId = ActorId | 'player';
 export type LocationId = string;
 export type QuestId = string;
 export type ItemId = string;
 export type TickIndex = number;
 
 export type ActionType =
-  | "move"
-  | "talk"
-  | "gossip"
-  | "confront"
-  | "fight"
-  | "choose_character"
-  | "set_name"
-  | "inspect"
-  | "remember"
-  | "pickup"
-  | "drop"
-  | "give"
-  | "offer_quest"
-  | "accept_quest"
-  | "complete_quest"
-  | "fail_quest"
-  | "buy"
-  | "sell";
+  | 'move'
+  | 'talk'
+  | 'gossip'
+  | 'confront'
+  | 'fight'
+  | 'choose_character'
+  | 'set_name'
+  | 'inspect'
+  | 'remember'
+  | 'pickup'
+  | 'drop'
+  | 'give'
+  | 'offer_quest'
+  | 'accept_quest'
+  | 'complete_quest'
+  | 'fail_quest'
+  | 'buy'
+  | 'sell';
 
 export interface BaseAction {
   type: ActionType;
   actorId: ActorId;
 }
-export interface MoveAction extends BaseAction { type: "move"; locationId: LocationId; }
-export interface TalkAction extends BaseAction { type: "talk"; targetId: ActorId; text: string; }
-export interface GossipAction extends BaseAction { type: "gossip"; targetId: ActorId; aboutId: ActorId; text: string; }
-export interface ConfrontAction extends BaseAction { type: "confront"; targetId: ActorId; text: string; }
-export interface FightAction extends BaseAction { type: "fight"; targetId: ActorId; moveId?: string; text?: string; }
-export interface ChooseCharacterAction extends BaseAction { type: "choose_character"; targetId?: ActorId; appearance?: CharacterAppearance; }
-export interface SetNameAction extends BaseAction { type: "set_name"; name: string; appearance?: CharacterAppearance; }
-export interface InspectAction extends BaseAction { type: "inspect"; propId: string; }
-export interface RememberAction extends BaseAction { type: "remember"; text: string; }
-export interface PickupAction extends BaseAction { type: "pickup"; itemId: ItemId; }
-export interface DropAction extends BaseAction { type: "drop"; itemId: ItemId; }
-export interface GiveAction extends BaseAction { type: "give"; itemId: ItemId; targetId: ActorId; }
-export interface OfferQuestAction extends BaseAction { type: "offer_quest"; questId: QuestId; targetId: ActorId; }
-export interface AcceptQuestAction extends BaseAction { type: "accept_quest"; questId: QuestId; }
-export interface CompleteQuestAction extends BaseAction { type: "complete_quest"; questId: QuestId; }
-export interface FailQuestAction extends BaseAction { type: "fail_quest"; questId: QuestId; }
-export interface BuyAction extends BaseAction { type: "buy"; itemId: ItemId; fromId: ActorId; }
-export interface SellAction extends BaseAction { type: "sell"; itemId: ItemId; toId: ActorId; }
+export interface MoveAction extends BaseAction {
+  type: 'move';
+  locationId: LocationId;
+}
+export interface TalkAction extends BaseAction {
+  type: 'talk';
+  targetId: ActorId;
+  text: string;
+}
+export interface GossipAction extends BaseAction {
+  type: 'gossip';
+  targetId: ActorId;
+  aboutId: ActorId;
+  text: string;
+}
+export interface ConfrontAction extends BaseAction {
+  type: 'confront';
+  targetId: ActorId;
+  text: string;
+}
+export interface FightAction extends BaseAction {
+  type: 'fight';
+  targetId: ActorId;
+  moveId?: string;
+  text?: string;
+}
+export interface ChooseCharacterAction extends BaseAction {
+  type: 'choose_character';
+  targetId?: ActorId;
+  appearance?: CharacterAppearance;
+}
+export interface SetNameAction extends BaseAction {
+  type: 'set_name';
+  name: string;
+  appearance?: CharacterAppearance;
+}
+export interface InspectAction extends BaseAction {
+  type: 'inspect';
+  propId: string;
+}
+export interface RememberAction extends BaseAction {
+  type: 'remember';
+  text: string;
+}
+export interface PickupAction extends BaseAction {
+  type: 'pickup';
+  itemId: ItemId;
+}
+export interface DropAction extends BaseAction {
+  type: 'drop';
+  itemId: ItemId;
+}
+export interface GiveAction extends BaseAction {
+  type: 'give';
+  itemId: ItemId;
+  targetId: ActorId;
+}
+export interface OfferQuestAction extends BaseAction {
+  type: 'offer_quest';
+  questId: QuestId;
+  targetId: ActorId;
+}
+export interface AcceptQuestAction extends BaseAction {
+  type: 'accept_quest';
+  questId: QuestId;
+}
+export interface CompleteQuestAction extends BaseAction {
+  type: 'complete_quest';
+  questId: QuestId;
+}
+export interface FailQuestAction extends BaseAction {
+  type: 'fail_quest';
+  questId: QuestId;
+}
+export interface BuyAction extends BaseAction {
+  type: 'buy';
+  itemId: ItemId;
+  fromId: ActorId;
+}
+export interface SellAction extends BaseAction {
+  type: 'sell';
+  itemId: ItemId;
+  toId: ActorId;
+}
 
 export type Action =
-  | MoveAction | TalkAction | GossipAction | ConfrontAction | FightAction | ChooseCharacterAction | SetNameAction | InspectAction | RememberAction
-  | PickupAction | DropAction | GiveAction
-  | OfferQuestAction | AcceptQuestAction | CompleteQuestAction | FailQuestAction
-  | BuyAction | SellAction;
+  | MoveAction
+  | TalkAction
+  | GossipAction
+  | ConfrontAction
+  | FightAction
+  | ChooseCharacterAction
+  | SetNameAction
+  | InspectAction
+  | RememberAction
+  | PickupAction
+  | DropAction
+  | GiveAction
+  | OfferQuestAction
+  | AcceptQuestAction
+  | CompleteQuestAction
+  | FailQuestAction
+  | BuyAction
+  | SellAction;
 
-type WithoutActor<A extends Action> = Omit<A, "actorId"> & { actorId?: "player" };
+type WithoutActor<A extends Action> = Omit<A, 'actorId'> & { actorId?: 'player' };
 export type PlayerAction =
   | WithoutActor<MoveAction>
   | WithoutActor<TalkAction>
@@ -75,36 +155,53 @@ export type PlayerAction =
   | WithoutActor<BuyAction>
   | WithoutActor<SellAction>;
 
-export type MemoryVisibility = "private" | "shared" | "public";
+export type MemoryVisibility = 'private' | 'shared' | 'public';
 export interface MemoryMeta {
   importance?: number;
   tags?: string[];
-  sourceActorId?: ActorId | "world" | "director";
+  sourceActorId?: ActorId | 'world' | 'director';
   visibility?: MemoryVisibility;
   emotionalWeight?: number;
   /** id of the chronicle event that minted this memory — used to chain causes */
   chronicleId?: string;
   /** who this memory is primarily about (used for rumors-about-the-player injection) */
-  subject?: ActorId | "player";
+  subject?: ActorId | 'player';
   /** cached embedding vector for semantic recall (computed lazily; absent ⇒ keyword scoring) */
   embedding?: number[];
 }
 
-export type AgentNeedKey = "safety" | "trust" | "resources" | "status" | "rest" | "curiosity" | "revenge" | "duty";
-export type AgentGoalKind = "survive" | "protect" | "investigate" | "repair" | "hide" | "reveal" | "help" | "harm" | "gain_status";
-export type AgentGoalStatus = "active" | "blocked" | "satisfied" | "abandoned";
+export type AgentNeedKey =
+  | 'safety'
+  | 'trust'
+  | 'resources'
+  | 'status'
+  | 'rest'
+  | 'curiosity'
+  | 'revenge'
+  | 'duty';
+export type AgentGoalKind =
+  | 'survive'
+  | 'protect'
+  | 'investigate'
+  | 'repair'
+  | 'hide'
+  | 'reveal'
+  | 'help'
+  | 'harm'
+  | 'gain_status';
+export type AgentGoalStatus = 'active' | 'blocked' | 'satisfied' | 'abandoned';
 export type AgentIntentKind =
-  | "wait"
-  | "help"
-  | "ask"
-  | "avoid"
-  | "confront"
-  | "gossip"
-  | "trade"
-  | "investigate"
-  | "move"
-  | "hide"
-  | "escalate";
+  | 'wait'
+  | 'help'
+  | 'ask'
+  | 'avoid'
+  | 'confront'
+  | 'gossip'
+  | 'trade'
+  | 'investigate'
+  | 'move'
+  | 'hide'
+  | 'escalate';
 
 export interface AgentTraits {
   personality?: string[];
@@ -137,7 +234,7 @@ export interface AgentSecret {
   id: string;
   text: string;
   risk: number;
-  knownBy?: Array<ActorId | "player">;
+  knownBy?: Array<ActorId | 'player'>;
 }
 
 export interface CombatState {
@@ -195,8 +292,8 @@ export interface LocationVisualDesign {
 }
 
 export interface ItemVisualDesign {
-  material?: "cloth" | "crystal" | "glass" | "metal" | "organic" | "paper" | "radio";
-  shape?: "core" | "gear" | "note" | "radio" | "scale" | "scrap" | "token" | "trinket";
+  material?: 'cloth' | 'crystal' | 'glass' | 'metal' | 'organic' | 'paper' | 'radio';
+  shape?: 'core' | 'gear' | 'note' | 'radio' | 'scale' | 'scrap' | 'token' | 'trinket';
   palette?: {
     primary?: string;
     emissive?: string;
@@ -213,7 +310,11 @@ export interface RelationshipAxes {
   suspicion?: number;
 }
 
-export interface Memory { tick: TickIndex; text: string; meta?: MemoryMeta; }
+export interface Memory {
+  tick: TickIndex;
+  text: string;
+  meta?: MemoryMeta;
+}
 export interface Npc {
   id: ActorId;
   name: string;
@@ -233,9 +334,9 @@ export interface Npc {
   /** coin balance; undefined ≈ 0. Loot/trade flows through it. */
   coins?: number;
   relationships: Record<ActorId, number>;
-  relationshipAxes?: Record<ActorId | "player", RelationshipAxes>;
+  relationshipAxes?: Record<ActorId | 'player', RelationshipAxes>;
   memories: Memory[];
-  tier?: "background" | "normal" | "quest";
+  tier?: 'background' | 'normal' | 'quest';
   /** while > world.tick, simulation/ambient/goal-pursuit skips this NPC */
   talkingToPlayerUntilTick?: number;
   /** when set, NPC pathfinds toward the player's location each tick */
@@ -291,14 +392,14 @@ export interface Clock {
   day: number;
 }
 
-export type QuestStatus = "open" | "active" | "done" | "failed";
+export type QuestStatus = 'open' | 'active' | 'done' | 'failed';
 export interface Quest {
   id: QuestId;
   title: string;
   description?: string;
   giverId?: ActorId;
   status?: QuestStatus;
-  acceptedBy?: ActorId | "player";
+  acceptedBy?: ActorId | 'player';
   rewards?: { relationshipDelta?: Record<ActorId, number>; coins?: number };
   consequences?: { relationshipDelta?: Record<ActorId, number> };
 }
@@ -319,7 +420,7 @@ export interface Player {
   coins?: number;
 }
 
-export type ArcStage = "training" | "trial" | "confrontation" | "complete";
+export type ArcStage = 'training' | 'trial' | 'confrontation' | 'complete';
 
 export interface WorldArc {
   id: string;
@@ -342,7 +443,11 @@ export interface Story {
   beats?: string[];
 }
 
-export type StoryPhase = "starter" | "nightfall_warning" | "shadow_confrontation" | "dawn_after_tasks";
+export type StoryPhase =
+  | 'starter'
+  | 'nightfall_warning'
+  | 'shadow_confrontation'
+  | 'dawn_after_tasks';
 export interface StoryProgress {
   phase: StoryPhase;
   unlockedCutsceneIds: string[];
@@ -352,7 +457,7 @@ export interface StoryProgress {
 export interface WorldRule {
   id: string;
   text: string;
-  kind?: "physical" | "magic" | "social" | "story" | "safety";
+  kind?: 'physical' | 'magic' | 'social' | 'story' | 'safety';
 }
 
 export interface Faction {
@@ -367,7 +472,7 @@ export interface WorldTension {
   id: string;
   title: string;
   pressure: number;
-  status?: "quiet" | "active" | "escalating" | "resolved";
+  status?: 'quiet' | 'active' | 'escalating' | 'resolved';
   involvedIds?: string[];
 }
 
@@ -392,12 +497,29 @@ export interface DirectorState {
   lastAuthoredTick?: TickIndex;
 }
 
-export interface AppliedAction { applied: true; action: Action; text: string; fromDirector?: boolean; }
-export interface RejectedAction { applied: false; action: Action; reason: string; fromDirector?: boolean; }
+export interface AppliedAction {
+  applied: true;
+  action: Action;
+  text: string;
+  fromDirector?: boolean;
+}
+export interface RejectedAction {
+  applied: false;
+  action: Action;
+  reason: string;
+  fromDirector?: boolean;
+}
 export type ActionResult = AppliedAction | RejectedAction;
 
-export interface TickActionEntry { action: Action; text: string; fromDirector?: boolean; }
-export interface TickRejectedEntry { action: Action; reason: string; }
+export interface TickActionEntry {
+  action: Action;
+  text: string;
+  fromDirector?: boolean;
+}
+export interface TickRejectedEntry {
+  action: Action;
+  reason: string;
+}
 export interface TickSummary {
   tick: TickIndex;
   actions: TickActionEntry[];
@@ -436,17 +558,17 @@ export interface World {
 }
 
 export type ChronicleEventKind =
-  | "player_word"
-  | "gossip"
-  | "secret_revealed"
-  | "turned_against"
-  | "confrontation"
-  | "authored"
-  | "quest"
-  | "arc"
-  | "coherence_caught"
-  | "player_witnessed"
-  | "defeat_promotion";
+  | 'player_word'
+  | 'gossip'
+  | 'secret_revealed'
+  | 'turned_against'
+  | 'confrontation'
+  | 'authored'
+  | 'quest'
+  | 'arc'
+  | 'coherence_caught'
+  | 'player_witnessed'
+  | 'defeat_promotion';
 
 export interface ChronicleEvent {
   id: string;
@@ -473,7 +595,7 @@ export interface WorldRecap {
 export type Proposer = (world: World) => Promise<Action[]> | Action[];
 export type Director = (world: World) => Promise<Action | null> | (Action | null);
 
-export type Tier = "background" | "normal" | "quest";
+export type Tier = 'background' | 'normal' | 'quest';
 
 export interface ProposeRequest {
   tier?: Tier;
@@ -491,18 +613,23 @@ export interface ProposeMeta {
 }
 export type ProposeResult =
   | { skipped: true; reason: string }
-  | { skipped?: false; action: Partial<Action> & { type: ActionType | "skip"; reason?: string }; raw?: string; meta?: ProposeMeta }
+  | {
+      skipped?: false;
+      action: Partial<Action> & { type: ActionType | 'skip'; reason?: string };
+      raw?: string;
+      meta?: ProposeMeta;
+    }
   | { skipped?: false; error: string; raw?: string; meta?: ProposeMeta };
 
 export const HOURS_PER_DAY = 24;
 export function isNight(clock: Clock): boolean {
   return clock.hour < 6 || clock.hour >= 20;
 }
-export function timeOfDay(clock: Clock): "dawn" | "day" | "dusk" | "night" {
+export function timeOfDay(clock: Clock): 'dawn' | 'day' | 'dusk' | 'night' {
   const h = clock.hour;
-  if (h < 6) return "night";
-  if (h < 9) return "dawn";
-  if (h < 18) return "day";
-  if (h < 21) return "dusk";
-  return "night";
+  if (h < 6) return 'night';
+  if (h < 9) return 'dawn';
+  if (h < 18) return 'day';
+  if (h < 21) return 'dusk';
+  return 'night';
 }

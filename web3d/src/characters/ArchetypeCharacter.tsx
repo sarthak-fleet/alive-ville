@@ -12,16 +12,16 @@
  * needed a per-archetype bone remap (Hips/Chest vs. pelvis/spine_03). For v1
  * each archetype's distinctive look does the silhouette work.
  */
-import { Outlines, useGLTF } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
-import * as THREE from "three";
-import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
+import { Outlines, useGLTF } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
-import { scaledDelta } from "../controls/runtime.ts";
-import { toonGradientMap } from "../scene/toon.ts";
-import { ARCHETYPE_CLIPS, type ArchetypeKey,ARCHETYPES } from "./archetypes.ts";
-import type { CharacterAnimationHandle, CombatAnimKind } from "./CharacterModel.tsx";
+import { scaledDelta } from '../controls/runtime.ts';
+import { toonGradientMap } from '../scene/toon.ts';
+import { ARCHETYPE_CLIPS, type ArchetypeKey, ARCHETYPES } from './archetypes.ts';
+import type { CharacterAnimationHandle, CombatAnimKind } from './CharacterModel.tsx';
 
 const TARGET_HEIGHT = 1.7;
 
@@ -50,7 +50,7 @@ const COMBAT_CLIPS: Record<CombatAnimKind, string> = {
   telegraph: ARCHETYPE_CLIPS.idleSword,
 };
 
-const GESTURE_CLIPS: Record<"pickup" | "interact", string> = {
+const GESTURE_CLIPS: Record<'pickup' | 'interact', string> = {
   pickup: ARCHETYPE_CLIPS.interact,
   interact: ARCHETYPE_CLIPS.interact,
 };
@@ -97,7 +97,7 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
             color?: THREE.Color;
             map?: THREE.Texture | null;
           };
-          const color = src.color ? src.color.clone() : new THREE.Color("#ffffff");
+          const color = src.color ? src.color.clone() : new THREE.Color('#ffffff');
           const toon = new THREE.MeshToonMaterial({
             color,
             map: src.map ?? null,
@@ -149,7 +149,7 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
       };
     }, [scene]);
 
-    const currentLocomotion = useRef<string>("");
+    const currentLocomotion = useRef<string>('');
 
     useEffect(() => {
       const idle = actions.get(ARCHETYPE_CLIPS.idle);
@@ -184,7 +184,7 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
       setTalking: () => {
         // archetype rig has no separate talking idle; skip cleanly
       },
-      gesture: (kind: "pickup" | "interact") => {
+      gesture: (kind: 'pickup' | 'interact') => {
         playOverlay(GESTURE_CLIPS[kind], 0.12);
       },
       trigger: (kind: CombatAnimKind) => {
@@ -202,7 +202,7 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
             death.clampWhenFinished = true;
             death.play();
           }
-          currentLocomotion.current = "";
+          currentLocomotion.current = '';
         }
       },
     }));
@@ -217,11 +217,11 @@ export const ArchetypeCharacter = forwardRef<CharacterAnimationHandle, Archetype
       const telegraphing = !flashing && now < telegraphUntil.current;
       for (const mat of toonMaterials) {
         if (flashing) {
-          mat.emissive.set("#ff4030");
+          mat.emissive.set('#ff4030');
           mat.emissiveIntensity = 0.85;
         } else if (telegraphing) {
           const pulse = 0.28 + Math.sin(now * 0.018) * 0.18;
-          mat.emissive.set("#ff8830");
+          mat.emissive.set('#ff8830');
           mat.emissiveIntensity = pulse;
         } else if (mat.emissiveIntensity !== 0) {
           mat.emissiveIntensity = 0;

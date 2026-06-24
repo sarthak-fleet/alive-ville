@@ -10,19 +10,19 @@
  * Design choice: sessions use FRESH world clones (not accumulated state) to
  * isolate the variable — model variance in persona recall, not memory leakage.
  */
-import { clearDialogueHistories, generateDialogueReply } from "../dialogue.ts";
-import type { Npc, World } from "../types.ts";
-import type { ProbeOpts, ProbeResult } from "./index.ts";
-import type { JudgeFn } from "./judge.ts";
-import { judgeScore } from "./judge.ts";
-import { loadProbeWorld, snapshotWorld } from "./world-loader.ts";
+import { clearDialogueHistories, generateDialogueReply } from '../dialogue.ts';
+import type { Npc, World } from '../types.ts';
+import type { ProbeOpts, ProbeResult } from './index.ts';
+import type { JudgeFn } from './judge.ts';
+import { judgeScore } from './judge.ts';
+import { loadProbeWorld, snapshotWorld } from './world-loader.ts';
 
 const QUESTIONS = [
-  "What do you value most in life?",
-  "What are you afraid of?",
-  "What did you do yesterday?",
-  "What do you think about strangers who come to town?",
-  "If you had to choose: loyalty or honesty?",
+  'What do you value most in life?',
+  'What are you afraid of?',
+  'What did you do yesterday?',
+  'What do you think about strangers who come to town?',
+  'If you had to choose: loyalty or honesty?',
 ] as const;
 
 const SESSIONS = 3;
@@ -35,11 +35,11 @@ export async function runIdentityProbe(opts: ProbeOpts = {}): Promise<ProbeResul
 
   if (!targetNpc || !opts.complete) {
     return {
-      id: "identity",
-      label: "Identity-stability interview",
-      status: "skip",
+      id: 'identity',
+      label: 'Identity-stability interview',
+      status: 'skip',
       score: 0,
-      detail: opts.complete ? "no NPC available" : "no completer (not an LLM run)",
+      detail: opts.complete ? 'no NPC available' : 'no completer (not an LLM run)',
       tokenSpend: 0,
     };
   }
@@ -61,7 +61,7 @@ export async function runIdentityProbe(opts: ProbeOpts = {}): Promise<ProbeResul
         complete: opts.complete,
         historyKey,
       });
-      answers.push(reply.ok ? reply.reply : "(no reply)");
+      answers.push(reply.ok ? reply.reply : '(no reply)');
     }
     sessionAnswers.push(answers);
     clearDialogueHistories(historyKey);
@@ -80,7 +80,7 @@ export async function runIdentityProbe(opts: ProbeOpts = {}): Promise<ProbeResul
         const ansB = sessionAnswers[b]![qi]!;
         const { score, tokenSpend } = await judgeScore(
           judge,
-          `NPC: ${targetNpc.name} (${targetNpc.role ?? "inhabitant"})\n` +
+          `NPC: ${targetNpc.name} (${targetNpc.role ?? 'inhabitant'})\n` +
             `Question: "${q}"\n\n` +
             `Answer A: "${ansA}"\n\n` +
             `Answer B: "${ansB}"\n\n` +
@@ -97,11 +97,11 @@ export async function runIdentityProbe(opts: ProbeOpts = {}): Promise<ProbeResul
   }
 
   const avgScore = pairCount > 0 ? scoreSum / pairCount : 0;
-  const status = avgScore >= PASS_THRESHOLD ? "pass" : avgScore >= WARN_THRESHOLD ? "warn" : "fail";
+  const status = avgScore >= PASS_THRESHOLD ? 'pass' : avgScore >= WARN_THRESHOLD ? 'warn' : 'fail';
 
   return {
-    id: "identity",
-    label: "Identity-stability interview",
+    id: 'identity',
+    label: 'Identity-stability interview',
     status,
     score: avgScore,
     detail: `NPC=${targetNpc.name} sessions=${SESSIONS} pairs=${pairCount} avg=${avgScore.toFixed(2)}/10`,
@@ -113,9 +113,7 @@ function pickNpc(world: World): Npc | undefined {
   // prefer an NPC at the player's starting location with defined traits
   return (
     world.npcs.find(
-      (npc) =>
-        npc.locationId === world.player.locationId &&
-        npc.traits?.values?.length
+      (npc) => npc.locationId === world.player.locationId && npc.traits?.values?.length
     ) ?? world.npcs[0]
   );
 }

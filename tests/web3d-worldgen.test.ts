@@ -1,23 +1,25 @@
-import { readFileSync } from "node:fs";
+import { readFileSync } from 'node:fs';
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import type { World } from "../src/types.ts";
-import { generateDistrict } from "../web3d/src/worldgen/district.ts";
-import { findDistrictPath, generateWorldModel } from "../web3d/src/worldgen/index.ts";
-import { interiorForBuilding } from "../web3d/src/worldgen/interiors.ts";
-import { SIDEWALK_INSET, WORLD_SCALE } from "../web3d/src/worldgen/model.ts";
+import type { World } from '../src/types.ts';
+import { generateDistrict } from '../web3d/src/worldgen/district.ts';
+import { findDistrictPath, generateWorldModel } from '../web3d/src/worldgen/index.ts';
+import { interiorForBuilding } from '../web3d/src/worldgen/interiors.ts';
+import { SIDEWALK_INSET, WORLD_SCALE } from '../web3d/src/worldgen/model.ts';
 
-const world = JSON.parse(readFileSync(new URL("../worlds/one-punch-man.json", import.meta.url), "utf8")) as World;
+const world = JSON.parse(
+  readFileSync(new URL('../worlds/one-punch-man.json', import.meta.url), 'utf8')
+) as World;
 
-describe("web3d worldgen", () => {
-  it("is deterministic: same world produces identical models", () => {
+describe('web3d worldgen', () => {
+  it('is deterministic: same world produces identical models', () => {
     const a = generateWorldModel(world);
     const b = generateWorldModel(world);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
-  it("generates every district with buildings and a courtyard", () => {
+  it('generates every district with buildings and a courtyard', () => {
     const model = generateWorldModel(world);
     expect(model.districts).toHaveLength(world.locations.length);
     for (const district of model.districts) {
@@ -28,9 +30,9 @@ describe("web3d worldgen", () => {
     expect(active.npcSpawns.length).toBeGreaterThan(0);
   });
 
-  it("builds a street per unique exit pair, avoiding other plots", () => {
+  it('builds a street per unique exit pair, avoiding other plots', () => {
     const model = generateWorldModel(world);
-    const uniquePairs = new Set(world.exits.map((exit) => [exit.from, exit.to].sort().join("--")));
+    const uniquePairs = new Set(world.exits.map((exit) => [exit.from, exit.to].sort().join('--')));
     expect(model.streets).toHaveLength(uniquePairs.size);
     for (const street of model.streets) {
       expect(street.points.length).toBeGreaterThanOrEqual(2);
@@ -49,7 +51,7 @@ describe("web3d worldgen", () => {
     }
   });
 
-  it("connects every exit pair in the nav graph", () => {
+  it('connects every exit pair in the nav graph', () => {
     const model = generateWorldModel(world);
     for (const exit of world.exits) {
       const path = findDistrictPath(model.nav, exit.from, exit.to);
@@ -58,7 +60,7 @@ describe("web3d worldgen", () => {
     }
   });
 
-  it("keeps buildings inside the district plot", () => {
+  it('keeps buildings inside the district plot', () => {
     const location = world.locations.find((l) => l.id === world.player.locationId)!;
     const district = generateDistrict(world, location);
     const minX = location.x * WORLD_SCALE + SIDEWALK_INSET - 0.5;
@@ -70,7 +72,7 @@ describe("web3d worldgen", () => {
     }
   });
 
-  it("keeps buildings clear of the courtyard so the player can roam", () => {
+  it('keeps buildings clear of the courtyard so the player can roam', () => {
     const location = world.locations.find((l) => l.id === world.player.locationId)!;
     const district = generateDistrict(world, location);
     for (const building of district.buildings) {
@@ -81,9 +83,12 @@ describe("web3d worldgen", () => {
     }
   });
 
-  it("makes every building enterable with deterministic on-demand interiors", () => {
+  it('makes every building enterable with deterministic on-demand interiors', () => {
     const model = generateWorldModel(world);
-    const buildingCount = model.districts.reduce((sum, district) => sum + district.buildings.length, 0);
+    const buildingCount = model.districts.reduce(
+      (sum, district) => sum + district.buildings.length,
+      0
+    );
     expect(model.doors).toHaveLength(buildingCount);
 
     // doors sit on their building's plot, facing the courtyard
@@ -98,7 +103,11 @@ describe("web3d worldgen", () => {
     }
 
     // sample interiors: deterministic, sized to the building, furniture inside walls
-    const sampleDoors = [model.doors[0]!, model.doors[Math.floor(model.doors.length / 2)]!, model.doors.at(-1)!];
+    const sampleDoors = [
+      model.doors[0]!,
+      model.doors[Math.floor(model.doors.length / 2)]!,
+      model.doors.at(-1)!,
+    ];
     const footprints = new Set<string>();
     for (const door of sampleDoors) {
       const interior = interiorForBuilding(world, model, door.buildingId)!;
@@ -122,12 +131,18 @@ describe("web3d worldgen", () => {
     expect(footprints.size).toBeGreaterThan(1);
   });
 
-  it("places every co-located NPC and loose item", () => {
+  it('places every co-located NPC and loose item', () => {
     const location = world.locations.find((l) => l.id === world.player.locationId)!;
     const district = generateDistrict(world, location);
-    const expectedNpcs = world.npcs.filter((npc) => npc.locationId === location.id && npc.id !== world.player.characterId);
-    expect(district.npcSpawns.map((s) => s.npcId).sort()).toEqual(expectedNpcs.map((n) => n.id).sort());
-    const looseItems = world.items.filter((item) => item.locationId === location.id && !item.holderId);
+    const expectedNpcs = world.npcs.filter(
+      (npc) => npc.locationId === location.id && npc.id !== world.player.characterId
+    );
+    expect(district.npcSpawns.map((s) => s.npcId).sort()).toEqual(
+      expectedNpcs.map((n) => n.id).sort()
+    );
+    const looseItems = world.items.filter(
+      (item) => item.locationId === location.id && !item.holderId
+    );
     expect(district.items).toHaveLength(looseItems.length);
   });
 });

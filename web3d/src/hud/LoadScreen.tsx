@@ -1,12 +1,12 @@
-import { useProgress } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { useProgress } from '@react-three/drei';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   /** True while the world API fetch or initial 3-D asset load is in progress. */
   worldLoading: boolean;
 }
 
-const PHASES = ["waking the world…", "loading characters…", "entering aliveville…"] as const;
+const PHASES = ['waking the world…', 'loading characters…', 'entering aliveville…'] as const;
 
 function phaseFor(progress: number): number {
   if (progress >= 80) return 2;
@@ -31,7 +31,7 @@ export function LoadScreen({ worldLoading }: Props) {
       timerRef.current = setTimeout(() => {
         setVisible(false);
         // Remove the inline splash too (it may still be in the DOM)
-        const splash = document.getElementById("splash");
+        const splash = document.getElementById('splash');
         if (splash) splash.remove();
       }, 300);
     }
@@ -47,7 +47,7 @@ export function LoadScreen({ worldLoading }: Props) {
       className="screen-center"
       style={{
         zIndex: 9998,
-        transition: "opacity 0.3s ease",
+        transition: 'opacity 0.3s ease',
         opacity: visible ? 1 : 0,
       }}
     >
@@ -57,17 +57,17 @@ export function LoadScreen({ worldLoading }: Props) {
           style={{
             width: 120,
             height: 2,
-            background: "rgba(255,255,255,0.12)",
+            background: 'rgba(255,255,255,0.12)',
             borderRadius: 1,
-            overflow: "hidden",
+            overflow: 'hidden',
           }}
         >
           <div
             style={{
               width: `${progress}%`,
-              height: "100%",
-              background: "rgba(120,170,255,0.7)",
-              transition: "width 0.4s ease",
+              height: '100%',
+              background: 'rgba(120,170,255,0.7)',
+              transition: 'width 0.4s ease',
             }}
           />
         </div>

@@ -1,23 +1,23 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-import { clipSupported, isRecording, startClip, stopClip } from "../platform/clip.ts";
-import { defaultSaveName, opfsSupported, writeSave } from "../platform/opfs-save.ts";
-import { useWorldStore } from "../store/world.ts";
+import { clipSupported, isRecording, startClip, stopClip } from '../platform/clip.ts';
+import { defaultSaveName, opfsSupported, writeSave } from '../platform/opfs-save.ts';
+import { useWorldStore } from '../store/world.ts';
 
 /** Frontier utility chips: OPFS local save + canvas clip recording. */
 export function PlatformControls(): React.ReactElement | null {
   const world = useWorldStore((state) => state.world);
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [recording, setRecording] = useState(false);
 
   if (!world) return null;
 
   const save = async (): Promise<void> => {
-    if (!opfsSupported() || saveState === "saving") return;
-    setSaveState("saving");
+    if (!opfsSupported() || saveState === 'saving') return;
+    setSaveState('saving');
     const meta = await writeSave(world, defaultSaveName(world)).catch(() => null);
-    setSaveState(meta ? "saved" : "idle");
-    if (meta) window.setTimeout(() => setSaveState("idle"), 2200);
+    setSaveState(meta ? 'saved' : 'idle');
+    if (meta) window.setTimeout(() => setSaveState('idle'), 2200);
   };
 
   const toggleRecord = (): void => {
@@ -29,16 +29,17 @@ export function PlatformControls(): React.ReactElement | null {
     }
   };
 
-  const savedLabel = saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : "Save game";
+  const savedLabel =
+    saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : 'Save game';
 
   return (
     <>
       {opfsSupported() ? (
         <button
           type="button"
-          className={`chip ${saveState === "saved" ? "on" : ""}`}
+          className={`chip ${saveState === 'saved' ? 'on' : ''}`}
           title="Save the full world to your browser — resume it from the start screen"
-          disabled={saveState === "saving"}
+          disabled={saveState === 'saving'}
           onClick={() => void save()}
         >
           💾 {savedLabel}
@@ -47,11 +48,11 @@ export function PlatformControls(): React.ReactElement | null {
       {clipSupported() ? (
         <button
           type="button"
-          className={`chip ${recording ? "on" : ""}`}
+          className={`chip ${recording ? 'on' : ''}`}
           title="Record the game canvas to a downloadable clip"
           onClick={toggleRecord}
         >
-          {recording ? "⏺ Stop clip" : "🎬 Clip"}
+          {recording ? '⏺ Stop clip' : '🎬 Clip'}
         </button>
       ) : null}
     </>

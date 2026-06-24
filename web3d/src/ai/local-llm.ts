@@ -11,12 +11,19 @@
  * Wiring it into NPC dialogue is the next step once the path is proven in-browser.
  */
 
-import type { InitProgressReport, MLCEngineInterface } from "@mlc-ai/web-llm";
-import { create } from "zustand";
+import type { InitProgressReport, MLCEngineInterface } from '@mlc-ai/web-llm';
+import { create } from 'zustand';
 
-import { type Capabilities, detectCapabilities } from "./capabilities.ts";
+import { type Capabilities, detectCapabilities } from './capabilities.ts';
 
-export type LocalBrainStatus = "unknown" | "unsupported" | "idle" | "loading" | "ready" | "generating" | "error";
+export type LocalBrainStatus =
+  | 'unknown'
+  | 'unsupported'
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'generating'
+  | 'error';
 
 /**
  * Preference order; first id present in web-llm's prebuilt config wins. We lead
@@ -26,16 +33,16 @@ export type LocalBrainStatus = "unknown" | "unsupported" | "idle" | "loading" | 
  * only reached if the 8B id is ever absent from the prebuilt config.
  */
 const MODELS_F16 = [
-  "Llama-3.1-8B-Instruct-q4f16_1-MLC",
-  "Qwen2.5-7B-Instruct-q4f16_1-MLC",
-  "Llama-3.2-3B-Instruct-q4f16_1-MLC",
-  "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+  'Llama-3.1-8B-Instruct-q4f16_1-MLC',
+  'Qwen2.5-7B-Instruct-q4f16_1-MLC',
+  'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+  'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
 ];
 const MODELS_F32 = [
-  "Llama-3.1-8B-Instruct-q4f32_1-MLC",
-  "Qwen2.5-7B-Instruct-q4f32_1-MLC",
-  "Llama-3.2-3B-Instruct-q4f32_1-MLC",
-  "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+  'Llama-3.1-8B-Instruct-q4f32_1-MLC',
+  'Qwen2.5-7B-Instruct-q4f32_1-MLC',
+  'Llama-3.2-3B-Instruct-q4f32_1-MLC',
+  'Qwen2.5-0.5B-Instruct-q4f32_1-MLC',
 ];
 
 /** The engine is not serializable, so it lives outside the store as a singleton. */
@@ -59,65 +66,73 @@ interface LocalBrainState {
 
 export const useLocalBrain = create<LocalBrainState>((set, get) => ({
   caps: null,
-  status: "unknown",
+  status: 'unknown',
   progress: 0,
-  progressText: "",
+  progressText: '',
   modelId: null,
   error: null,
-  lastReply: "",
+  lastReply: '',
 
   async detect() {
     const caps = await detectCapabilities();
-    set({ caps, status: caps.webgpu ? (get().status === "ready" ? "ready" : "idle") : "unsupported" });
+    set({
+      caps,
+      status: caps.webgpu ? (get().status === 'ready' ? 'ready' : 'idle') : 'unsupported',
+    });
     return caps;
   },
 
   async load() {
     const state = get();
-    if (state.status === "loading" || state.status === "ready") return;
+    if (state.status === 'loading' || state.status === 'ready') return;
     const caps = state.caps ?? (await get().detect());
     if (!caps.webgpu) {
-      set({ status: "unsupported", error: "This browser/device has no WebGPU adapter." });
+      set({ status: 'unsupported', error: 'This browser/device has no WebGPU adapter.' });
       return;
     }
 
-    set({ status: "loading", progress: 0, progressText: "Starting…", error: null });
+    set({ status: 'loading', progress: 0, progressText: 'Starting…', error: null });
     try {
-      const webllm = await import("@mlc-ai/web-llm");
-      const available = new Set(webllm.prebuiltAppConfig.model_list.map((entry: { model_id: string }) => entry.model_id));
+      const webllm = await import('@mlc-ai/web-llm');
+      const available = new Set(
+        webllm.prebuiltAppConfig.model_list.map((entry: { model_id: string }) => entry.model_id)
+      );
       const prefs = caps.shaderF16 ? MODELS_F16 : MODELS_F32;
-      const modelId = prefs.find((id) => available.has(id)) ?? webllm.prebuiltAppConfig.model_list[0]?.model_id ?? null;
-      if (!modelId) throw new Error("No web-llm model available in prebuilt config.");
+      const modelId =
+        prefs.find((id) => available.has(id)) ??
+        webllm.prebuiltAppConfig.model_list[0]?.model_id ??
+        null;
+      if (!modelId) throw new Error('No web-llm model available in prebuilt config.');
 
       engine = await webllm.CreateMLCEngine(modelId, {
         initProgressCallback: (report: InitProgressReport) => {
           set({ progress: report.progress, progressText: report.text });
         },
       });
-      set({ status: "ready", modelId, progress: 1, progressText: "Ready — running on your GPU." });
+      set({ status: 'ready', modelId, progress: 1, progressText: 'Ready — running on your GPU.' });
     } catch (err) {
       engine = null;
-      set({ status: "error", error: err instanceof Error ? err.message : String(err) });
+      set({ status: 'error', error: err instanceof Error ? err.message : String(err) });
     }
   },
 
   async generate(system, user) {
-    if (!engine || get().status !== "ready") throw new Error("Local brain is not ready.");
-    set({ status: "generating" });
+    if (!engine || get().status !== 'ready') throw new Error('Local brain is not ready.');
+    set({ status: 'generating' });
     try {
       const completion = await engine.chat.completions.create({
         messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
+          { role: 'system', content: system },
+          { role: 'user', content: user },
         ],
         temperature: 0.8,
         max_tokens: 160,
       });
-      const reply = completion.choices[0]?.message?.content?.trim() ?? "";
-      set({ status: "ready", lastReply: reply });
+      const reply = completion.choices[0]?.message?.content?.trim() ?? '';
+      set({ status: 'ready', lastReply: reply });
       return reply;
     } catch (err) {
-      set({ status: "error", error: err instanceof Error ? err.message : String(err) });
+      set({ status: 'error', error: err instanceof Error ? err.message : String(err) });
       throw err;
     }
   },

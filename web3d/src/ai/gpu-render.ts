@@ -35,25 +35,26 @@ fn fs(in : VsOut) -> @location(0) vec4<f32> {
 /** Start the demo on `canvas`; returns a stop() that halts the loop and frees the device. */
 export async function startRenderDemo(canvas: HTMLCanvasElement): Promise<() => void> {
   const gpu = (navigator as { gpu?: GPU }).gpu;
-  if (!gpu) throw new Error("WebGPU unavailable.");
+  if (!gpu) throw new Error('WebGPU unavailable.');
   const adapter = await gpu.requestAdapter();
-  if (!adapter) throw new Error("No WebGPU adapter.");
+  if (!adapter) throw new Error('No WebGPU adapter.');
   const device = await adapter.requestDevice();
-  const context = canvas.getContext("webgpu") as GPUCanvasContext | null;
-  if (!context) throw new Error("No WebGPU canvas context.");
+  const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
+  if (!context) throw new Error('No WebGPU canvas context.');
 
   const format = gpu.getPreferredCanvasFormat();
-  context.configure({ device, format, alphaMode: "premultiplied" });
+  context.configure({ device, format, alphaMode: 'premultiplied' });
 
-  const BUF = (globalThis as unknown as { GPUBufferUsage: { UNIFORM: number; COPY_DST: number } }).GPUBufferUsage;
+  const BUF = (globalThis as unknown as { GPUBufferUsage: { UNIFORM: number; COPY_DST: number } })
+    .GPUBufferUsage;
   const uniform = device.createBuffer({ size: 4, usage: BUF.UNIFORM | BUF.COPY_DST });
 
   const shader = device.createShaderModule({ code: RENDER_WGSL });
   const pipeline = device.createRenderPipeline({
-    layout: "auto",
-    vertex: { module: shader, entryPoint: "vs" },
-    fragment: { module: shader, entryPoint: "fs", targets: [{ format }] },
-    primitive: { topology: "triangle-list" },
+    layout: 'auto',
+    vertex: { module: shader, entryPoint: 'vs' },
+    fragment: { module: shader, entryPoint: 'fs', targets: [{ format }] },
+    primitive: { topology: 'triangle-list' },
   });
   const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
@@ -69,7 +70,12 @@ export async function startRenderDemo(canvas: HTMLCanvasElement): Promise<() => 
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
-        { view: context.getCurrentTexture().createView(), clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: "clear", storeOp: "store" },
+        {
+          view: context.getCurrentTexture().createView(),
+          clearValue: { r: 0, g: 0, b: 0, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
       ],
     });
     pass.setPipeline(pipeline);

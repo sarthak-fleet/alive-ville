@@ -1,7 +1,7 @@
 // Local typings for @react-three/postprocessing: its shipped .d.ts uses
 // extensionless relative re-exports, which moduleResolution NodeNext cannot
 // resolve, leaving the module typed as empty. Mapped here via tsconfig paths.
-import type { ReactElement, ReactNode, RefObject } from "react";
+import type { ReactElement, ReactNode, RefObject } from 'react';
 
 export interface EffectComposerProps {
   children?: ReactNode;
@@ -13,7 +13,9 @@ export interface EffectComposerProps {
   resolutionScale?: number;
 }
 
-export function EffectComposer(props: EffectComposerProps & { ref?: RefObject<unknown> }): ReactElement;
+export function EffectComposer(
+  props: EffectComposerProps & { ref?: RefObject<unknown> }
+): ReactElement;
 
 export interface BloomProps {
   intensity?: number;

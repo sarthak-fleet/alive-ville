@@ -6,7 +6,7 @@
  * Both are opt-in — nothing runs unless the UI enables voice.
  */
 
-import { kokoroSpeak, kokoroStop } from "./kokoro.ts";
+import { kokoroSpeak, kokoroStop } from './kokoro.ts';
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -22,7 +22,10 @@ type SpeechRecognitionLike = {
 type RecognitionCtor = new () => SpeechRecognitionLike;
 
 function recognitionCtor(): RecognitionCtor | null {
-  const w = globalThis as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
+  const w = globalThis as unknown as {
+    SpeechRecognition?: RecognitionCtor;
+    webkitSpeechRecognition?: RecognitionCtor;
+  };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
@@ -44,7 +47,7 @@ export function sayNpc(text: string): void {
 }
 
 export function ttsSupported(): boolean {
-  return typeof globalThis !== "undefined" && "speechSynthesis" in globalThis;
+  return typeof globalThis !== 'undefined' && 'speechSynthesis' in globalThis;
 }
 
 export function sttSupported(): boolean {
@@ -75,11 +78,11 @@ export function listenOnce(onFinal: (transcript: string) => void): (() => void) 
   const Ctor = recognitionCtor();
   if (!Ctor) return null;
   const recognition = new Ctor();
-  recognition.lang = "en-US";
+  recognition.lang = 'en-US';
   recognition.interimResults = false;
   recognition.continuous = false;
   recognition.onresult = (event) => {
-    const transcript = event.results[0]?.[0]?.transcript ?? "";
+    const transcript = event.results[0]?.[0]?.transcript ?? '';
     if (transcript) onFinal(transcript);
   };
   recognition.onerror = () => recognition.stop();

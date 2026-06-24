@@ -21,9 +21,7 @@
   },
   "storyProgress": {
     "phase": "starter",
-    "unlockedCutsceneIds": [
-      "ashment_intro_square"
-    ],
+    "unlockedCutsceneIds": ["ashment_intro_square"],
     "playedCutsceneIds": []
   },
   "tick": 0,
@@ -33,16 +31,9 @@
     "appearance": {
       "hair": "windswept dark hair",
       "outfit": "traveler's jacket with a red scarf",
-      "palette": [
-        "#1c2540",
-        "#e8c39e",
-        "#c8382a"
-      ],
+      "palette": ["#1c2540", "#e8c39e", "#c8382a"],
       "silhouette": "average",
-      "visualTags": [
-        "scarf",
-        "jacket"
-      ]
+      "visualTags": ["scarf", "jacket"]
     }
   },
   "clock": {
@@ -71,27 +62,15 @@
     {
       "id": "village",
       "name": "Ashment villagers",
-      "goals": [
-        "keep the village calm",
-        "restore the forge flame"
-      ],
-      "resources": [
-        "notice board",
-        "shared stores"
-      ],
+      "goals": ["keep the village calm", "restore the forge flame"],
+      "resources": ["notice board", "shared stores"],
       "reputation": 0
     },
     {
       "id": "bridge_whisper",
       "name": "The Bridge Whisper",
-      "goals": [
-        "draw bright metal to the river",
-        "keep villagers divided"
-      ],
-      "resources": [
-        "cold blue ember",
-        "night fog"
-      ],
+      "goals": ["draw bright metal to the river", "keep villagers divided"],
+      "resources": ["cold blue ember", "night fog"],
       "reputation": -3
     }
   ],
@@ -101,23 +80,14 @@
       "title": "Metal objects are disappearing",
       "pressure": 42,
       "status": "active",
-      "involvedIds": [
-        "mira",
-        "tomas",
-        "pax",
-        "bridge"
-      ]
+      "involvedIds": ["mira", "tomas", "pax", "bridge"]
     },
     {
       "id": "forge_unlit",
       "title": "The forge flame is out",
       "pressure": 55,
       "status": "escalating",
-      "involvedIds": [
-        "tomas",
-        "bridge",
-        "wood"
-      ]
+      "involvedIds": ["tomas", "bridge", "wood"]
     }
   ],
   "villainPlans": [
@@ -130,18 +100,13 @@
       "hidden": true,
       "pressure": 38,
       "nextTrigger": "If the forge is not rekindled by dusk, the bridge whisper grows louder.",
-      "knownFacts": [
-        "Pax hears the whisper",
-        "wooden cups muffle the blue ember"
-      ]
+      "knownFacts": ["Pax hears the whisper", "wooden cups muffle the blue ember"]
     }
   ],
   "directorState": {
     "pressure": 18,
     "quietTicks": 0,
-    "pendingReveals": [
-      "The missing metal follows the bridge pattern."
-    ]
+    "pendingReveals": ["The missing metal follows the bridge pattern."]
   },
   "locations": [
     {
@@ -159,14 +124,8 @@
           "structure": "#657180",
           "accent": "#f8d44e"
         },
-        "visualTags": [
-          "river stone",
-          "market",
-          "notice board"
-        ],
-        "landmarks": [
-          "notice_board"
-        ],
+        "visualTags": ["river stone", "market", "notice board"],
+        "landmarks": ["notice_board"],
         "elevation": 0.06
       }
     },
@@ -185,15 +144,8 @@
           "structure": "#8a4c2e",
           "accent": "#f08a38"
         },
-        "visualTags": [
-          "forge",
-          "soot",
-          "metal",
-          "tools"
-        ],
-        "landmarks": [
-          "forge_chimney"
-        ],
+        "visualTags": ["forge", "soot", "metal", "tools"],
+        "landmarks": ["forge_chimney"],
         "elevation": 0.12
       }
     },
@@ -212,14 +164,8 @@
           "structure": "#497c4a",
           "accent": "#b5e48c"
         },
-        "visualTags": [
-          "garden",
-          "moonmint",
-          "herbs"
-        ],
-        "landmarks": [
-          "garden_planter"
-        ]
+        "visualTags": ["garden", "moonmint", "herbs"],
+        "landmarks": ["garden_planter"]
       }
     },
     {
@@ -237,14 +183,8 @@
           "structure": "#596477",
           "accent": "#f8d44e"
         },
-        "visualTags": [
-          "inn",
-          "lantern",
-          "notice board"
-        ],
-        "landmarks": [
-          "lantern_post"
-        ]
+        "visualTags": ["inn", "lantern", "notice board"],
+        "landmarks": ["lantern_post"]
       }
     },
     {
@@ -262,15 +202,8 @@
           "structure": "#657180",
           "accent": "#7fd0ff"
         },
-        "visualTags": [
-          "bridge",
-          "fog",
-          "blue ember",
-          "threat"
-        ],
-        "landmarks": [
-          "bridge_span"
-        ],
+        "visualTags": ["bridge", "fog", "blue ember", "threat"],
+        "landmarks": ["bridge_span"],
         "elevation": 0.22
       }
     },
@@ -289,14 +222,8 @@
           "structure": "#4d6540",
           "accent": "#b58f57"
         },
-        "visualTags": [
-          "wood",
-          "sealed hollow",
-          "fog"
-        ],
-        "landmarks": [
-          "wood_tree"
-        ]
+        "visualTags": ["wood", "sealed hollow", "fog"],
+        "landmarks": ["wood_tree"]
       }
     }
   ],
@@ -377,17 +304,9 @@
       "locationId": "forge",
       "description": "A rack of borrowed tools above the forge bench.",
       "inspectText": "Fresh soot outlines a missing pair of shears. Tomas did not clean this up before leaving.",
-      "clueTags": [
-        "forge",
-        "shears",
-        "tomas"
-      ],
+      "clueTags": ["forge", "shears", "tomas"],
       "relatedQuestId": "return_shears",
-      "involvedIds": [
-        "tomas",
-        "mira",
-        "forge"
-      ],
+      "involvedIds": ["tomas", "mira", "forge"],
       "pressureDelta": -2
     },
     {
@@ -396,17 +315,9 @@
       "locationId": "bridge",
       "description": "Cold blue scrapes run along the old bridge stones.",
       "inspectText": "The scrape marks point toward the river and match the color of the cold ember.",
-      "clueTags": [
-        "bridge",
-        "blue",
-        "ember",
-        "metal"
-      ],
+      "clueTags": ["bridge", "blue", "ember", "metal"],
       "relatedQuestId": "bridge_whisper",
-      "involvedIds": [
-        "bridge",
-        "pax"
-      ],
+      "involvedIds": ["bridge", "pax"],
       "pressureDelta": -4
     },
     {
@@ -415,17 +326,9 @@
       "locationId": "inn",
       "description": "Traveler reports pinned beside the inn lanterns.",
       "inspectText": "Several notes mention the bridge going silent whenever the forge flame dims.",
-      "clueTags": [
-        "inn",
-        "bridge",
-        "forge",
-        "lantern"
-      ],
+      "clueTags": ["inn", "bridge", "forge", "lantern"],
       "relatedQuestId": "bridge_whisper",
-      "involvedIds": [
-        "lena",
-        "bridge"
-      ],
+      "involvedIds": ["lena", "bridge"],
       "pressureDelta": -2
     }
   ],
@@ -443,36 +346,15 @@
         "bodyType": "average height, practical posture",
         "hair": "brown hair tucked under an olive headscarf",
         "outfit": "green apron over a cream shirt and brown skirt",
-        "palette": [
-          "#708a4b",
-          "#e2d58f",
-          "#6d4930"
-        ],
+        "palette": ["#708a4b", "#e2d58f", "#6d4930"],
         "silhouette": "Soft garden-worker silhouette with apron, scarf, and flower basket energy.",
-        "visualTags": [
-          "gardener",
-          "kind",
-          "earthy",
-          "headscarf"
-        ]
+        "visualTags": ["gardener", "kind", "earthy", "headscarf"]
       },
       "traits": {
-        "personality": [
-          "kind",
-          "direct",
-          "observant"
-        ],
-        "values": [
-          "care",
-          "honesty",
-          "usefulness"
-        ],
-        "flaws": [
-          "impatient when tools vanish"
-        ],
-        "fears": [
-          "the moonmint dying before nightfall"
-        ],
+        "personality": ["kind", "direct", "observant"],
+        "values": ["care", "honesty", "usefulness"],
+        "flaws": ["impatient when tools vanish"],
+        "fears": ["the moonmint dying before nightfall"],
         "speechStyle": "warm but brisk"
       },
       "needs": {
@@ -534,11 +416,7 @@
           "text": "Tomas borrowed pruning shears and forgot to return them.",
           "meta": {
             "importance": 7,
-            "tags": [
-              "tomas",
-              "shears",
-              "missing"
-            ],
+            "tags": ["tomas", "shears", "missing"],
             "visibility": "private",
             "emotionalWeight": 5,
             "sourceActorId": "world"
@@ -549,11 +427,7 @@
           "text": "The moonmint leaves curled inward after the forge flame went out.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "moonmint",
-              "forge",
-              "flame"
-            ],
+            "tags": ["moonmint", "forge", "flame"],
             "visibility": "shared",
             "emotionalWeight": 4,
             "sourceActorId": "world"
@@ -564,11 +438,7 @@
           "text": "A trail of silver dew led from the herb beds toward the old bridge.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "silver",
-              "dew",
-              "bridge"
-            ],
+            "tags": ["silver", "dew", "bridge"],
             "visibility": "private",
             "emotionalWeight": 3,
             "sourceActorId": "world"
@@ -589,36 +459,15 @@
         "bodyType": "tall, broad-shouldered, heavy build",
         "hair": "dark hair and beard under a charcoal headband",
         "outfit": "brown leather apron, rolled cream sleeves, black work trousers",
-        "palette": [
-          "#6f4b35",
-          "#d2b16c",
-          "#2c2a28"
-        ],
+        "palette": ["#6f4b35", "#d2b16c", "#2c2a28"],
         "silhouette": "Large blacksmith silhouette with apron, gloves, and squared stance.",
-        "visualTags": [
-          "blacksmith",
-          "bearded",
-          "strong",
-          "apron"
-        ]
+        "visualTags": ["blacksmith", "bearded", "strong", "apron"]
       },
       "traits": {
-        "personality": [
-          "stubborn",
-          "protective",
-          "ashamed"
-        ],
-        "values": [
-          "craft",
-          "responsibility",
-          "strength"
-        ],
-        "flaws": [
-          "hides fear until it becomes a problem"
-        ],
-        "fears": [
-          "being seen as a coward"
-        ],
+        "personality": ["stubborn", "protective", "ashamed"],
+        "values": ["craft", "responsibility", "strength"],
+        "flaws": ["hides fear until it becomes a problem"],
+        "fears": ["being seen as a coward"],
         "speechStyle": "short, blunt, defensive"
       },
       "needs": {
@@ -664,9 +513,7 @@
           "id": "heard_bridge_voice",
           "text": "Tomas heard the bridge whisper his name when he found Mira's shears.",
           "risk": 78,
-          "knownBy": [
-            "tomas"
-          ]
+          "knownBy": ["tomas"]
         }
       ],
       "relationshipAxes": {
@@ -692,11 +539,7 @@
           "text": "The forge bellows need dry leather before nightfall.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "forge",
-              "bellows",
-              "leather"
-            ],
+            "tags": ["forge", "bellows", "leather"],
             "visibility": "shared",
             "emotionalWeight": 3,
             "sourceActorId": "world"
@@ -707,11 +550,7 @@
           "text": "The old anvil rang by itself when the blue glow flashed under the bridge.",
           "meta": {
             "importance": 7,
-            "tags": [
-              "anvil",
-              "blue",
-              "bridge"
-            ],
+            "tags": ["anvil", "blue", "bridge"],
             "visibility": "private",
             "emotionalWeight": 5,
             "sourceActorId": "world"
@@ -722,12 +561,7 @@
           "text": "Tomas found Mira's shears near the bridge, panicked, and left them on the forge bench.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "mira",
-              "shears",
-              "bridge",
-              "forge"
-            ],
+            "tags": ["mira", "shears", "bridge", "forge"],
             "visibility": "private",
             "emotionalWeight": 6,
             "sourceActorId": "world"
@@ -748,36 +582,15 @@
         "bodyType": "upright, composed, medium build",
         "hair": "auburn hair tied neatly away from the face",
         "outfit": "amber travel vest, long skirt, lantern keeper sash",
-        "palette": [
-          "#a96a42",
-          "#f1ca7a",
-          "#5f3d2c"
-        ],
+        "palette": ["#a96a42", "#f1ca7a", "#5f3d2c"],
         "silhouette": "Readable innkeeper silhouette with lantern colors and composed stance.",
-        "visualTags": [
-          "innkeeper",
-          "lantern",
-          "witness",
-          "calm"
-        ]
+        "visualTags": ["innkeeper", "lantern", "witness", "calm"]
       },
       "traits": {
-        "personality": [
-          "patient",
-          "social",
-          "strategic"
-        ],
-        "values": [
-          "hospitality",
-          "truth",
-          "safety"
-        ],
-        "flaws": [
-          "waits for proof too long"
-        ],
-        "fears": [
-          "someone crossing the bridge alone after dusk"
-        ],
+        "personality": ["patient", "social", "strategic"],
+        "values": ["hospitality", "truth", "safety"],
+        "flaws": ["waits for proof too long"],
+        "fears": ["someone crossing the bridge alone after dusk"],
         "speechStyle": "measured, reassuring, curious"
       },
       "needs": {
@@ -839,11 +652,7 @@
           "text": "A traveler heard scratching beneath the old bridge.",
           "meta": {
             "importance": 7,
-            "tags": [
-              "traveler",
-              "scratching",
-              "bridge"
-            ],
+            "tags": ["traveler", "scratching", "bridge"],
             "visibility": "shared",
             "emotionalWeight": 4,
             "sourceActorId": "world"
@@ -854,11 +663,7 @@
           "text": "The brass lantern burned blue for three seconds when pointed at Hollow Wood.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "lantern",
-              "blue",
-              "wood"
-            ],
+            "tags": ["lantern", "blue", "wood"],
             "visibility": "private",
             "emotionalWeight": 3,
             "sourceActorId": "world"
@@ -869,11 +674,7 @@
           "text": "Lena promised the Wanderer a room if they help calm Ashment before nightfall.",
           "meta": {
             "importance": 6,
-            "tags": [
-              "wanderer",
-              "promise",
-              "nightfall"
-            ],
+            "tags": ["wanderer", "promise", "nightfall"],
             "visibility": "shared",
             "emotionalWeight": 2,
             "sourceActorId": "world"
@@ -894,36 +695,15 @@
         "bodyType": "older, slightly stooped but alert",
         "hair": "white hair and trimmed beard",
         "outfit": "blue merchant cloak over tan robes, walking stick",
-        "palette": [
-          "#355a82",
-          "#e7dbbe",
-          "#6b553d"
-        ],
+        "palette": ["#355a82", "#e7dbbe", "#6b553d"],
         "silhouette": "Elder silhouette with cloak, cane, and notice-board authority.",
-        "visualTags": [
-          "elder",
-          "merchant",
-          "cloak",
-          "cane"
-        ]
+        "visualTags": ["elder", "merchant", "cloak", "cane"]
       },
       "traits": {
-        "personality": [
-          "experienced",
-          "proud",
-          "pattern-seeking"
-        ],
-        "values": [
-          "evidence",
-          "reputation",
-          "preparedness"
-        ],
-        "flaws": [
-          "accuses before checking"
-        ],
-        "fears": [
-          "being dismissed as old and dramatic"
-        ],
+        "personality": ["experienced", "proud", "pattern-seeking"],
+        "values": ["evidence", "reputation", "preparedness"],
+        "flaws": ["accuses before checking"],
+        "fears": ["being dismissed as old and dramatic"],
         "speechStyle": "dry, precise, slightly theatrical"
       },
       "needs": {
@@ -976,11 +756,7 @@
           "text": "Pax keeps hiding shiny things behind the notice board.",
           "meta": {
             "importance": 7,
-            "tags": [
-              "pax",
-              "shiny",
-              "notice"
-            ],
+            "tags": ["pax", "shiny", "notice"],
             "visibility": "private",
             "emotionalWeight": 3,
             "sourceActorId": "world"
@@ -991,12 +767,7 @@
           "text": "Every missing object has been metal: shears, spoons, nails, hinges, and the inn's spare key.",
           "meta": {
             "importance": 9,
-            "tags": [
-              "metal",
-              "missing",
-              "shears",
-              "key"
-            ],
+            "tags": ["metal", "missing", "shears", "key"],
             "visibility": "shared",
             "emotionalWeight": 4,
             "sourceActorId": "world"
@@ -1007,12 +778,7 @@
           "text": "The notice board map has a faded mark where the bridge, forge, and Hollow Wood form a triangle.",
           "meta": {
             "importance": 8,
-            "tags": [
-              "notice",
-              "bridge",
-              "forge",
-              "wood"
-            ],
+            "tags": ["notice", "bridge", "forge", "wood"],
             "visibility": "shared",
             "emotionalWeight": 2,
             "sourceActorId": "world"
@@ -1033,36 +799,15 @@
         "bodyType": "short, wiry, quick-footed",
         "hair": "messy dark brown hair",
         "outfit": "rust-red vest, patched blue trousers, small side satchel",
-        "palette": [
-          "#b47657",
-          "#2d3d56",
-          "#8a6038"
-        ],
+        "palette": ["#b47657", "#2d3d56", "#8a6038"],
         "silhouette": "Small anxious silhouette with satchel and hunched shoulders.",
-        "visualTags": [
-          "child",
-          "satchel",
-          "secretive",
-          "quick"
-        ]
+        "visualTags": ["child", "satchel", "secretive", "quick"]
       },
       "traits": {
-        "personality": [
-          "playful",
-          "secretive",
-          "scared"
-        ],
-        "values": [
-          "belonging",
-          "safety",
-          "forgiveness"
-        ],
-        "flaws": [
-          "lies when cornered"
-        ],
-        "fears": [
-          "the bridge whisper saying his name"
-        ],
+        "personality": ["playful", "secretive", "scared"],
+        "values": ["belonging", "safety", "forgiveness"],
+        "flaws": ["lies when cornered"],
+        "fears": ["the bridge whisper saying his name"],
         "speechStyle": "quick, evasive, small bursts of honesty"
       },
       "needs": {
@@ -1109,9 +854,7 @@
           "id": "hidden_trinket_pile",
           "text": "Pax hid a pile of shiny objects behind the notice board after the bridge whispered to bring bright pieces.",
           "risk": 92,
-          "knownBy": [
-            "pax"
-          ]
+          "knownBy": ["pax"]
         }
       ],
       "relationshipAxes": {
@@ -1136,11 +879,7 @@
           "text": "Orrin blamed Pax for a missing spoon.",
           "meta": {
             "importance": 5,
-            "tags": [
-              "orrin",
-              "blamed",
-              "spoon"
-            ],
+            "tags": ["orrin", "blamed", "spoon"],
             "visibility": "private",
             "emotionalWeight": 6,
             "sourceActorId": "world"
@@ -1151,12 +890,7 @@
           "text": "Pax did hide some shiny things, but only after hearing the bridge whisper 'bring bright pieces'.",
           "meta": {
             "importance": 10,
-            "tags": [
-              "secret",
-              "shiny",
-              "bridge",
-              "whisper"
-            ],
+            "tags": ["secret", "shiny", "bridge", "whisper"],
             "visibility": "private",
             "emotionalWeight": 8,
             "sourceActorId": "world"
@@ -1167,12 +901,7 @@
           "text": "The cold blue ember stopped humming when Pax covered it with a wooden cup.",
           "meta": {
             "importance": 9,
-            "tags": [
-              "blue",
-              "ember",
-              "wooden",
-              "cup"
-            ],
+            "tags": ["blue", "ember", "wooden", "cup"],
             "visibility": "private",
             "emotionalWeight": 5,
             "sourceActorId": "world"

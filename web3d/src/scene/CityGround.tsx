@@ -1,23 +1,29 @@
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
-import { memo, useMemo } from "react";
-import * as THREE from "three";
+import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { memo, useMemo } from 'react';
+import * as THREE from 'three';
 
-import { shiftColor } from "../worldgen/district.ts";
-import type { WorldModel } from "../worldgen/index.ts";
-import { crosswalkTexture, speckleTexture, streetTexture } from "./textures.ts";
-import { toonGradientMap, toonMaterial } from "./toon.ts";
+import { shiftColor } from '../worldgen/district.ts';
+import type { WorldModel } from '../worldgen/index.ts';
+import { crosswalkTexture, speckleTexture, streetTexture } from './textures.ts';
+import { toonGradientMap, toonMaterial } from './toon.ts';
 
 const APRON = 14;
-const manholeMat = new THREE.MeshBasicMaterial({ color: "#23272f" });
-const manholeRimMat = new THREE.MeshBasicMaterial({ color: "#3b414d" });
+const manholeMat = new THREE.MeshBasicMaterial({ color: '#23272f' });
+const manholeRimMat = new THREE.MeshBasicMaterial({ color: '#3b414d' });
 
-export const CityGround = memo(function CityGround({ model, baseColor }: { model: WorldModel; baseColor: string }) {
+export const CityGround = memo(function CityGround({
+  model,
+  baseColor,
+}: {
+  model: WorldModel;
+  baseColor: string;
+}) {
   const { bounds } = model;
   const width = bounds.maxX - bounds.minX + APRON * 2;
   const depth = bounds.maxZ - bounds.minZ + APRON * 2;
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cz = (bounds.minZ + bounds.maxZ) / 2;
-  const edgeMat = toonMaterial("#3a4150");
+  const edgeMat = toonMaterial('#3a4150');
 
   const groundMat = useMemo(() => {
     const texture = speckleTexture(shiftColor(baseColor, 0.06)).clone();
@@ -73,11 +79,23 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
       {streetSegments
         .filter((segment) => segment.length > 14)
         .map((segment, index) => (
-          <group key={`mh-${index}`} position={[segment.cx, 0.028, segment.cz]} rotation={[0, segment.angle, 0]}>
-            <mesh position={[index % 2 === 0 ? 1.1 : -1.1, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} material={manholeMat}>
+          <group
+            key={`mh-${index}`}
+            position={[segment.cx, 0.028, segment.cz]}
+            rotation={[0, segment.angle, 0]}
+          >
+            <mesh
+              position={[index % 2 === 0 ? 1.1 : -1.1, 0, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              material={manholeMat}
+            >
               <circleGeometry args={[0.55, 16]} />
             </mesh>
-            <mesh position={[index % 2 === 0 ? 1.1 : -1.1, 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]} material={manholeRimMat}>
+            <mesh
+              position={[index % 2 === 0 ? 1.1 : -1.1, 0.002, 0]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              material={manholeRimMat}
+            >
               <ringGeometry args={[0.42, 0.5, 16]} />
             </mesh>
           </group>
@@ -90,7 +108,13 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
           rotation={[-Math.PI / 2, 0, gate.rotationY]}
         >
           <planeGeometry args={[6.4, 3]} />
-          <meshBasicMaterial map={crosswalkTexture()} transparent depthWrite={false} polygonOffset polygonOffsetFactor={-1} />
+          <meshBasicMaterial
+            map={crosswalkTexture()}
+            transparent
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-1}
+          />
         </mesh>
       ))}
       {/* every building has a real door */}
@@ -98,10 +122,10 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
         const rotY = Math.atan2(door.outsideX - door.x, door.outsideZ - door.z);
         return (
           <group key={door.buildingId} position={[door.x, 0, door.z]} rotation={[0, rotY, 0]}>
-            <mesh position={[0, 1.25, 0.1]} castShadow material={toonMaterial("#4a3527")}>
+            <mesh position={[0, 1.25, 0.1]} castShadow material={toonMaterial('#4a3527')}>
               <boxGeometry args={[1.4, 2.5, 0.16]} />
             </mesh>
-            <mesh position={[0, 2.58, 0.12]} material={toonMaterial("#ffe9b0", "#ffe9b0")}>
+            <mesh position={[0, 2.58, 0.12]} material={toonMaterial('#ffe9b0', '#ffe9b0')}>
               <sphereGeometry args={[0.1, 8, 6]} />
             </mesh>
           </group>
@@ -119,7 +143,7 @@ export const CityGround = memo(function CityGround({ model, baseColor }: { model
             <boxGeometry args={[7.4, 0.35, 0.4]} />
           </mesh>
           {/* hanging gate lantern */}
-          <mesh position={[0, 3.3, 0]} material={toonMaterial("#ffe9b0", "#ffe9b0")}>
+          <mesh position={[0, 3.3, 0]} material={toonMaterial('#ffe9b0', '#ffe9b0')}>
             <sphereGeometry args={[0.16, 10, 8]} />
           </mesh>
         </group>

@@ -2,15 +2,15 @@
  * Lifelikeness QA harness — five probes that catch silent regressions when the
  * model mix changes. Run via `pnpm probe:lifelikeness`; tests inject mocks.
  */
-import type { DialogueCompleter } from "../dialogue.ts";
-import { runDivergenceProbe } from "./divergence.ts";
-import { runGroundingProbe } from "./grounding.ts";
-import { runIdentityProbe } from "./identity.ts";
-import type { JudgeFn } from "./judge.ts";
-import { runMemoryProbe } from "./memory.ts";
-import { runSycophancyProbe } from "./sycophancy.ts";
+import type { DialogueCompleter } from '../dialogue.ts';
+import { runDivergenceProbe } from './divergence.ts';
+import { runGroundingProbe } from './grounding.ts';
+import { runIdentityProbe } from './identity.ts';
+import type { JudgeFn } from './judge.ts';
+import { runMemoryProbe } from './memory.ts';
+import { runSycophancyProbe } from './sycophancy.ts';
 
-export type ProbeStatus = "pass" | "warn" | "fail" | "skip";
+export type ProbeStatus = 'pass' | 'warn' | 'fail' | 'skip';
 
 export interface ProbeResult {
   id: string;
@@ -28,12 +28,12 @@ export interface ProbeReport {
   summary: string;
 }
 
-export { runDivergenceProbe } from "./divergence.ts";
-export { runGroundingProbe } from "./grounding.ts";
-export { runIdentityProbe } from "./identity.ts";
-export type { JudgeFn } from "./judge.ts";
-export { runMemoryProbe } from "./memory.ts";
-export { runSycophancyProbe } from "./sycophancy.ts";
+export { runDivergenceProbe } from './divergence.ts';
+export { runGroundingProbe } from './grounding.ts';
+export { runIdentityProbe } from './identity.ts';
+export type { JudgeFn } from './judge.ts';
+export { runMemoryProbe } from './memory.ts';
+export { runSycophancyProbe } from './sycophancy.ts';
 
 export interface ProbeOpts {
   /** dependency-injected completer — real gateway in CLI, mock in tests */
@@ -60,14 +60,14 @@ export async function runAllProbes(opts: ProbeOpts = {}): Promise<ProbeReport> {
   }
 
   const totalTokenSpend = results.reduce((sum, r) => sum + r.tokenSpend, 0);
-  const failed = results.filter((r) => r.status === "fail").length;
-  const warned = results.filter((r) => r.status === "warn").length;
+  const failed = results.filter((r) => r.status === 'fail').length;
+  const warned = results.filter((r) => r.status === 'warn').length;
   const summary =
     failed > 0
       ? `${failed} probe(s) FAILED`
       : warned > 0
         ? `${warned} probe(s) WARN`
-        : "all probes PASS";
+        : 'all probes PASS';
 
   return {
     ts: new Date().toISOString(),
@@ -85,17 +85,17 @@ export function formatReportCard(report: ProbeReport): string {
   ];
   for (const r of report.results) {
     const icon =
-      r.status === "pass"
-        ? "PASS"
-        : r.status === "warn"
-          ? "WARN"
-          : r.status === "skip"
-            ? "SKIP"
-            : "FAIL";
+      r.status === 'pass'
+        ? 'PASS'
+        : r.status === 'warn'
+          ? 'WARN'
+          : r.status === 'skip'
+            ? 'SKIP'
+            : 'FAIL';
     lines.push(`${icon}  ${r.label}`);
     lines.push(`     score=${r.score.toFixed(2)}  tokens=${r.tokenSpend}  ${r.detail}`);
   }
   lines.push(`─────────────────────────────────────────`);
   lines.push(`${report.summary}  (total tokens: ${report.totalTokenSpend})`);
-  return lines.join("\n");
+  return lines.join('\n');
 }

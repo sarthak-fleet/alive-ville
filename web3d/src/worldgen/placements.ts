@@ -1,6 +1,6 @@
-import type { World } from "../../../src/types.ts";
-import { itemVisualFor, stableOffset } from "../mapping/visuals.ts";
-import type { DistrictModel, InteractablePlacement, ItemPlacement, NpcSpawn } from "./model.ts";
+import type { World } from '../../../src/types.ts';
+import { itemVisualFor, stableOffset } from '../mapping/visuals.ts';
+import type { DistrictModel, InteractablePlacement, ItemPlacement, NpcSpawn } from './model.ts';
 
 export interface PlacedNpcSpawn extends NpcSpawn {
   districtId: string;
@@ -12,12 +12,22 @@ export interface WorldPlacements {
   npcSpawns: Record<string, PlacedNpcSpawn>;
 }
 
-export function itemPlacementsFor(world: World, courtyard: { x: number; z: number; radius: number }, locationId: string): ItemPlacement[] {
+export function itemPlacementsFor(
+  world: World,
+  courtyard: { x: number; z: number; radius: number },
+  locationId: string
+): ItemPlacement[] {
   return world.items
     .filter((item) => item.locationId === locationId && !item.holderId)
     .map((item) => {
       const offset = stableOffset(item.id, courtyard.radius * 0.85);
-      return { itemId: item.id, name: item.name, x: courtyard.x + offset.x, z: courtyard.z + offset.z, visual: itemVisualFor(item) };
+      return {
+        itemId: item.id,
+        name: item.name,
+        x: courtyard.x + offset.x,
+        z: courtyard.z + offset.z,
+        visual: itemVisualFor(item),
+      };
     });
 }
 
@@ -42,7 +52,10 @@ export function interactablePlacementsFor(
     });
 }
 
-export function npcSpawnFor(npcId: string, courtyard: { x: number; z: number; radius: number }): NpcSpawn {
+export function npcSpawnFor(
+  npcId: string,
+  courtyard: { x: number; z: number; radius: number }
+): NpcSpawn {
   const offset = stableOffset(npcId, courtyard.radius * 0.9);
   return {
     npcId,
@@ -54,15 +67,20 @@ export function npcSpawnFor(npcId: string, courtyard: { x: number; z: number; ra
 
 /** Dynamic, per-tick placements over a static city model. */
 export function computePlacements(world: World, districts: DistrictModel[]): WorldPlacements {
-  const items: WorldPlacements["items"] = [];
-  const interactables: WorldPlacements["interactables"] = [];
-  const npcSpawns: WorldPlacements["npcSpawns"] = {};
+  const items: WorldPlacements['items'] = [];
+  const interactables: WorldPlacements['interactables'] = [];
+  const npcSpawns: WorldPlacements['npcSpawns'] = {};
 
   for (const district of districts) {
     for (const item of itemPlacementsFor(world, district.courtyard, district.locationId)) {
       items.push({ ...item, districtId: district.locationId });
     }
-    for (const prop of interactablePlacementsFor(world, district.courtyard, district.locationId, district.palette.accent)) {
+    for (const prop of interactablePlacementsFor(
+      world,
+      district.courtyard,
+      district.locationId,
+      district.palette.accent
+    )) {
       interactables.push({ ...prop, districtId: district.locationId });
     }
   }
@@ -72,7 +90,10 @@ export function computePlacements(world: World, districts: DistrictModel[]): Wor
     if (npc.id === world.player.characterId) continue;
     const district = districtById.get(npc.locationId);
     if (!district) continue;
-    npcSpawns[npc.id] = { ...npcSpawnFor(npc.id, district.courtyard), districtId: district.locationId };
+    npcSpawns[npc.id] = {
+      ...npcSpawnFor(npc.id, district.courtyard),
+      districtId: district.locationId,
+    };
   }
 
   return { items, interactables, npcSpawns };

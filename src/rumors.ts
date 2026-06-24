@@ -1,5 +1,5 @@
-import { recordChronicle } from "./chronicle.ts";
-import type { Memory, Npc, World } from "./types.ts";
+import { recordChronicle } from './chronicle.ts';
+import type { Memory, Npc, World } from './types.ts';
 
 /**
  * Information is alive: what NPCs hear travels, and what they learn changes
@@ -19,7 +19,7 @@ import type { Memory, Npc, World } from "./types.ts";
  */
 
 export interface RumorEvent {
-  kind: "gossip_spread" | "secret_revealed" | "turned_against";
+  kind: 'gossip_spread' | 'secret_revealed' | 'turned_against';
   actorId: string;
   aboutId?: string;
   text: string;
@@ -55,12 +55,14 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
       const memory = juiciestShareable(teller, world.tick);
       if (!memory) continue;
       // tell one co-located NPC who hasn't heard it (round-robin by tick)
-      const listeners = group.filter((other) => other.id !== teller.id && !knowsText(other, memory.text));
+      const listeners = group.filter(
+        (other) => other.id !== teller.id && !knowsText(other, memory.text)
+      );
       if (listeners.length === 0) continue;
       const listener = listeners[world.tick % listeners.length]!;
       const sourceChronicleId = memory.meta?.chronicleId;
       const chronicle = recordChronicle(world, {
-        kind: "gossip",
+        kind: 'gossip',
         text: `${teller.name} told ${listener.name} what they heard.`,
         actorId: teller.id,
         targetId: listener.id,
@@ -71,15 +73,15 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
         text: `${teller.name} told me: ${strip(memory.text)}`,
         meta: {
           sourceActorId: teller.id,
-          visibility: "shared",
+          visibility: 'shared',
           importance: Math.max(1, (memory.meta?.importance ?? 2) - 1),
-          tags: ["rumor"],
+          tags: ['rumor'],
           chronicleId: chronicle.id,
         },
       });
       shares += 1;
       events.push({
-        kind: "gossip_spread",
+        kind: 'gossip_spread',
         actorId: teller.id,
         aboutId: listener.id,
         // carry the actual rumor so it can surface as a visible murmur (showcase)
@@ -93,7 +95,7 @@ function diffuseGossip(world: World, events: RumorEvent[]): void {
 function juiciestShareable(npc: Npc, tick: number): Memory | null {
   for (let index = npc.memories.length - 1; index >= 0; index -= 1) {
     const memory = npc.memories[index]!;
-    if ((memory.meta?.visibility ?? "private") === "private") continue;
+    if ((memory.meta?.visibility ?? 'private') === 'private') continue;
     if ((memory.meta?.importance ?? 0) < SHARE_MIN_IMPORTANCE) continue;
     if (tick - memory.tick > 60) return null; // old news stops travelling
     return memory;
@@ -103,17 +105,26 @@ function juiciestShareable(npc: Npc, tick: number): Memory | null {
 
 function knowsText(npc: Npc, text: string): boolean {
   const needle = strip(text).toLowerCase();
-  return npc.memories.some((memory) => strip(memory.text).toLowerCase().includes(needle.slice(0, 80)));
+  return npc.memories.some((memory) =>
+    strip(memory.text).toLowerCase().includes(needle.slice(0, 80))
+  );
 }
 
 function strip(text: string): string {
-  return text.replace(/^[^:]{0,40}told me: /i, "").trim();
+  return text.replace(/^[^:]{0,40}told me: /i, '').trim();
 }
 
 // ---------------------------------------------------------------------------
 
 function significantWords(text: string): string[] {
-  return [...new Set(text.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length >= 4))];
+  return [
+    ...new Set(
+      text
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length >= 4)
+    ),
+  ];
 }
 
 function revealSecrets(world: World, events: RumorEvent[]): void {
@@ -129,14 +140,16 @@ function revealSecrets(world: World, events: RumorEvent[]): void {
 
         secret.knownBy = [...(secret.knownBy ?? []), other.id];
         const revealChronicle = recordChronicle(world, {
-          kind: "secret_revealed",
+          kind: 'secret_revealed',
           text: `${other.name} has learned ${holder.name}'s secret.`,
           actorId: other.id,
           targetId: holder.id,
-          causeIds: recognition.trigger?.meta?.chronicleId ? [recognition.trigger.meta.chronicleId] : [],
+          causeIds: recognition.trigger?.meta?.chronicleId
+            ? [recognition.trigger.meta.chronicleId]
+            : [],
         });
         events.push({
-          kind: "secret_revealed",
+          kind: 'secret_revealed',
           actorId: other.id,
           aboutId: holder.id,
           text: `${other.name} has learned ${holder.name}'s secret.`,
@@ -157,9 +170,13 @@ interface RecognitionResult {
  * `trigger` field returns the newest memory that contributed at least one
  * matching word — that's the chronicle ancestor we link the revelation to.
  */
-function recognizesSecret(npc: Npc, secretWords: string[], threshold = 0.5): RecognitionResult | null {
+function recognizesSecret(
+  npc: Npc,
+  secretWords: string[],
+  threshold = 0.5
+): RecognitionResult | null {
   const recent = npc.memories.slice(-40);
-  const heard = recent.map((memory) => memory.text.toLowerCase()).join(" ");
+  const heard = recent.map((memory) => memory.text.toLowerCase()).join(' ');
   let hits = 0;
   for (const word of secretWords) if (heard.includes(word)) hits += 1;
   if (hits < Math.max(2, Math.ceil(secretWords.length * threshold))) return null;
@@ -204,15 +221,21 @@ function applyRevelation(
   knower.memories.push({
     tick: world.tick,
     text: `I have learned ${holder.name}'s secret. It changes things between us.`,
-    meta: { importance: 3, visibility: "shared", sourceActorId: holder.id, tags: ["secret"], chronicleId: revealChronicleId },
+    meta: {
+      importance: 3,
+      visibility: 'shared',
+      sourceActorId: holder.id,
+      tags: ['secret'],
+      chronicleId: revealChronicleId,
+    },
   });
 
   // principled NPCs act on dangerous secrets instead of sitting on them
-  const values = (knower.traits?.values ?? []).join(" ");
+  const values = (knower.traits?.values ?? []).join(' ');
   if (risk >= 60 && CONFRONT_VALUES.test(values)) {
     knower.relationships[holder.id] = Math.min(knower.relationships[holder.id] ?? 0, -4);
     const turnedChronicle = recordChronicle(world, {
-      kind: "turned_against",
+      kind: 'turned_against',
       text: `${knower.name} has turned against ${holder.name}.`,
       actorId: knower.id,
       targetId: holder.id,
@@ -223,15 +246,15 @@ function applyRevelation(
       {
         id: `${knower.id}_confront_${holder.id}_${world.tick}`,
         title: `Confront ${holder.name} about what I learned`,
-        kind: "reveal",
+        kind: 'reveal',
         priority: 84,
-        status: "active",
+        status: 'active',
         targetId: holder.locationId,
         chronicleId: turnedChronicle.id,
       },
     ];
     events.push({
-      kind: "turned_against",
+      kind: 'turned_against',
       actorId: knower.id,
       aboutId: holder.id,
       text: `${knower.name} has turned against ${holder.name}.`,

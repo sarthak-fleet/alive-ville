@@ -1,10 +1,10 @@
-import { Billboard, Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
+import { Billboard, Text } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 
-import type { Npc as NpcData, Quest } from "../../../src/types.ts";
-import { missSwoosh, telegraphSting } from "../audio/sfx.ts";
+import type { Npc as NpcData, Quest } from '../../../src/types.ts';
+import { missSwoosh, telegraphSting } from '../audio/sfx.ts';
 import {
   CHIP_DAMAGE,
   MELEE_RANGE,
@@ -13,20 +13,26 @@ import {
   STANCE_EXIT_RANGE,
   STANCE_RANGE,
   STRAFE_SPEED,
-} from "../combat/pacing.ts";
-import { applyIncomingHit, playerCombatState } from "../combat/player-fsm.ts";
-import { useCombatStore } from "../combat/store.ts";
-import { npcRegistry, playerPosition, registerNpc, scaledDelta, unregisterNpc } from "../controls/runtime.ts";
-import { useDirectorStore } from "../director/store.ts";
-import { useUiStore } from "../store/ui.ts";
-import { findDistrictPath, type WorldModel } from "../worldgen/index.ts";
-import type { PlacedNpcSpawn } from "../worldgen/placements.ts";
-import { rngFor } from "../worldgen/rng.ts";
-import { ArchetypeCharacter } from "./ArchetypeCharacter.tsx";
-import { archetypeFor } from "./archetypes.ts";
-import { useBanterStore } from "./banter.ts";
-import type { CharacterAnimationHandle } from "./CharacterModel.tsx";
-import { followersStore } from "./followers.ts";
+} from '../combat/pacing.ts';
+import { applyIncomingHit, playerCombatState } from '../combat/player-fsm.ts';
+import { useCombatStore } from '../combat/store.ts';
+import {
+  npcRegistry,
+  playerPosition,
+  registerNpc,
+  scaledDelta,
+  unregisterNpc,
+} from '../controls/runtime.ts';
+import { useDirectorStore } from '../director/store.ts';
+import { useUiStore } from '../store/ui.ts';
+import { findDistrictPath, type WorldModel } from '../worldgen/index.ts';
+import type { PlacedNpcSpawn } from '../worldgen/placements.ts';
+import { rngFor } from '../worldgen/rng.ts';
+import { ArchetypeCharacter } from './ArchetypeCharacter.tsx';
+import { archetypeFor } from './archetypes.ts';
+import { useBanterStore } from './banter.ts';
+import type { CharacterAnimationHandle } from './CharacterModel.tsx';
+import { followersStore } from './followers.ts';
 
 const WALK_SPEED = 1.15;
 const TRAVEL_SPEED = 3.4;
@@ -40,7 +46,7 @@ const CHIP_TELEGRAPH_S = 0.25;
 /** Post-strike recovery pause before the next chip cycle begins. */
 const CHIP_RECOVER_S = 0.22;
 
-type EnemyAiState = "approach" | "telegraph" | "strike" | "recover" | "strafe" | "retreat";
+type EnemyAiState = 'approach' | 'telegraph' | 'strike' | 'recover' | 'strafe' | 'retreat';
 
 interface NpcProps {
   npc: NpcData;
@@ -52,20 +58,20 @@ interface NpcProps {
   staticMode?: boolean;
 }
 
-type AmbientRole = "shopkeeper" | "patroller" | "idler" | "wanderer";
+type AmbientRole = 'shopkeeper' | 'patroller' | 'idler' | 'wanderer';
 
 function ambientRoleFor(npc: NpcData): AmbientRole {
-  const text = `${npc.role ?? ""} ${npc.description ?? ""}`.toLowerCase();
-  if (/merchant|shop|keeper|vendor|clerk|innkeep|trader|bartend/.test(text)) return "shopkeeper";
-  if (/guard|patrol|hero|watch|officer|rider|soldier|knight/.test(text)) return "patroller";
-  if (/elder|old |child|kid|sage|sitting/.test(text)) return "idler";
-  return "wanderer";
+  const text = `${npc.role ?? ''} ${npc.description ?? ''}`.toLowerCase();
+  if (/merchant|shop|keeper|vendor|clerk|innkeep|trader|bartend/.test(text)) return 'shopkeeper';
+  if (/guard|patrol|hero|watch|officer|rider|soldier|knight/.test(text)) return 'patroller';
+  if (/elder|old |child|kid|sage|sitting/.test(text)) return 'idler';
+  return 'wanderer';
 }
 
 /** higher tier = more agency = acts more often and roams further */
 function agencyFor(npc: NpcData): number {
-  if (npc.tier === "quest") return 1;
-  if (npc.tier === "background") return 0.45;
+  if (npc.tier === 'quest') return 1;
+  if (npc.tier === 'background') return 0.45;
   return 0.7;
 }
 
@@ -76,14 +82,14 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
   // position prop must stay constant: movement is imperative, and a reactive
   // position would teleport the node whenever the sim relocates the NPC
   const [initialSpawn] = useState(() => ({ x: spawn.x, z: spawn.z, heading: spawn.heading }));
-  const personaText = `${npc.name} ${npc.role ?? ""} ${npc.description ?? ""}`;
+  const personaText = `${npc.name} ${npc.role ?? ''} ${npc.description ?? ''}`;
   // Quaternius archetype rigs (CC0, fully animated, per-instance cloned) are the
   // primary models — far higher quality + variety than the procedural mannequin,
   // which stays as the fallback for personas no archetype matches. The anime VRM
   // path (VrmCharacter.tsx + vrm.ts) is shelved as beta while we lean on the
   // stronger stylized asset libraries.
   const archetypeKey = useMemo(
-    () => archetypeFor(personaText, npc.role ?? "", npc.appearance?.visualTags ?? [], npc.id),
+    () => archetypeFor(personaText, npc.role ?? '', npc.appearance?.visualTags ?? [], npc.id),
     [personaText, npc.role, npc.appearance?.visualTags, npc.id]
   );
   const inDialogue = useUiStore((state) => state.dialogueNpcId === npc.id);
@@ -92,20 +98,20 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
   const lockedOn = useCombatStore((state) => state.lockTargetId === npc.id);
 
   const state = useRef({
-    rng: rngFor(worldId, npc.id, "wander"),
+    rng: rngFor(worldId, npc.id, 'wander'),
     districtId: spawn.districtId,
     travelWaypoints: null as Array<{ x: number; z: number }> | null,
     wanderTarget: new THREE.Vector3(spawn.x, 0, spawn.z),
     wanderCenter: { x: spawn.x, z: spawn.z },
     waitUntil: 0,
     heading: spawn.heading,
-    aiState: "approach" as EnemyAiState,
+    aiState: 'approach' as EnemyAiState,
     aiUntil: 0,
     struck: false,
     patrolAngle: 0,
     // strafe + chip cadence
     /** Current lateral strafe sign: +1 or -1. */
-    strafeSign: (rngFor(worldId, npc.id, "strafe")() < 0.5 ? 1 : -1) as 1 | -1,
+    strafeSign: (rngFor(worldId, npc.id, 'strafe')() < 0.5 ? 1 : -1) as 1 | -1,
     /** Time when strafe direction should flip (seconds). */
     strafeFlipAt: 0,
     /** Time when the next chip attack window opens (seconds). */
@@ -121,12 +127,14 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
   const routineAnchor = useMemo(() => {
     const district = model.districts.find((entry) => entry.locationId === spawn.districtId);
     if (!district) return null;
-    if (ambientRole === "shopkeeper") {
-      const stall = district.props.find((prop) => prop.kind === "stall") ?? district.props.find((prop) => prop.kind === "crate");
+    if (ambientRole === 'shopkeeper') {
+      const stall =
+        district.props.find((prop) => prop.kind === 'stall') ??
+        district.props.find((prop) => prop.kind === 'crate');
       if (stall) return { x: stall.x + 0.9, z: stall.z + 0.4 };
     }
-    if (ambientRole === "idler") {
-      const bench = district.props.find((prop) => prop.kind === "bench");
+    if (ambientRole === 'idler') {
+      const bench = district.props.find((prop) => prop.kind === 'bench');
       if (bench) return { x: bench.x + 0.4, z: bench.z + 0.7 };
     }
     return null;
@@ -145,7 +153,7 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
   useEffect(() => {
     const hp = enemy?.hp ?? null;
     if (hp !== null && prevHp.current !== null && hp < prevHp.current && !enemy?.defeated) {
-      animation.current?.trigger("hit");
+      animation.current?.trigger('hit');
       animation.current?.flash?.();
     }
     prevHp.current = hp;
@@ -201,15 +209,27 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
     const inCutscene = Boolean(useDirectorStore.getState().cutscene);
 
     // hostile combat AI takes priority over ambient behavior
-    if (enemy?.hostile && playerCombatState.kind !== "dead" && !inCutscene) {
-      updateEnemyAi(npc.id, npc.name, s, node, time, delta, animation.current, visualHitPoint(node));
+    if (enemy?.hostile && playerCombatState.kind !== 'dead' && !inCutscene) {
+      updateEnemyAi(
+        npc.id,
+        npc.name,
+        s,
+        node,
+        time,
+        delta,
+        animation.current,
+        visualHitPoint(node)
+      );
       syncRegistry(npc.id, node.position);
       return;
     }
 
     if (inDialogue && !s.travelWaypoints) {
       animation.current?.setSpeed(0);
-      const toPlayer = Math.atan2(playerPosition.x - node.position.x, playerPosition.z - node.position.z);
+      const toPlayer = Math.atan2(
+        playerPosition.x - node.position.x,
+        playerPosition.z - node.position.z
+      );
       s.heading = dampAngle(s.heading, toPlayer, 8, delta);
       node.rotation.y = s.heading;
       syncRegistry(npc.id, node.position);
@@ -256,7 +276,12 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
         animation.current?.setSpeed(speed);
       } else {
         animation.current?.setSpeed(0);
-        s.heading = dampAngle(s.heading, Math.atan2(playerPosition.x - node.position.x, playerPosition.z - node.position.z), 6, delta);
+        s.heading = dampAngle(
+          s.heading,
+          Math.atan2(playerPosition.x - node.position.x, playerPosition.z - node.position.z),
+          6,
+          delta
+        );
         node.rotation.y = s.heading;
       }
       syncRegistry(npc.id, node.position);
@@ -270,7 +295,12 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
       animation.current?.setTalking?.(true);
       const partner = npcRegistry.get(liveBanter.partnerId);
       if (partner) {
-        s.heading = dampAngle(s.heading, Math.atan2(partner.position.x - node.position.x, partner.position.z - node.position.z), 8, delta);
+        s.heading = dampAngle(
+          s.heading,
+          Math.atan2(partner.position.x - node.position.x, partner.position.z - node.position.z),
+          8,
+          delta
+        );
         node.rotation.y = s.heading;
       }
       syncRegistry(npc.id, node.position);
@@ -280,10 +310,14 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
     // ambient routine targets
     if (time > s.waitUntil) {
       if (s.waitUntil !== 0) {
-        if (ambientRole === "shopkeeper" && routineAnchor) {
+        if (ambientRole === 'shopkeeper' && routineAnchor) {
           const jitter = 0.35;
-          s.wanderTarget.set(routineAnchor.x + (s.rng() - 0.5) * jitter, 0, routineAnchor.z + (s.rng() - 0.5) * jitter);
-        } else if (ambientRole === "patroller") {
+          s.wanderTarget.set(
+            routineAnchor.x + (s.rng() - 0.5) * jitter,
+            0,
+            routineAnchor.z + (s.rng() - 0.5) * jitter
+          );
+        } else if (ambientRole === 'patroller') {
           const district = model.districts.find((entry) => entry.locationId === s.districtId);
           if (district) {
             s.patrolAngle += 0.9 + s.rng() * 0.5;
@@ -294,15 +328,23 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
               district.courtyard.z + Math.sin(s.patrolAngle) * radius
             );
           }
-        } else if (ambientRole === "idler" && routineAnchor) {
-          s.wanderTarget.set(routineAnchor.x + (s.rng() - 0.5) * 0.8, 0, routineAnchor.z + (s.rng() - 0.5) * 0.8);
+        } else if (ambientRole === 'idler' && routineAnchor) {
+          s.wanderTarget.set(
+            routineAnchor.x + (s.rng() - 0.5) * 0.8,
+            0,
+            routineAnchor.z + (s.rng() - 0.5) * 0.8
+          );
         } else {
           const angle = s.rng() * Math.PI * 2;
           const radius = s.rng() * WANDER_RADIUS;
-          s.wanderTarget.set(s.wanderCenter.x + Math.cos(angle) * radius, 0, s.wanderCenter.z + Math.sin(angle) * radius);
+          s.wanderTarget.set(
+            s.wanderCenter.x + Math.cos(angle) * radius,
+            0,
+            s.wanderCenter.z + Math.sin(angle) * radius
+          );
         }
       }
-      const idle = ambientRole === "idler" ? 7 : ambientRole === "shopkeeper" ? 5 : 2;
+      const idle = ambientRole === 'idler' ? 7 : ambientRole === 'shopkeeper' ? 5 : 2;
       s.waitUntil = time + (idle + s.rng() * 4) / agency;
     }
 
@@ -322,7 +364,9 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
     syncRegistry(npc.id, node.position);
   });
 
-  const hasOpenQuest = quests.some((quest) => quest.giverId === npc.id && (quest.status ?? "open") === "open");
+  const hasOpenQuest = quests.some(
+    (quest) => quest.giverId === npc.id && (quest.status ?? 'open') === 'open'
+  );
   const defeated = Boolean(enemy?.defeated) || Boolean(npc.combat?.defeated);
   const hostile = Boolean(enemy?.hostile) && !defeated;
 
@@ -345,18 +389,27 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
   if (corpseHidden) return null;
 
   return (
-    <group ref={group} position={[initialSpawn.x, 0, initialSpawn.z]} rotation={[0, initialSpawn.heading, 0]}>
+    <group
+      ref={group}
+      position={[initialSpawn.x, 0, initialSpawn.z]}
+      rotation={[0, initialSpawn.heading, 0]}
+    >
       <ArchetypeCharacter ref={animation} archetype={archetypeKey} />
       {banter ? (
         <Billboard position={[0, 2.75, 0]}>
           <mesh position={[0, 0, -0.01]}>
             <planeGeometry args={[Math.min(2.6, 0.6 + banter.text.length * 0.024), 0.62]} />
-            <meshBasicMaterial color={banter.confrontation ? "#3a1418" : "#10141f"} transparent opacity={0.88} depthWrite={false} />
+            <meshBasicMaterial
+              color={banter.confrontation ? '#3a1418' : '#10141f'}
+              transparent
+              opacity={0.88}
+              depthWrite={false}
+            />
           </mesh>
           <Text
             fontSize={0.13}
             maxWidth={Math.min(2.4, 0.5 + banter.text.length * 0.024)}
-            color={banter.confrontation ? "#ffb3a8" : "#e8ecf5"}
+            color={banter.confrontation ? '#ffb3a8' : '#e8ecf5'}
             outlineWidth={0.008}
             outlineColor="#0a0d16"
             anchorX="center"
@@ -370,7 +423,7 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
       <Billboard ref={labelRef} position={[0, 2.2, 0]}>
         <Text
           fontSize={0.19}
-          color={defeated ? "#8b93a3" : hostile ? "#ff7a6a" : "#e8ecf5"}
+          color={defeated ? '#8b93a3' : hostile ? '#ff7a6a' : '#e8ecf5'}
           fillOpacity={0.92}
           outlineWidth={0.014}
           outlineColor="#101421"
@@ -380,7 +433,14 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
           {npc.name}
         </Text>
         {hasOpenQuest && !defeated && !hostile ? (
-          <Text position={[0, 0.34, 0]} fontSize={0.4} color="#ffd84d" outlineWidth={0.03} outlineColor="#3d2a05" anchorX="center">
+          <Text
+            position={[0, 0.34, 0]}
+            fontSize={0.4}
+            color="#ffd84d"
+            outlineWidth={0.03}
+            outlineColor="#3d2a05"
+            anchorX="center"
+          >
             !
           </Text>
         ) : null}
@@ -397,7 +457,14 @@ export function Npc({ npc, worldId, spawn, model, quests, staticMode }: NpcProps
           </group>
         ) : null}
         {lockedOn && !defeated ? (
-          <Text position={[0, 0.62, 0]} fontSize={0.34} color="#ffd84d" outlineWidth={0.03} outlineColor="#3d2a05" anchorX="center">
+          <Text
+            position={[0, 0.62, 0]}
+            fontSize={0.34}
+            color="#ffd84d"
+            outlineWidth={0.03}
+            outlineColor="#3d2a05"
+            anchorX="center"
+          >
             ◆
           </Text>
         ) : null}
@@ -460,23 +527,23 @@ function updateEnemyAi(
       node.rotation.y = s.heading;
       return;
     }
-  } else if (distance > STANCE_EXIT_RANGE && s.aiState !== "telegraph" && s.aiState !== "strike") {
+  } else if (distance > STANCE_EXIT_RANGE && s.aiState !== 'telegraph' && s.aiState !== 'strike') {
     // dropped out of stance range — exit stance and stop
     s.inStance = false;
-    s.aiState = "approach";
+    s.aiState = 'approach';
     animation?.setSpeed(0);
     return;
   }
 
   // ── approach ────────────────────────────────────────────────────────────────
-  if (s.aiState === "approach") {
+  if (s.aiState === 'approach') {
     if (lowHp && distance < 6) {
-      s.aiState = "retreat";
+      s.aiState = 'retreat';
       s.aiUntil = time + 2.2;
       animation?.setTelegraph?.(false);
     } else if (distance <= MELEE_RANGE) {
       // Within melee range: start strafing and wait for chip timer
-      s.aiState = "strafe";
+      s.aiState = 'strafe';
       if (time > s.strafeFlipAt) {
         s.strafeFlipAt = time + 3 + s.rng() * 2;
       }
@@ -485,17 +552,19 @@ function updateEnemyAi(
       _startTelegraph(s, store, time, nowMs, animation, hitPoint);
     } else {
       // Close in
-      const step = toPlayer.normalize().multiplyScalar(Math.min(CHASE_SPEED * delta, Math.max(0, distance - MELEE_RANGE)));
+      const step = toPlayer
+        .normalize()
+        .multiplyScalar(Math.min(CHASE_SPEED * delta, Math.max(0, distance - MELEE_RANGE)));
       node.position.add(step);
       animation?.setSpeed(CHASE_SPEED);
     }
     s.heading = dampAngle(s.heading, faceYaw, 10, delta);
     node.rotation.y = s.heading;
-    if (s.aiState === "approach") return;
+    if (s.aiState === 'approach') return;
   }
 
   // ── strafe ──────────────────────────────────────────────────────────────────
-  if (s.aiState === "strafe") {
+  if (s.aiState === 'strafe') {
     // Flip direction every 3-5 s
     if (time >= s.strafeFlipAt) {
       s.strafeSign = s.strafeSign === 1 ? -1 : 1;
@@ -504,12 +573,12 @@ function updateEnemyAi(
 
     // Exit strafe conditions
     if (lowHp && distance < 6) {
-      s.aiState = "retreat";
+      s.aiState = 'retreat';
       s.aiUntil = time + 2.2;
       animation?.setTelegraph?.(false);
     } else if (distance > MELEE_STRIKE_RANGE + 0.5) {
       // player backed away — close in
-      s.aiState = "approach";
+      s.aiState = 'approach';
     } else if (time >= s.nextChipAt) {
       // chip timer fired: start the attack sequence
       _startTelegraph(s, store, time, nowMs, animation, hitPoint);
@@ -526,25 +595,25 @@ function updateEnemyAi(
     }
     s.heading = dampAngle(s.heading, faceYaw, 10, delta);
     node.rotation.y = s.heading;
-    if (s.aiState === "strafe") return;
+    if (s.aiState === 'strafe') return;
   }
 
   // ── telegraph ───────────────────────────────────────────────────────────────
-  if (s.aiState === "telegraph") {
+  if (s.aiState === 'telegraph') {
     animation?.setSpeed(0);
     s.heading = dampAngle(s.heading, faceYaw, 6, delta);
     node.rotation.y = s.heading;
     if (time >= s.aiUntil) {
-      s.aiState = "strike";
+      s.aiState = 'strike';
       s.aiUntil = time + 0.18;
-      animation?.trigger("attack1");
+      animation?.trigger('attack1');
       animation?.setTelegraph?.(false);
     }
     return;
   }
 
   // ── strike ───────────────────────────────────────────────────────────────────
-  if (s.aiState === "strike") {
+  if (s.aiState === 'strike') {
     animation?.setSpeed(0);
     if (!s.struck && distance <= MELEE_STRIKE_RANGE) {
       s.struck = true;
@@ -561,38 +630,38 @@ function updateEnemyAi(
         // dodged — near-miss whoosh
         missSwoosh();
         store.addVfx({
-          kind: "dust",
+          kind: 'dust',
           x: playerPosition.x,
           y: playerPosition.y + 0.9,
           z: playerPosition.z,
-          color: "#c0c8d8",
+          color: '#c0c8d8',
           startedAt: nowMs,
           expiresAt: nowMs + 320,
         });
       }
     }
     if (time >= s.aiUntil) {
-      s.aiState = "recover";
+      s.aiState = 'recover';
       s.aiUntil = time + CHIP_RECOVER_S;
     }
     return;
   }
 
   // ── recover ──────────────────────────────────────────────────────────────────
-  if (s.aiState === "recover") {
+  if (s.aiState === 'recover') {
     animation?.setSpeed(0);
     if (time >= s.aiUntil) {
       // Schedule next chip: jittered interval counted from NOW (post-recover)
       s.nextChipAt = time + nextChipDelay(s.rng) / 1000;
       // Resume strafing if still in melee range, otherwise approach
-      s.aiState = distance <= MELEE_STRIKE_RANGE + 0.5 ? "strafe" : "approach";
+      s.aiState = distance <= MELEE_STRIKE_RANGE + 0.5 ? 'strafe' : 'approach';
     }
     return;
   }
 
   // ── retreat ──────────────────────────────────────────────────────────────────
   if (time >= s.aiUntil || distance > 9) {
-    s.aiState = "approach";
+    s.aiState = 'approach';
     return;
   }
   const away = toPlayer.normalize().multiplyScalar(-RETREAT_SPEED * delta);
@@ -611,21 +680,20 @@ function _startTelegraph(
   animation: CharacterAnimationHandle | null,
   hitPoint: { x: number; y: number; z: number }
 ): void {
-  s.aiState = "telegraph";
+  s.aiState = 'telegraph';
   s.aiUntil = time + CHIP_TELEGRAPH_S;
   s.struck = false;
-  animation?.trigger("telegraph");
+  animation?.trigger('telegraph');
   animation?.setTelegraph?.(true);
   telegraphSting();
   store.addVfx({
-    kind: "telegraph",
+    kind: 'telegraph',
     ...hitPoint,
-    color: "#ff8830",
+    color: '#ff8830',
     startedAt: nowMs,
     expiresAt: nowMs + CHIP_TELEGRAPH_S * 1000,
   });
 }
-
 
 function dampAngle(current: number, target: number, lambda: number, delta: number): number {
   let diff = target - current;

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 /**
  * Camera-occlusion fading: buildings between the camera and the player turn
@@ -34,11 +34,19 @@ export function unregisterOccluder(object: THREE.Object3D): void {
   }
 }
 
-export function updateOcclusion(camera: THREE.Camera, target: THREE.Vector3, elapsed: number, delta: number): void {
+export function updateOcclusion(
+  camera: THREE.Camera,
+  target: THREE.Vector3,
+  elapsed: number,
+  delta: number
+): void {
   if (elapsed - lastScan > 0.12) {
     lastScan = elapsed;
     const origin = camera.position;
-    const direction = target.clone().setY(target.y + 1.2).sub(origin);
+    const direction = target
+      .clone()
+      .setY(target.y + 1.2)
+      .sub(origin);
     const distance = direction.length();
     raycaster.set(origin, direction.normalize());
     raycaster.far = Math.max(0.1, distance - 0.6);
