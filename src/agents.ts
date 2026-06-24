@@ -1,6 +1,15 @@
-import { rankMemories, tokenize } from "./memory-score.ts";
-import { phasePressureRevealText, planRevealText, quietWorldRevealText } from "./story-context.ts";
-import type { AgentGoalKind, AgentIntent, AppliedAction, Memory, Npc, RelationshipAxes, ScheduleBlock, World } from "./types.ts";
+import { rankMemories, tokenize } from './memory-score.ts';
+import { phasePressureRevealText, planRevealText, quietWorldRevealText } from './story-context.ts';
+import type {
+  AgentGoalKind,
+  AgentIntent,
+  AppliedAction,
+  Memory,
+  Npc,
+  RelationshipAxes,
+  ScheduleBlock,
+  World,
+} from './types.ts';
 
 const DEFAULT_NEEDS = {
   safety: 50,
@@ -36,7 +45,7 @@ export function ensureAgentStateDefaults(world: World): void {
   for (const npc of world.npcs) {
     npc.role ??= roleFor(npc);
     npc.needs = { ...DEFAULT_NEEDS, ...(npc.needs ?? {}) };
-    npc.mood ??= { emotion: "focused", stress: 20, confidence: 50, suspicion: 20 };
+    npc.mood ??= { emotion: 'focused', stress: 20, confidence: 50, suspicion: 20 };
     npc.traits ??= { personality: [], values: [], flaws: [], fears: [] };
     npc.ambitions ??= goalsToAmbitions(npc);
     npc.relationshipAxes ??= {};
@@ -80,15 +89,15 @@ export function refreshMoods(world: World): void {
     // High director pressure raises village-wide anxiety
     if (directorPressure > 65) {
       npc.mood.stress = Math.min(100, npc.mood.stress + 4);
-      npc.mood.emotion = "anxious";
+      npc.mood.emotion = 'anxious';
     } else if (npc.mood.stress > 70) {
-      npc.mood.emotion = "stressed";
+      npc.mood.emotion = 'stressed';
     } else if (npc.mood.suspicion > 70) {
-      npc.mood.emotion = "wary";
+      npc.mood.emotion = 'wary';
     } else if (npc.mood.stress < 20 && npc.mood.suspicion < 20) {
-      npc.mood.emotion = "calm";
+      npc.mood.emotion = 'calm';
     } else {
-      npc.mood.emotion = "focused";
+      npc.mood.emotion = 'focused';
     }
   }
 }
@@ -96,11 +105,19 @@ export function refreshMoods(world: World): void {
 export function advanceStoryPressure(world: World, actions: AppliedAction[]): void {
   if (world.directorState) {
     world.directorState.quietTicks = actions.length > 0 ? 0 : world.directorState.quietTicks + 1;
-    world.directorState.pressure = clamp(world.directorState.pressure + (actions.length > 0 ? 2 : 8), 0, 100);
+    world.directorState.pressure = clamp(
+      world.directorState.pressure + (actions.length > 0 ? 2 : 8),
+      0,
+      100
+    );
     if (world.directorState.quietTicks >= 2) {
       addPendingReveal(world, quietWorldRevealText(world));
     }
-    if ((world.storyProgress?.phase === "nightfall_warning" || world.storyProgress?.phase === "shadow_confrontation") && world.directorState.quietTicks >= 1) {
+    if (
+      (world.storyProgress?.phase === 'nightfall_warning' ||
+        world.storyProgress?.phase === 'shadow_confrontation') &&
+      world.directorState.quietTicks >= 1
+    ) {
       const phaseReveal = phasePressureRevealText(world);
       if (phaseReveal) addPendingReveal(world, phaseReveal);
     }
@@ -130,15 +147,31 @@ function advanceTensions(world: World): void {
   const quietTicks = world.directorState?.quietTicks ?? 0;
   const duskOrNight = world.clock.hour >= 18 || world.clock.hour < 6;
   for (const tension of world.tensions ?? []) {
-    if (tension.status === "resolved") continue;
-    const previousStatus = tension.status ?? "quiet";
-    const hiddenPlanPressure = (world.villainPlans ?? []).some((plan) =>
-      plan.stage >= 2 && tension.involvedIds?.some((id) => id === plan.actorId || plan.knownFacts?.some((fact) => fact.toLowerCase().includes(id.toLowerCase())))
-    ) ? 6 : 0;
-    tension.pressure = clamp(tension.pressure + 2 + (quietTicks >= 2 ? 5 : 0) + (duskOrNight ? 4 : 0) + hiddenPlanPressure, 0, 100);
-    tension.status = tension.pressure >= 75 ? "escalating" : tension.pressure >= 40 ? "active" : "quiet";
-    if (tension.status === "escalating" && previousStatus !== "escalating") {
-      addPendingReveal(world, `Tension escalated: ${tension.title}. Counterplay: ${counterplayForTension(world.id, tension.id)}`);
+    if (tension.status === 'resolved') continue;
+    const previousStatus = tension.status ?? 'quiet';
+    const hiddenPlanPressure = (world.villainPlans ?? []).some(
+      (plan) =>
+        plan.stage >= 2 &&
+        tension.involvedIds?.some(
+          (id) =>
+            id === plan.actorId ||
+            plan.knownFacts?.some((fact) => fact.toLowerCase().includes(id.toLowerCase()))
+        )
+    )
+      ? 6
+      : 0;
+    tension.pressure = clamp(
+      tension.pressure + 2 + (quietTicks >= 2 ? 5 : 0) + (duskOrNight ? 4 : 0) + hiddenPlanPressure,
+      0,
+      100
+    );
+    tension.status =
+      tension.pressure >= 75 ? 'escalating' : tension.pressure >= 40 ? 'active' : 'quiet';
+    if (tension.status === 'escalating' && previousStatus !== 'escalating') {
+      addPendingReveal(
+        world,
+        `Tension escalated: ${tension.title}. Counterplay: ${counterplayForTension(world.id, tension.id)}`
+      );
     }
   }
 }
@@ -146,18 +179,30 @@ function advanceTensions(world: World): void {
 export function counterplayForTension(worldId: string, tensionId: string): string {
   const hints: Record<string, Record<string, string>> = {
     ashment: {
-      missing_metal: "inspect the bridge marks, return Mira's shears, or bring bridge proof to Lena",
+      missing_metal:
+        "inspect the bridge marks, return Mira's shears, or bring bridge proof to Lena",
       forge_unlit: "recover dry bellows leather and rekindle Tomas's forge",
     },
     opm_z_city: {
-      overpass_alert: "inspect the report board, recover proof at the overpass, or file it with Mumen Rider",
-      sonic_challenge: "recover Saitama's coupon, inspect Sonic's marks, or defeat the challenger cleanly",
+      overpass_alert:
+        'inspect the report board, recover proof at the overpass, or file it with Mumen Rider',
+      sonic_challenge:
+        "recover Saitama's coupon, inspect Sonic's marks, or defeat the challenger cleanly",
     },
   };
-  return hints[worldId]?.[tensionId] ?? "find proof, help an involved NPC, or confront the source directly";
+  return (
+    hints[worldId]?.[tensionId] ??
+    'find proof, help an involved NPC, or confront the source directly'
+  );
 }
 
-export function retrieveRelevantMemories(world: World, npcId: string, query: string, limit = 5, queryEmbedding?: number[]): RetrievedMemory[] {
+export function retrieveRelevantMemories(
+  world: World,
+  npcId: string,
+  query: string,
+  limit = 5,
+  queryEmbedding?: number[]
+): RetrievedMemory[] {
   const npc = world.npcs.find((candidate) => candidate.id === npcId);
   if (!npc) return [];
   return rankMemories(npc.memories, world.tick, query, limit, queryEmbedding);
@@ -166,17 +211,19 @@ export function retrieveRelevantMemories(world: World, npcId: string, query: str
 export function planAgentIntent(world: World, npc: Npc): AgentIntent {
   const scheduled = scheduledBlockFor(world, npc);
   const activeAmbition = [...(npc.ambitions ?? [])]
-    .filter((goal) => (goal.status ?? "active") === "active")
+    .filter((goal) => (goal.status ?? 'active') === 'active')
     .sort((a, b) => b.priority - a.priority)[0];
-  const mood = npc.mood ?? { emotion: "focused", stress: 20, confidence: 50, suspicion: 20 };
+  const mood = npc.mood ?? { emotion: 'focused', stress: 20, confidence: 50, suspicion: 20 };
   const safety = npc.needs?.safety ?? DEFAULT_NEEDS.safety;
   const duty = npc.needs?.duty ?? DEFAULT_NEEDS.duty;
   const suspicion = mood.suspicion + averageSuspicion(npc);
-  const villainPlan = world.villainPlans?.find((plan) => plan.actorId === npc.id && plan.hidden && plan.stage > 0);
+  const villainPlan = world.villainPlans?.find(
+    (plan) => plan.actorId === npc.id && plan.hidden && plan.stage > 0
+  );
 
   if (villainPlan) {
     return {
-      kind: "escalate",
+      kind: 'escalate',
       reason: `Advance hidden plan: ${villainPlan.objective}`,
       targetId: villainPlan.id,
       updatedTick: world.tick,
@@ -184,7 +231,7 @@ export function planAgentIntent(world: World, npc: Npc): AgentIntent {
   }
   if (scheduled && scheduled.locationId !== npc.locationId) {
     return {
-      kind: "move",
+      kind: 'move',
       reason: scheduled.intent,
       targetId: scheduled.locationId,
       updatedTick: world.tick,
@@ -192,46 +239,48 @@ export function planAgentIntent(world: World, npc: Npc): AgentIntent {
   }
   if ((npc.secrets ?? []).some((secret) => secret.risk >= 70) && suspicion >= 50) {
     return {
-      kind: "hide",
-      reason: "Protect a dangerous secret while suspicion is rising.",
+      kind: 'hide',
+      reason: 'Protect a dangerous secret while suspicion is rising.',
       targetId: npc.secrets?.[0]?.id,
       updatedTick: world.tick,
     };
   }
   if (safety < 35 || mood.stress >= 75) {
     return {
-      kind: "avoid",
-      reason: "Reduce exposure until stress or danger drops.",
+      kind: 'avoid',
+      reason: 'Reduce exposure until stress or danger drops.',
       updatedTick: world.tick,
     };
   }
-  if (activeAmbition?.kind === "investigate" || (npc.needs?.curiosity ?? 0) >= 70) {
+  if (activeAmbition?.kind === 'investigate' || (npc.needs?.curiosity ?? 0) >= 70) {
     return {
-      kind: "investigate",
-      reason: activeAmbition?.title ?? "Follow the strongest unanswered clue.",
+      kind: 'investigate',
+      reason: activeAmbition?.title ?? 'Follow the strongest unanswered clue.',
       targetId: activeAmbition?.targetId,
       updatedTick: world.tick,
     };
   }
-  if (activeAmbition?.kind === "protect" || duty >= 70) {
+  if (activeAmbition?.kind === 'protect' || duty >= 70) {
     return {
-      kind: "help",
-      reason: activeAmbition?.title ?? "Protect the people or place this character feels responsible for.",
+      kind: 'help',
+      reason:
+        activeAmbition?.title ??
+        'Protect the people or place this character feels responsible for.',
       targetId: activeAmbition?.targetId,
       updatedTick: world.tick,
     };
   }
   if (suspicion >= 65) {
     return {
-      kind: "confront",
-      reason: "Suspicion is high enough to challenge someone directly.",
+      kind: 'confront',
+      reason: 'Suspicion is high enough to challenge someone directly.',
       targetId: mostSuspiciousTarget(npc),
       updatedTick: world.tick,
     };
   }
   return {
-    kind: "wait",
-    reason: activeAmbition?.title ?? "Keep routine and watch for new information.",
+    kind: 'wait',
+    reason: activeAmbition?.title ?? 'Keep routine and watch for new information.',
     targetId: activeAmbition?.targetId,
     updatedTick: world.tick,
   };
@@ -240,24 +289,31 @@ export function planAgentIntent(world: World, npc: Npc): AgentIntent {
 export function scheduledBlockFor(world: World, npc: Npc): ScheduleBlock | null {
   const schedule = npc.plan?.schedule ?? defaultScheduleFor(npc.id, world, npc);
   if (!schedule.length) return null;
-  return [...schedule]
-    .sort((a, b) => b.hour - a.hour)
-    .find((block) => world.clock.hour >= block.hour) ?? schedule.at(-1) ?? null;
+  return (
+    [...schedule].sort((a, b) => b.hour - a.hour).find((block) => world.clock.hour >= block.hour) ??
+    schedule.at(-1) ??
+    null
+  );
 }
 
 // Graduated deterministic importance (mem0-inspired, but no LLM): start from a
 // baseline and add for high-stakes content, conflict/action, and consequence —
 // instead of a binary 7/4. Kept on the same ~1–10 scale so the reflection
 // importance-sum threshold behaves as before.
-export function memoryMetaFromText(text: string): NonNullable<Memory["meta"]> {
-  const tags = tokenize(text).filter((term) => term.length > 3).slice(0, 6);
+export function memoryMetaFromText(text: string): NonNullable<Memory['meta']> {
+  const tags = tokenize(text)
+    .filter((term) => term.length > 3)
+    .slice(0, 6);
   let importance = 3;
-  if (/secret|bridge|missing|flame|whisper|danger|promise|blue|stole|hide/i.test(text)) importance += 3; // high-stakes lore
+  if (/secret|bridge|missing|flame|whisper|danger|promise|blue|stole|hide/i.test(text))
+    importance += 3; // high-stakes lore
   if (/fight|attack|threat|confront|betray|kill|defeat|steal/i.test(text)) importance += 2; // conflict/action
   if (/quest|gave|gift|reward|coins|defeated|won|lost/i.test(text)) importance += 1; // consequence
   importance = Math.min(9, importance);
-  const emotionalWeight = /angry|panic|scared|unsafe|blamed|confronted|betray|furious/i.test(text) ? 6 : 2;
-  return { importance, tags, visibility: "private", emotionalWeight, sourceActorId: "world" };
+  const emotionalWeight = /angry|panic|scared|unsafe|blamed|confronted|betray|furious/i.test(text)
+    ? 6
+    : 2;
+  return { importance, tags, visibility: 'private', emotionalWeight, sourceActorId: 'world' };
 }
 
 function goalsToAmbitions(npc: Npc) {
@@ -266,42 +322,54 @@ function goalsToAmbitions(npc: Npc) {
     title: goal,
     kind: inferGoalKind(goal),
     priority: Math.max(30, 80 - index * 10),
-    status: "active" as const,
+    status: 'active' as const,
   }));
 }
 
 function defaultScheduleFor(npcId: string, world: World, npc?: Npc): ScheduleBlock[] {
   const schedules: Record<string, ScheduleBlock[]> = {
     mira: [
-      { hour: 6, locationId: "garden", intent: "Tend moonmint and check for missing tools." },
-      { hour: 14, locationId: "square", intent: "Ask neighbors what they saw near the bridge." },
-      { hour: 20, locationId: "inn", intent: "Keep the moonmint cuttings safe indoors." },
+      { hour: 6, locationId: 'garden', intent: 'Tend moonmint and check for missing tools.' },
+      { hour: 14, locationId: 'square', intent: 'Ask neighbors what they saw near the bridge.' },
+      { hour: 20, locationId: 'inn', intent: 'Keep the moonmint cuttings safe indoors.' },
     ],
     tomas: [
-      { hour: 6, locationId: "forge", intent: "Repair tools and listen for the old flame." },
-      { hour: 18, locationId: "bridge", intent: "Check whether the bridge quiets after forge work." },
-      { hour: 21, locationId: "inn", intent: "Avoid the bridge until morning." },
+      { hour: 6, locationId: 'forge', intent: 'Repair tools and listen for the old flame.' },
+      {
+        hour: 18,
+        locationId: 'bridge',
+        intent: 'Check whether the bridge quiets after forge work.',
+      },
+      { hour: 21, locationId: 'inn', intent: 'Avoid the bridge until morning.' },
     ],
     lena: [
-      { hour: 6, locationId: "inn", intent: "Collect witness accounts from travelers." },
-      { hour: 12, locationId: "square", intent: "Compare rumors at the notice board." },
-      { hour: 18, locationId: "inn", intent: "Trim lanterns before nightfall." },
+      { hour: 6, locationId: 'inn', intent: 'Collect witness accounts from travelers.' },
+      { hour: 12, locationId: 'square', intent: 'Compare rumors at the notice board.' },
+      { hour: 18, locationId: 'inn', intent: 'Trim lanterns before nightfall.' },
     ],
     orrin: [
-      { hour: 6, locationId: "square", intent: "Guard the notice board and watch patterns." },
-      { hour: 18, locationId: "inn", intent: "Trade rumors where people gather after dusk." },
+      { hour: 6, locationId: 'square', intent: 'Guard the notice board and watch patterns.' },
+      { hour: 18, locationId: 'inn', intent: 'Trade rumors where people gather after dusk.' },
     ],
     pax: [
-      { hour: 6, locationId: "square", intent: "Pretend nothing is hidden behind the board." },
-      { hour: 18, locationId: "bridge", intent: "Check whether the whisper still wants bright pieces." },
-      { hour: 21, locationId: "wood", intent: "Hide from anyone asking about metal." },
+      { hour: 6, locationId: 'square', intent: 'Pretend nothing is hidden behind the board.' },
+      {
+        hour: 18,
+        locationId: 'bridge',
+        intent: 'Check whether the whisper still wants bright pieces.',
+      },
+      { hour: 21, locationId: 'wood', intent: 'Hide from anyone asking about metal.' },
     ],
   };
-  return schedules[npcId] ?? [{
-    hour: 6,
-    locationId: npc?.locationId ?? world.locations[0]?.id ?? world.player.locationId,
-    intent: "Follow the local routine and watch for changes.",
-  }];
+  return (
+    schedules[npcId] ?? [
+      {
+        hour: 6,
+        locationId: npc?.locationId ?? world.locations[0]?.id ?? world.player.locationId,
+        intent: 'Follow the local routine and watch for changes.',
+      },
+    ]
+  );
 }
 
 function nextActionHint(world: World, npc: Npc): string {
@@ -310,11 +378,12 @@ function nextActionHint(world: World, npc: Npc): string {
   if (scheduled && scheduled.locationId !== npc.locationId) {
     return `Should head to ${locationName(world, scheduled.locationId)}: ${scheduled.intent}`;
   }
-  if (intent?.kind === "escalate") return "Will protect the hidden plan unless trust or evidence changes.";
-  if (intent?.kind === "investigate") return "Will follow the strongest unresolved clue.";
-  if (intent?.kind === "help") return "Will support the place or person they feel responsible for.";
-  if (intent?.kind === "hide") return "Will avoid direct answers until pressure drops.";
-  return scheduled?.intent ?? "Will keep routine and react to new information.";
+  if (intent?.kind === 'escalate')
+    return 'Will protect the hidden plan unless trust or evidence changes.';
+  if (intent?.kind === 'investigate') return 'Will follow the strongest unresolved clue.';
+  if (intent?.kind === 'help') return 'Will support the place or person they feel responsible for.';
+  if (intent?.kind === 'hide') return 'Will avoid direct answers until pressure drops.';
+  return scheduled?.intent ?? 'Will keep routine and react to new information.';
 }
 
 function locationName(world: World, id: string): string {
@@ -322,17 +391,17 @@ function locationName(world: World, id: string): string {
 }
 
 function inferGoalKind(goal: string): AgentGoalKind {
-  if (/protect|keep|make sure/i.test(goal)) return "protect";
-  if (/find|learn|prove|collect|investigate|admit|tell/i.test(goal)) return "investigate";
-  if (/avoid|hide|secret/i.test(goal)) return "hide";
-  if (/repair|restart|fix/i.test(goal)) return "repair";
-  return "help";
+  if (/protect|keep|make sure/i.test(goal)) return 'protect';
+  if (/find|learn|prove|collect|investigate|admit|tell/i.test(goal)) return 'investigate';
+  if (/avoid|hide|secret/i.test(goal)) return 'hide';
+  if (/repair|restart|fix/i.test(goal)) return 'repair';
+  return 'help';
 }
 
 function roleFor(npc: Npc): string {
-  if (npc.tier === "quest") return "major character";
-  if (npc.tier === "background") return "background villager";
-  return "local npc";
+  if (npc.tier === 'quest') return 'major character';
+  if (npc.tier === 'background') return 'background villager';
+  return 'local npc';
 }
 
 function axesFromScore(score: number): Required<RelationshipAxes> {
@@ -352,15 +421,17 @@ function averageSuspicion(npc: Npc): number {
 }
 
 function mostSuspiciousTarget(npc: Npc): string | undefined {
-  return Object.entries(npc.relationshipAxes ?? {})
-    .sort(([, a], [, b]) => (b.suspicion ?? 0) - (a.suspicion ?? 0))[0]?.[0];
+  return Object.entries(npc.relationshipAxes ?? {}).sort(
+    ([, a], [, b]) => (b.suspicion ?? 0) - (a.suspicion ?? 0)
+  )[0]?.[0];
 }
 
 function isPlanCountered(world: World, planId: string): boolean {
-  if (planId !== "bridge_whisper_plan") return false;
+  if (planId !== 'bridge_whisper_plan') return false;
   const quests = world.quests ?? [];
-  return quests.some((quest) =>
-    (quest.id === "rekindle_forge" || quest.id === "bridge_whisper") && quest.status === "done"
+  return quests.some(
+    (quest) =>
+      (quest.id === 'rekindle_forge' || quest.id === 'bridge_whisper') && quest.status === 'done'
   );
 }
 

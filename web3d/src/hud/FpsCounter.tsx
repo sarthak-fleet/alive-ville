@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Always-on FPS readout pinned to the top-right corner. Colour-coded so "clunky"
@@ -30,7 +30,7 @@ export function FpsCounter(): React.ReactElement {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const tier = fps >= 50 ? "good" : fps >= 30 ? "ok" : "bad";
+  const tier = fps >= 50 ? 'good' : fps >= 30 ? 'ok' : 'bad';
   return (
     <div className={`fps-counter ${tier}`} title={`${ms} ms/frame`}>
       <span className="fps-num">{fps}</span> <span className="fps-unit">FPS</span>

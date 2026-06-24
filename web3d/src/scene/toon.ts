@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 let gradientMap: THREE.DataTexture | null = null;
 
@@ -15,7 +15,7 @@ export function toonGradientMap(): THREE.DataTexture {
 const materialCache = new Map<string, THREE.MeshToonMaterial>();
 
 export function toonMaterial(color: string, emissive?: string): THREE.MeshToonMaterial {
-  const key = `${color}:${emissive ?? ""}`;
+  const key = `${color}:${emissive ?? ''}`;
   const cached = materialCache.get(key);
   if (cached) return cached;
   const material = new THREE.MeshToonMaterial({
@@ -43,7 +43,7 @@ export function softToonGradientMap(): THREE.DataTexture {
 
 const softMaterialCache = new Map<string, THREE.MeshToonMaterial>();
 export function softToonMaterial(color: string, emissive?: string): THREE.MeshToonMaterial {
-  const key = `${color}:${emissive ?? ""}`;
+  const key = `${color}:${emissive ?? ''}`;
   const cached = softMaterialCache.get(key);
   if (cached) return cached;
   const material = new THREE.MeshToonMaterial({

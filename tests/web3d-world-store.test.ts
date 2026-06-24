@@ -1,19 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 
-import { useUiStore } from "../web3d/src/store/ui.ts";
-import { resetTransientWorldUiState, useWorldStore } from "../web3d/src/store/world.ts";
+import { useUiStore } from '../web3d/src/store/ui.ts';
+import { resetTransientWorldUiState, useWorldStore } from '../web3d/src/store/world.ts';
 
-describe("web3d world store", () => {
-  it("resets transient dialogue state with a world swap", () => {
+describe('web3d world store', () => {
+  it('resets transient dialogue state with a world swap', () => {
     useWorldStore.setState({ lastNpcInitiationAt: 12345 });
     useUiStore.setState({
-      gamePhase: "playing",
-      dialogueNpcId: "mira",
-      dialogueOpener: "hello",
-      dialogueLines: [{ speaker: "npc", speakerName: "Mira", text: "hello" }],
+      gamePhase: 'playing',
+      dialogueNpcId: 'mira',
+      dialogueOpener: 'hello',
+      dialogueLines: [{ speaker: 'npc', speakerName: 'Mira', text: 'hello' }],
       dialogueBusy: true,
-      interactionTarget: { kind: "npc", id: "mira", label: "Mira", verb: "talk to" },
-      interiorBuildingId: "forge",
+      interactionTarget: { kind: 'npc', id: 'mira', label: 'Mira', verb: 'talk to' },
+      interiorBuildingId: 'forge',
     });
 
     resetTransientWorldUiState();

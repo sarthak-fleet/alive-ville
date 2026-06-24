@@ -6,13 +6,13 @@
  * only when offline. API calls are never cached. Scope: /game/.
  * To remove: DevTools → Application → Service Workers → Unregister.
  */
-const CACHE = "aliveville-v1";
+const CACHE = 'aliveville-v1';
 
-self.addEventListener("install", () => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
@@ -22,10 +22,15 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("fetch", (event) => {
+self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin || url.pathname.includes("/api/")) return;
+  if (
+    request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname.includes('/api/')
+  )
+    return;
 
   event.respondWith(
     (async () => {

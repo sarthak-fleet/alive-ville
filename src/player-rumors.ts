@@ -1,5 +1,5 @@
-import { recordChronicle } from "./chronicle.ts";
-import type { Npc, World } from "./types.ts";
+import { recordChronicle } from './chronicle.ts';
+import type { Npc, World } from './types.ts';
 
 /**
  * Player-witnessed events: when the player does something visible (combat win,
@@ -30,15 +30,20 @@ export interface PlayerWitnessedOpts {
  */
 export function recordPlayerWitnessed(world: World, opts: PlayerWitnessedOpts): string {
   const { deed, importance, causeId, actorId, targetId } = opts;
-  const excludeIds = new Set([actorId, targetId, world.player.characterId].filter((id): id is string => typeof id === "string"));
+  const excludeIds = new Set(
+    [actorId, targetId, world.player.characterId].filter(
+      (id): id is string => typeof id === 'string'
+    )
+  );
   const witnesses: Npc[] = world.npcs.filter(
-    (npc) => !npc.combat?.defeated && npc.locationId === world.player.locationId && !excludeIds.has(npc.id)
+    (npc) =>
+      !npc.combat?.defeated && npc.locationId === world.player.locationId && !excludeIds.has(npc.id)
   );
 
   const chronicle = recordChronicle(world, {
-    kind: "player_witnessed",
+    kind: 'player_witnessed',
     text: deed,
-    actorId: actorId ?? "player",
+    actorId: actorId ?? 'player',
     targetId,
     causeIds: causeId ? [causeId] : [],
     playerCaused: true,
@@ -50,9 +55,9 @@ export function recordPlayerWitnessed(world: World, opts: PlayerWitnessedOpts): 
       text: deed,
       meta: {
         importance,
-        visibility: "shared",
-        subject: "player",
-        tags: ["rumor", "player"],
+        visibility: 'shared',
+        subject: 'player',
+        tags: ['rumor', 'player'],
         chronicleId: chronicle.id,
       },
     });
@@ -66,15 +71,19 @@ export function recordPlayerWitnessed(world: World, opts: PlayerWitnessedOpts): 
  * memory on the victor, records a defeat_promotion chronicle event, and enters
  * the shared rumor pipeline so other NPCs learn about it.
  */
-export function tagBestedThePlayer(world: World, victorId: string, combatChronicleId?: string): void {
+export function tagBestedThePlayer(
+  world: World,
+  victorId: string,
+  combatChronicleId?: string
+): void {
   const victor = world.npcs.find((npc) => npc.id === victorId);
   if (!victor) return;
 
-  const playerName = world.player.name ?? "the outsider";
+  const playerName = world.player.name ?? 'the outsider';
   const deed = `${victor.name} bested ${playerName} in combat.`;
 
   const chronicle = recordChronicle(world, {
-    kind: "defeat_promotion",
+    kind: 'defeat_promotion',
     text: deed,
     actorId: victorId,
     causeIds: combatChronicleId ? [combatChronicleId] : [],
@@ -86,9 +95,9 @@ export function tagBestedThePlayer(world: World, victorId: string, combatChronic
     text: `I bested ${playerName} in combat.`,
     meta: {
       importance: 10,
-      visibility: "shared",
-      subject: "player",
-      tags: ["bested_the_player", "rumor", "player"],
+      visibility: 'shared',
+      subject: 'player',
+      tags: ['bested_the_player', 'rumor', 'player'],
       chronicleId: chronicle.id,
     },
   });
@@ -97,6 +106,6 @@ export function tagBestedThePlayer(world: World, victorId: string, combatChronic
 /** Returns the first NPC that has a "bested_the_player" memory, if any. */
 export function findBestedThePlayerNpc(world: World): Npc | undefined {
   return world.npcs.find((npc) =>
-    npc.memories.some((m) => m.meta?.tags?.includes("bested_the_player"))
+    npc.memories.some((m) => m.meta?.tags?.includes('bested_the_player'))
   );
 }

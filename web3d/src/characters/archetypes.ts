@@ -46,7 +46,7 @@ export function pickArchetype(
   role: string,
   visualTags: string[]
 ): ArchetypeKey | null {
-  const text = `${personaText} ${role} ${visualTags.join(" ")}`.toLowerCase();
+  const text = `${personaText} ${role} ${visualTags.join(' ')}`.toLowerCase();
 
   // explicit female steer first — keeps the women-pack rigs out from under
   // male keyword nets like "soldier"
@@ -56,31 +56,47 @@ export function pickArchetype(
     );
 
   if (female) {
-    if (/witch|sorceress|mage|wizard|hex|cauldron|spell/.test(text)) return "witch";
-    if (/soldier|guard|warrior|knight|trooper|fighter/.test(text)) return "soldier";
-    if (/sci.?fi|space|astronaut|cyborg|android|robot|cyber/.test(text)) return "scifi";
-    return "woman";
+    if (/witch|sorceress|mage|wizard|hex|cauldron|spell/.test(text)) return 'witch';
+    if (/soldier|guard|warrior|knight|trooper|fighter/.test(text)) return 'soldier';
+    if (/sci.?fi|space|astronaut|cyborg|android|robot|cyber/.test(text)) return 'scifi';
+    return 'woman';
   }
 
-  if (/king|queen|monarch|royal|crown|highness|emperor|empress/.test(text)) return "king";
-  if (/astronaut|spaceman|cosmonaut|space.?suit/.test(text)) return "astronaut";
-  if (/swat|tactical|spec.?ops|riot|trooper/.test(text)) return "swat";
-  if (/soldier|guard|warrior|knight|slayer|patrol|watch|officer/.test(text)) return "soldier";
-  if (/sci.?fi|cyber|android|robot|drone|cyborg|hacker|net/.test(text)) return "scifi";
-  if (/punk|delinquent|rebel|thug|gang|street|biker/.test(text)) return "punk";
-  if (/farmer|peasant|villager|miller|herder|shepherd|fisher|gardener|garden|grower|botanist|cook|baker/.test(text))
-    return "farmer";
-  if (/worker|builder|laborer|construction|miner|engineer|smith|forge|mechanic|tinker|craft/.test(text))
-    return "worker";
-  if (/business|suit|executive|banker|noble|gentleman|merchant|trader|baron|aristocrat|innkeep|inn\b|host|bartend|barkeep|tavern|keeper|broker|vendor|shopkeep|clerk|elder/.test(text))
-    return "businessman";
-  if (/adventurer|hero|explorer|wanderer|ranger|hunter|scout|traveler|child|kid|young|student|analyst|witness|bystander/.test(text))
-    return "adventurer";
+  if (/king|queen|monarch|royal|crown|highness|emperor|empress/.test(text)) return 'king';
+  if (/astronaut|spaceman|cosmonaut|space.?suit/.test(text)) return 'astronaut';
+  if (/swat|tactical|spec.?ops|riot|trooper/.test(text)) return 'swat';
+  if (/soldier|guard|warrior|knight|slayer|patrol|watch|officer/.test(text)) return 'soldier';
+  if (/sci.?fi|cyber|android|robot|drone|cyborg|hacker|net/.test(text)) return 'scifi';
+  if (/punk|delinquent|rebel|thug|gang|street|biker/.test(text)) return 'punk';
+  if (
+    /farmer|peasant|villager|miller|herder|shepherd|fisher|gardener|garden|grower|botanist|cook|baker/.test(
+      text
+    )
+  )
+    return 'farmer';
+  if (
+    /worker|builder|laborer|construction|miner|engineer|smith|forge|mechanic|tinker|craft/.test(
+      text
+    )
+  )
+    return 'worker';
+  if (
+    /business|suit|executive|banker|noble|gentleman|merchant|trader|baron|aristocrat|innkeep|inn\b|host|bartend|barkeep|tavern|keeper|broker|vendor|shopkeep|clerk|elder/.test(
+      text
+    )
+  )
+    return 'businessman';
+  if (
+    /adventurer|hero|explorer|wanderer|ranger|hunter|scout|traveler|child|kid|young|student|analyst|witness|bystander/.test(
+      text
+    )
+  )
+    return 'adventurer';
 
   return null;
 }
 
-const CIVILIAN_POOL: ArchetypeKey[] = ["adventurer", "farmer", "worker", "woman", "businessman"];
+const CIVILIAN_POOL: ArchetypeKey[] = ['adventurer', 'farmer', 'worker', 'woman', 'businessman'];
 
 function hashRotate(seed: string): ArchetypeKey {
   let hash = 2166136261;
@@ -96,25 +112,29 @@ function hashRotate(seed: string): ArchetypeKey {
  * civilian archetype (hash-rotated by seed) so EVERY character renders as a real
  * model instead of the cheap procedural mannequin.
  */
-export function archetypeFor(personaText: string, role: string, visualTags: string[], seedId: string): ArchetypeKey {
+export function archetypeFor(
+  personaText: string,
+  role: string,
+  visualTags: string[],
+  seedId: string
+): ArchetypeKey {
   return pickArchetype(personaText, role, visualTags) ?? hashRotate(seedId);
 }
 
 /** Animation clip names baked into the Quaternius modular characters. */
 export const ARCHETYPE_CLIPS = {
-  idle: "CharacterArmature|Idle",
-  idleNeutral: "CharacterArmature|Idle_Neutral",
-  idleSword: "CharacterArmature|Idle_Sword",
-  walk: "CharacterArmature|Walk",
-  run: "CharacterArmature|Run",
-  punchLeft: "CharacterArmature|Punch_Left",
-  punchRight: "CharacterArmature|Punch_Right",
-  swordSlash: "CharacterArmature|Sword_Slash",
-  kickLeft: "CharacterArmature|Kick_Left",
-  roll: "CharacterArmature|Roll",
-  hit: "CharacterArmature|HitRecieve",
-  death: "CharacterArmature|Death",
-  interact: "CharacterArmature|Interact",
-  wave: "CharacterArmature|Wave",
+  idle: 'CharacterArmature|Idle',
+  idleNeutral: 'CharacterArmature|Idle_Neutral',
+  idleSword: 'CharacterArmature|Idle_Sword',
+  walk: 'CharacterArmature|Walk',
+  run: 'CharacterArmature|Run',
+  punchLeft: 'CharacterArmature|Punch_Left',
+  punchRight: 'CharacterArmature|Punch_Right',
+  swordSlash: 'CharacterArmature|Sword_Slash',
+  kickLeft: 'CharacterArmature|Kick_Left',
+  roll: 'CharacterArmature|Roll',
+  hit: 'CharacterArmature|HitRecieve',
+  death: 'CharacterArmature|Death',
+  interact: 'CharacterArmature|Interact',
+  wave: 'CharacterArmature|Wave',
 } as const;
-

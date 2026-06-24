@@ -1,19 +1,19 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 export interface DialogueLine {
-  speaker: "player" | "npc" | "event";
+  speaker: 'player' | 'npc' | 'event';
   speakerName: string;
   text: string;
 }
 
 export interface InteractionTarget {
-  kind: "npc" | "item" | "prop" | "door";
+  kind: 'npc' | 'item' | 'prop' | 'door';
   id: string;
   label: string;
   verb: string;
 }
 
-export type GamePhase = "title" | "character" | "playing";
+export type GamePhase = 'title' | 'character' | 'playing';
 
 interface UiStore {
   gamePhase: GamePhase;
@@ -37,7 +37,7 @@ interface UiStore {
 }
 
 export const useUiStore = create<UiStore>((set, get) => ({
-  gamePhase: "title",
+  gamePhase: 'title',
   setGamePhase(phase) {
     set({ gamePhase: phase });
   },
@@ -62,7 +62,12 @@ export const useUiStore = create<UiStore>((set, get) => ({
       });
       return;
     }
-    set({ dialogueNpcId: npcId, dialogueOpener: opener ?? null, dialogueLines: [], dialogueBusy: false });
+    set({
+      dialogueNpcId: npcId,
+      dialogueOpener: opener ?? null,
+      dialogueLines: [],
+      dialogueBusy: false,
+    });
   },
   setDialogueLines(lines) {
     set({ dialogueLines: lines });

@@ -1,5 +1,5 @@
-import { questItemTargetsFor } from "./quest-targets.ts";
-import type { Quest, World } from "./types.ts";
+import { questItemTargetsFor } from './quest-targets.ts';
+import type { Quest, World } from './types.ts';
 
 /**
  * Completion gating: quests are prose, but questItemTargetsFor links them to
@@ -11,7 +11,7 @@ import type { Quest, World } from "./types.ts";
 const DEFEAT_VERBS = /defeat|drive (?:off|out|away)|slay|hunt|banish|repel|vanquish/i;
 
 export function questDefeatTargetId(world: World, quest: Quest): string | null {
-  const text = `${quest.title} ${quest.description ?? ""}`;
+  const text = `${quest.title} ${quest.description ?? ''}`;
   if (!DEFEAT_VERBS.test(text)) return null;
   const words = new Set(text.toLowerCase().split(/[^a-z]+/));
   for (const npc of world.npcs) {
@@ -30,7 +30,7 @@ export function questObjectiveMet(world: World, quest: Quest): boolean | null {
   }
   const targets = questItemTargetsFor(world, quest);
   if (targets.length === 0) return null;
-  const accepter = quest.acceptedBy ?? "player";
+  const accepter = quest.acceptedBy ?? 'player';
   // any one target delivered (or in the accepter's hands) counts — multi-target
   // quests like bridge_whisper need only one piece of proof
   return targets.some(({ itemId, returnNpcId }) => {
@@ -51,5 +51,5 @@ export function questObjectiveBlockText(world: World, quest: Quest): string {
     const item = (world.items ?? []).find((entry) => entry.id === target.itemId);
     if (item) return `The task is not done yet: ${item.name} has not been brought back.`;
   }
-  return "The task is not done yet.";
+  return 'The task is not done yet.';
 }

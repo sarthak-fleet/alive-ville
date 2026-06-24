@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 /**
  * High-frequency (per-frame) shared state kept outside zustand so the 60fps
@@ -38,15 +38,19 @@ export function knockback(npcId: string, direction: { x: number; z: number }, fo
 }
 
 /** player gesture hook, filled by the controller once its rig mounts */
-export const playerGestureHook: { fire: ((kind: "pickup" | "interact") => void) | null } = { fire: null };
+export const playerGestureHook: { fire: ((kind: 'pickup' | 'interact') => void) | null } = {
+  fire: null,
+};
 
 /** player flash hook: triggers a brief red emissive on the player rig */
 export const playerFlashHook: { fire: (() => void) | null } = { fire: null };
 
 /** combat toast hook: fires a HUD toast for in-world combat events (defeat, etc.) */
-export const combatToastHook: { fire: ((text: string, kind: "defeat" | "info") => void) | null } = { fire: null };
+export const combatToastHook: { fire: ((text: string, kind: 'defeat' | 'info') => void) | null } = {
+  fire: null,
+};
 
-export function playerGesture(kind: "pickup" | "interact"): void {
+export function playerGesture(kind: 'pickup' | 'interact'): void {
   playerGestureHook.fire?.(kind);
 }
 
@@ -77,5 +81,10 @@ export function unregisterNpc(npcId: string): void {
 }
 
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>)["__game"] = { playerPosition, npcRegistry, cameraState, requestTeleport };
+  (window as unknown as Record<string, unknown>)['__game'] = {
+    playerPosition,
+    npcRegistry,
+    cameraState,
+    requestTeleport,
+  };
 }

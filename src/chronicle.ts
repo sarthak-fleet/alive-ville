@@ -1,4 +1,4 @@
-import type { ChronicleEvent, ChronicleEventKind, World } from "./types.ts";
+import type { ChronicleEvent, ChronicleEventKind, World } from './types.ts';
 
 /**
  * The Chronicle: a causal trace of legible world beats. Each event records
@@ -22,7 +22,8 @@ export interface ChroniclePartial {
 
 export function recordChronicle(world: World, partial: ChroniclePartial): ChronicleEvent {
   world.chronicle ??= [];
-  const causeIds = partial.causeIds?.filter((id): id is string => typeof id === "string" && id.length > 0) ?? [];
+  const causeIds =
+    partial.causeIds?.filter((id): id is string => typeof id === 'string' && id.length > 0) ?? [];
   // playerCaused is sticky: if any ancestor is player-caused, so is this beat
   const inheritedPlayerCaused = causeIds.some((id) => {
     const cause = world.chronicle!.find((entry) => entry.id === id);

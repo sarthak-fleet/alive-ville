@@ -24,11 +24,15 @@ export type ParseResult =
   | { ok: false; reason: string };
 
 export function parseActionJson(raw: unknown): ParseResult {
-  if (typeof raw !== "string") return { ok: false, reason: "Empty response." };
-  const trimmed = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  if (typeof raw !== 'string') return { ok: false, reason: 'Empty response.' };
+  const trimmed = raw
+    .trim()
+    .replace(/^```(?:json)?/i, '')
+    .replace(/```$/i, '')
+    .trim();
   try {
     const parsed = JSON.parse(trimmed);
-    if (!parsed || typeof parsed !== "object") return { ok: false, reason: "Not an object." };
+    if (!parsed || typeof parsed !== 'object') return { ok: false, reason: 'Not an object.' };
     return { ok: true, action: parsed as Record<string, unknown> };
   } catch (error) {
     return { ok: false, reason: `JSON parse failed: ${(error as Error).message}` };

@@ -8,11 +8,12 @@
  * returns null and callers fall back to keyword relevance — zero regression.
  */
 
-import { cosineSimilarity } from "./cosine.ts";
+import { cosineSimilarity } from './cosine.ts';
 
 export { cosineSimilarity };
 
-let llmFetch: (url: string, init: RequestInit) => Promise<Response> = (url, init) => fetch(url, init);
+let llmFetch: (url: string, init: RequestInit) => Promise<Response> = (url, init) =>
+  fetch(url, init);
 export function setEmbeddingFetch(fn: (url: string, init: RequestInit) => Promise<Response>): void {
   llmFetch = fn;
 }
@@ -22,26 +23,28 @@ export function setEmbeddingFetch(fn: (url: string, init: RequestInit) => Promis
 let embeddingsDisabled = false;
 
 export function embeddingsAvailable(): boolean {
-  return !embeddingsDisabled && Boolean(process.env["LLM_BASE_URL"]);
+  return !embeddingsDisabled && Boolean(process.env['LLM_BASE_URL']);
 }
 
 /** Embed one string. Returns null when embeddings are unavailable (caller falls back to keywords). */
 export async function embed(text: string): Promise<number[] | null> {
   if (!embeddingsAvailable() || !text.trim()) return null;
-  const url = `${process.env["LLM_BASE_URL"]!.replace(/\/$/, "")}/embeddings`;
+  const url = `${process.env['LLM_BASE_URL']!.replace(/\/$/, '')}/embeddings`;
   try {
     const response = await llmFetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "content-type": "application/json",
-        ...(process.env["LLM_API_KEY"] ? { authorization: `Bearer ${process.env["LLM_API_KEY"]}` } : {}),
+        'content-type': 'application/json',
+        ...(process.env['LLM_API_KEY']
+          ? { authorization: `Bearer ${process.env['LLM_API_KEY']}` }
+          : {}),
       },
       // free-ai gateway embedding ids: @cf/baai/bge-* (Workers AI, free), voyage-*,
       // or text-embedding-004 (Gemini). bge-base is the free default; project_id is required.
       body: JSON.stringify({
-        model: process.env["LLM_MODEL_EMBED"] ?? "@cf/baai/bge-base-en-v1.5",
+        model: process.env['LLM_MODEL_EMBED'] ?? '@cf/baai/bge-base-en-v1.5',
         input: text,
-        project_id: process.env["LLM_PROJECT_ID"] ?? "ai-game",
+        project_id: process.env['LLM_PROJECT_ID'] ?? 'ai-game',
       }),
     });
     if (!response.ok) {

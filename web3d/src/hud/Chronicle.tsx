@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 
-import type { ChronicleEvent } from "../../../src/types.ts";
-import { useWorldStore } from "../store/world.ts";
+import type { ChronicleEvent } from '../../../src/types.ts';
+import { useWorldStore } from '../store/world.ts';
 
 interface ChronicleProps {
   open: boolean;
@@ -30,7 +30,12 @@ export function Chronicle({ open, onClose }: ChronicleProps) {
     <div className="chronicle-panel">
       <div className="chronicle-header">
         <span className="chronicle-title">Chronicle</span>
-        <button type="button" className="chronicle-close" onClick={onClose} aria-label="Close chronicle">
+        <button
+          type="button"
+          className="chronicle-close"
+          onClick={onClose}
+          aria-label="Close chronicle"
+        >
           ×
         </button>
       </div>
@@ -60,10 +65,13 @@ interface ChronicleRowProps {
 
 function ChronicleRow({ event, expanded, onToggle }: ChronicleRowProps) {
   const chronicle = useWorldStore((state) => state.world?.chronicle);
-  const ancestors = useMemo(() => (expanded ? walkCauses(chronicle ?? [], event) : []), [chronicle, event, expanded]);
+  const ancestors = useMemo(
+    () => (expanded ? walkCauses(chronicle ?? [], event) : []),
+    [chronicle, event, expanded]
+  );
   const hasCauses = event.causeIds.length > 0;
   return (
-    <li className={`chronicle-event ${event.playerCaused ? "player-caused" : ""}`}>
+    <li className={`chronicle-event ${event.playerCaused ? 'player-caused' : ''}`}>
       <button
         type="button"
         className="chronicle-event-row"
@@ -72,16 +80,19 @@ function ChronicleRow({ event, expanded, onToggle }: ChronicleRowProps) {
         aria-expanded={expanded}
       >
         <span className="chronicle-time">
-          Day {event.day} {String(event.hour).padStart(2, "0")}:00
+          Day {event.day} {String(event.hour).padStart(2, '0')}:00
         </span>
         <span className="chronicle-text">{event.text}</span>
         {event.playerCaused ? <span className="chronicle-tag">your doing</span> : null}
-        {hasCauses ? <span className="chronicle-chevron">{expanded ? "▾" : "▸"}</span> : null}
+        {hasCauses ? <span className="chronicle-chevron">{expanded ? '▾' : '▸'}</span> : null}
       </button>
       {expanded && ancestors.length > 0 ? (
         <ul className="chronicle-causes">
           {ancestors.map((entry) => (
-            <li key={`${event.id}-cause-${entry.event.id}`} style={{ paddingLeft: `${entry.depth * 14}px` }}>
+            <li
+              key={`${event.id}-cause-${entry.event.id}`}
+              style={{ paddingLeft: `${entry.depth * 14}px` }}
+            >
               <span className="chronicle-cause-prefix">↳ because:</span> {entry.event.text}
             </li>
           ))}

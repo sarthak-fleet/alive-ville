@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 /** live NPC↔NPC exchanges, rendered as speech bubbles in the 3D town */
 export interface BanterEntry {
@@ -42,6 +42,6 @@ export const useBanterStore = create<BanterStore>((set, get) => ({
   },
 }));
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
-  (window as unknown as Record<string, unknown>)["__banter"] = useBanterStore;
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>)['__banter'] = useBanterStore;
 }

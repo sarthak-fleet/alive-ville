@@ -1,6 +1,6 @@
-import type { World } from "../../../src/types.ts";
-import { generateWorldModel } from "./index.ts";
-import type { WorldModel } from "./model.ts";
+import type { World } from '../../../src/types.ts';
+import { generateWorldModel } from './index.ts';
+import type { WorldModel } from './model.ts';
 
 // Static city geometry only changes when the map changes, not every tick —
 // cache by map content so per-tick world updates reuse the same model object.

@@ -1,6 +1,6 @@
-import type { ItemVisual, Palette } from "../mapping/visuals.ts";
+import type { ItemVisual, Palette } from '../mapping/visuals.ts';
 // type-only circular reference; erased at compile time
-import type { InteriorDoor } from "./interiors.ts";
+import type { InteriorDoor } from './interiors.ts';
 
 export interface BuildingModel {
   id: string;
@@ -17,20 +17,20 @@ export interface BuildingModel {
 }
 
 export type PropKind =
-  | "lamp"
-  | "bench"
-  | "planter"
-  | "crate"
-  | "sign"
-  | "dummy"
-  | "stall"
-  | "tree"
-  | "bush"
-  | "grass"
-  | "flower"
-  | "rock"
-  | "mushroom"
-  | "fence";
+  | 'lamp'
+  | 'bench'
+  | 'planter'
+  | 'crate'
+  | 'sign'
+  | 'dummy'
+  | 'stall'
+  | 'tree'
+  | 'bush'
+  | 'grass'
+  | 'flower'
+  | 'rock'
+  | 'mushroom'
+  | 'fence';
 
 export interface PropModel {
   id: string;

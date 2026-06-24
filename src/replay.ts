@@ -1,4 +1,4 @@
-import type { TickSummary, World } from "./types.ts";
+import type { TickSummary, World } from './types.ts';
 
 export interface ReplayFrame {
   tick: number;
@@ -42,25 +42,26 @@ export function inspectReplay(world: World): ReplayInspectorReport {
 
 function inspectFrame(summary: TickSummary, _previous?: TickSummary): ReplayFrame {
   const changedActors = new Set<string>();
-  const relationshipDeltas: ReplayFrame["relationshipDeltas"] = [];
+  const relationshipDeltas: ReplayFrame['relationshipDeltas'] = [];
   const memoryCounts = new Map<string, number>();
 
   for (const entry of summary.actions) {
     changedActors.add(entry.action.actorId);
-    if ("targetId" in entry.action && typeof entry.action.targetId === "string") changedActors.add(entry.action.targetId);
-    if (entry.action.type === "gossip") changedActors.add(entry.action.aboutId);
-    if (entry.action.type === "talk" || entry.action.type === "confront") {
+    if ('targetId' in entry.action && typeof entry.action.targetId === 'string')
+      changedActors.add(entry.action.targetId);
+    if (entry.action.type === 'gossip') changedActors.add(entry.action.aboutId);
+    if (entry.action.type === 'talk' || entry.action.type === 'confront') {
       addMemory(memoryCounts, entry.action.actorId);
       addMemory(memoryCounts, entry.action.targetId);
     }
-    if (entry.action.type === "remember") addMemory(memoryCounts, entry.action.actorId);
-    if (entry.action.type === "gossip") {
+    if (entry.action.type === 'remember') addMemory(memoryCounts, entry.action.actorId);
+    if (entry.action.type === 'gossip') {
       relationshipDeltas.push(
         { actorId: entry.action.actorId, targetId: entry.action.aboutId, delta: -1 },
         { actorId: entry.action.targetId, targetId: entry.action.aboutId, delta: -1 }
       );
     }
-    if (entry.action.type === "confront") {
+    if (entry.action.type === 'confront') {
       relationshipDeltas.push(
         { actorId: entry.action.actorId, targetId: entry.action.targetId, delta: -2 },
         { actorId: entry.action.targetId, targetId: entry.action.actorId, delta: -1 }

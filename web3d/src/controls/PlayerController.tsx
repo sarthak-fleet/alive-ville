@@ -1,24 +1,34 @@
-import { useFrame, useThree } from "@react-three/fiber";
-import { CapsuleCollider, type RapierRigidBody, RigidBody, useRapier } from "@react-three/rapier";
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
+import { useFrame, useThree } from '@react-three/fiber';
+import { CapsuleCollider, type RapierRigidBody, RigidBody, useRapier } from '@react-three/rapier';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
 
-import type { World } from "../../../src/types.ts";
-import { attackSwing, dodgeWhoosh, doorCreak, ensureAudio, footstep } from "../audio/sfx.ts";
-import { ArchetypeCharacter } from "../characters/ArchetypeCharacter.tsx";
-import { archetypeFor } from "../characters/archetypes.ts";
-import type { CharacterAnimationHandle } from "../characters/CharacterModel.tsx";
-import { combatInput, playerCombatState, updatePlayerCombat } from "../combat/player-fsm.ts";
-import { useCombatStore } from "../combat/store.ts";
-import { useDirectorStore } from "../director/store.ts";
-import { updateOcclusion } from "../scene/occlusion.ts";
-import { useUiStore } from "../store/ui.ts";
-import { useWorldStore } from "../store/world.ts";
-import type { DistrictModel, WorldModel } from "../worldgen/index.ts";
-import { interiorForBuilding } from "../worldgen/interiors.ts";
-import type { WorldPlacements } from "../worldgen/placements.ts";
-import { attachInput, input } from "./input.ts";
-import { cameraShake, cameraState, npcRegistry, playerFlashHook, playerGestureHook, playerHeading, playerPosition, scaledDelta, teleportRequest } from "./runtime.ts";
+import type { World } from '../../../src/types.ts';
+import { attackSwing, dodgeWhoosh, doorCreak, ensureAudio, footstep } from '../audio/sfx.ts';
+import { ArchetypeCharacter } from '../characters/ArchetypeCharacter.tsx';
+import { archetypeFor } from '../characters/archetypes.ts';
+import type { CharacterAnimationHandle } from '../characters/CharacterModel.tsx';
+import { combatInput, playerCombatState, updatePlayerCombat } from '../combat/player-fsm.ts';
+import { useCombatStore } from '../combat/store.ts';
+import { useDirectorStore } from '../director/store.ts';
+import { updateOcclusion } from '../scene/occlusion.ts';
+import { useUiStore } from '../store/ui.ts';
+import { useWorldStore } from '../store/world.ts';
+import type { DistrictModel, WorldModel } from '../worldgen/index.ts';
+import { interiorForBuilding } from '../worldgen/interiors.ts';
+import type { WorldPlacements } from '../worldgen/placements.ts';
+import { attachInput, input } from './input.ts';
+import {
+  cameraShake,
+  cameraState,
+  npcRegistry,
+  playerFlashHook,
+  playerGestureHook,
+  playerHeading,
+  playerPosition,
+  scaledDelta,
+  teleportRequest,
+} from './runtime.ts';
 
 const WALK_SPEED = 4.2;
 const RUN_SPEED = 7.8;
@@ -38,7 +48,12 @@ interface PlayerControllerProps {
   activeDistrict: DistrictModel;
 }
 
-export function PlayerController({ world, model, placements, activeDistrict }: PlayerControllerProps) {
+export function PlayerController({
+  world,
+  model,
+  placements,
+  activeDistrict,
+}: PlayerControllerProps) {
   const body = useRef<RapierRigidBody>(null);
   const modelGroup = useRef<THREE.Group>(null);
   const animation = useRef<CharacterAnimationHandle>(null);
@@ -49,9 +64,16 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
   // The player renders as a stylized archetype model (Wanderer → adventurer);
   // when playing AS a character, match that character's persona.
   const playerArchetype = useMemo(() => {
-    const character = world.player.characterId ? world.npcs.find((npc) => npc.id === world.player.characterId) : null;
-    const persona = `${world.player.name ?? "Wanderer"} ${character?.role ?? ""} ${character?.description ?? ""}`;
-    return archetypeFor(persona, character?.role ?? "", character?.appearance?.visualTags ?? [], world.player.characterId ?? "player");
+    const character = world.player.characterId
+      ? world.npcs.find((npc) => npc.id === world.player.characterId)
+      : null;
+    const persona = `${world.player.name ?? 'Wanderer'} ${character?.role ?? ''} ${character?.description ?? ''}`;
+    return archetypeFor(
+      persona,
+      character?.role ?? '',
+      character?.appearance?.visualTags ?? [],
+      world.player.characterId ?? 'player'
+    );
   }, [world.player.name, world.player.characterId, world.npcs]);
 
   // Raycast straight down from above (x,z) to find the actual floor/ground Y.
@@ -112,14 +134,13 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     worldIdRef.current = world.id;
     const x = activeDistrict.playerSpawn.x;
     const z = activeDistrict.playerSpawn.z;
-    body.current?.setTranslation(
-      { x, y: groundedY(x, z) + CAPSULE_CENTER_Y + 0.05, z },
-      true
-    );
+    body.current?.setTranslation({ x, y: groundedY(x, z) + CAPSULE_CENTER_Y + 0.05, z }, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on world identity change
   }, [world.id]);
 
-  const controllerRef = useRef<ReturnType<typeof physicsWorld.createCharacterController> | null>(null);
+  const controllerRef = useRef<ReturnType<typeof physicsWorld.createCharacterController> | null>(
+    null
+  );
 
   useEffect(() => {
     const c = physicsWorld.createCharacterController(0.05);
@@ -186,22 +207,23 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
         combatInput.attackPressed = true;
       }
       s.dragging = false;
-      if (element.hasPointerCapture(event.pointerId)) element.releasePointerCapture(event.pointerId);
+      if (element.hasPointerCapture(event.pointerId))
+        element.releasePointerCapture(event.pointerId);
     };
     const onWheel = (event: WheelEvent) => {
       s.distance = THREE.MathUtils.clamp(s.distance + event.deltaY * 0.012, 3.5, 42);
     };
-    element.addEventListener("pointerdown", onPointerDown);
-    element.addEventListener("pointermove", onPointerMove);
-    element.addEventListener("pointerup", onPointerUp);
-    element.addEventListener("pointercancel", onPointerUp);
-    element.addEventListener("wheel", onWheel, { passive: true });
+    element.addEventListener('pointerdown', onPointerDown);
+    element.addEventListener('pointermove', onPointerMove);
+    element.addEventListener('pointerup', onPointerUp);
+    element.addEventListener('pointercancel', onPointerUp);
+    element.addEventListener('wheel', onWheel, { passive: true });
     return () => {
-      element.removeEventListener("pointerdown", onPointerDown);
-      element.removeEventListener("pointermove", onPointerMove);
-      element.removeEventListener("pointerup", onPointerUp);
-      element.removeEventListener("pointercancel", onPointerUp);
-      element.removeEventListener("wheel", onWheel);
+      element.removeEventListener('pointerdown', onPointerDown);
+      element.removeEventListener('pointermove', onPointerMove);
+      element.removeEventListener('pointerup', onPointerUp);
+      element.removeEventListener('pointercancel', onPointerUp);
+      element.removeEventListener('wheel', onWheel);
       if (isLocked()) document.exitPointerLock();
     };
   }, [gl]);
@@ -311,13 +333,14 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     });
     if (combatFrame.trigger) {
       animation.current?.trigger(combatFrame.trigger);
-      if (combatFrame.trigger.startsWith("attack")) attackSwing(Number(combatFrame.trigger.slice(-1)) || 1);
-      if (combatFrame.trigger === "dodge") dodgeWhoosh();
+      if (combatFrame.trigger.startsWith('attack'))
+        attackSwing(Number(combatFrame.trigger.slice(-1)) || 1);
+      if (combatFrame.trigger === 'dodge') dodgeWhoosh();
     }
     if (combatFrame.faceYaw !== null) s.heading = combatFrame.faceYaw;
 
     // death → respawn at the active courtyard
-    if (playerCombatState.kind === "dead" && performance.now() - playerCombatState.diedAt > 3200) {
+    if (playerCombatState.kind === 'dead' && performance.now() - playerCombatState.diedAt > 3200) {
       const rx = activeDistrict.playerSpawn.x;
       const rz = activeDistrict.playerSpawn.z;
       rigidBody.setNextKinematicTranslation({
@@ -325,7 +348,7 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
         y: groundedY(rx, rz) + CAPSULE_CENTER_Y + 0.05,
         z: rz,
       });
-      playerCombatState.kind = "free";
+      playerCombatState.kind = 'free';
       useCombatStore.getState().respawnPlayer();
       return;
     }
@@ -378,8 +401,13 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
       let turn = s.heading - headingBefore;
       while (turn > Math.PI) turn -= Math.PI * 2;
       while (turn < -Math.PI) turn += Math.PI * 2;
-      const targetLean = THREE.MathUtils.clamp((-turn / Math.max(delta, 0.001)) * 0.018, -0.13, 0.13);
-      modelGroup.current.rotation.z += (targetLean - modelGroup.current.rotation.z) * (1 - Math.exp(-8 * delta));
+      const targetLean = THREE.MathUtils.clamp(
+        (-turn / Math.max(delta, 0.001)) * 0.018,
+        -0.13,
+        0.13
+      );
+      modelGroup.current.rotation.z +=
+        (targetLean - modelGroup.current.rotation.z) * (1 - Math.exp(-8 * delta));
     }
     const horizontalSpeed = s.velocity.length();
     animation.current?.setSpeed(combatFrame.moveLock ? 0 : horizontalSpeed);
@@ -394,21 +422,27 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     }
 
     // run dust puffs
-    if (!combatFrame.moveLock && horizontalSpeed > 5.4 && grounded && frame.clock.elapsedTime - s.lastDust > 0.22) {
+    if (
+      !combatFrame.moveLock &&
+      horizontalSpeed > 5.4 &&
+      grounded &&
+      frame.clock.elapsedTime - s.lastDust > 0.22
+    ) {
       s.lastDust = frame.clock.elapsedTime;
       useCombatStore.getState().addVfx({
-        kind: "dust",
+        kind: 'dust',
         x: playerPosition.x - Math.sin(s.heading) * 0.3,
         y: playerPosition.y + 0.12,
         z: playerPosition.z - Math.cos(s.heading) * 0.3,
-        color: "#cbc3b4",
+        color: '#cbc3b4',
         startedAt: performance.now(),
         expiresAt: performance.now() + 420,
       });
     }
 
     // follow camera with speed-reactive FOV and impact shake
-    const targetFov = 50 + (playerCombatState.kind === "dodge" ? 8 : input.run && horizontalSpeed > 5 ? 6 : 0);
+    const targetFov =
+      50 + (playerCombatState.kind === 'dodge' ? 8 : input.run && horizontalSpeed > 5 ? 6 : 0);
     s.fov += (targetFov - s.fov) * (1 - Math.exp(-6 * delta));
     const perspective = frame.camera as THREE.PerspectiveCamera;
     if (Math.abs(perspective.fov - s.fov) > 0.05) {
@@ -432,7 +466,10 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
       s.lookTarget.set(playerPosition.x, playerPosition.y + 1.4, playerPosition.z);
       s.lookInitialized = true;
     }
-    s.lookTarget.lerp(new THREE.Vector3(playerPosition.x, playerPosition.y + 1.4, playerPosition.z), 1 - Math.exp(-14 * delta));
+    s.lookTarget.lerp(
+      new THREE.Vector3(playerPosition.x, playerPosition.y + 1.4, playerPosition.z),
+      1 - Math.exp(-14 * delta)
+    );
     frame.camera.lookAt(s.lookTarget);
     cameraState.yaw = s.yaw;
     updateOcclusion(frame.camera, playerPosition, frame.clock.elapsedTime, delta);
@@ -457,7 +494,7 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
           s.moveInFlight = true;
           void useWorldStore
             .getState()
-            .send({ type: "move", locationId: here.locationId })
+            .send({ type: 'move', locationId: here.locationId })
             .finally(() => {
               s.moveInFlight = false;
             });
@@ -478,23 +515,41 @@ export function PlayerController({ world, model, placements, activeDistrict }: P
     >
       <CapsuleCollider args={[CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS]} />
       <group ref={modelGroup} position={[0, -CAPSULE_CENTER_Y, 0]}>
-        <ArchetypeCharacter ref={animation} archetype={playerArchetype} protagonist={!world.player.characterId} />
+        <ArchetypeCharacter
+          ref={animation}
+          archetype={playerArchetype}
+          protagonist={!world.player.characterId}
+        />
       </group>
     </RigidBody>
   );
 }
 
 function scanInteractions(world: World, placements: WorldPlacements, model: WorldModel) {
-  let best: { kind: "npc" | "item" | "prop" | "door"; id: string; label: string; verb: string; distance: number } | null = null;
+  let best: {
+    kind: 'npc' | 'item' | 'prop' | 'door';
+    id: string;
+    label: string;
+    verb: string;
+    distance: number;
+  } | null = null;
 
   const interiorBuildingId = useUiStore.getState().interiorBuildingId;
   if (interiorBuildingId) {
     // inside: the only interaction is the exit door
     const interior = interiorForBuilding(world, model, interiorBuildingId);
     if (interior) {
-      const distance = Math.hypot(interior.exit.x - playerPosition.x, interior.exit.z - playerPosition.z);
+      const distance = Math.hypot(
+        interior.exit.x - playerPosition.x,
+        interior.exit.z - playerPosition.z
+      );
       if (distance < DOOR_RANGE) {
-        return { kind: "door" as const, id: interior.buildingId, label: interior.label, verb: "Leave" };
+        return {
+          kind: 'door' as const,
+          id: interior.buildingId,
+          label: interior.label,
+          verb: 'Leave',
+        };
       }
     }
     return null;
@@ -503,7 +558,7 @@ function scanInteractions(world: World, placements: WorldPlacements, model: Worl
   for (const door of model.doors) {
     const distance = Math.hypot(door.x - playerPosition.x, door.z - playerPosition.z);
     if (distance < DOOR_RANGE && (!best || distance < best.distance)) {
-      best = { kind: "door", id: door.buildingId, label: door.label, verb: "Enter", distance };
+      best = { kind: 'door', id: door.buildingId, label: door.label, verb: 'Enter', distance };
     }
   }
 
@@ -514,20 +569,20 @@ function scanInteractions(world: World, placements: WorldPlacements, model: Worl
       const npc = world.npcs.find((entry) => entry.id === actor.npcId);
       const enemy = combatEnemies[actor.npcId];
       if (npc && !npc.combat?.defeated && !enemy?.defeated && !enemy?.hostile) {
-        best = { kind: "npc", id: npc.id, label: npc.name, verb: "Talk to", distance };
+        best = { kind: 'npc', id: npc.id, label: npc.name, verb: 'Talk to', distance };
       }
     }
   }
   for (const item of placements.items) {
     const distance = Math.hypot(item.x - playerPosition.x, item.z - playerPosition.z);
     if (distance < INTERACT_RANGE && (!best || distance < best.distance)) {
-      best = { kind: "item", id: item.itemId, label: item.name, verb: "Pick up", distance };
+      best = { kind: 'item', id: item.itemId, label: item.name, verb: 'Pick up', distance };
     }
   }
   for (const prop of placements.interactables) {
     const distance = Math.hypot(prop.x - playerPosition.x, prop.z - playerPosition.z);
     if (distance < INTERACT_RANGE && (!best || distance < best.distance)) {
-      best = { kind: "prop", id: prop.propId, label: prop.name, verb: "Inspect", distance };
+      best = { kind: 'prop', id: prop.propId, label: prop.name, verb: 'Inspect', distance };
     }
   }
   return best ? { kind: best.kind, id: best.id, label: best.label, verb: best.verb } : null;

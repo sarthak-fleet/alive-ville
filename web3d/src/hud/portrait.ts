@@ -1,7 +1,7 @@
-import { api } from "../api/client.ts";
+import { api } from '../api/client.ts';
 
 // honor vite's base path ("/game/" in production) for static asset paths
-const ASSET_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const ASSET_BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 /**
  * URL resolution order for a portrait image:
@@ -11,7 +11,11 @@ const ASSET_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
  *   3. Terminal: onError caller falls back to letter avatar
  */
 export function portraitStaticUrl(npcId: string, worldId: string): string {
-  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const slug = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   return `${ASSET_BASE}/assets/portraits/${slug(worldId)}-${slug(npcId)}.png`;
 }
 

@@ -39,14 +39,24 @@ export interface ComputeResult {
 /** Run an n×n f32 matmul on the GPU and report wall-clock throughput. */
 export async function runMatmulBenchmark(n = 384): Promise<ComputeResult> {
   const gpu = (navigator as { gpu?: GPU }).gpu;
-  if (!gpu) throw new Error("WebGPU unavailable.");
+  if (!gpu) throw new Error('WebGPU unavailable.');
   const adapter = await gpu.requestAdapter();
-  if (!adapter) throw new Error("No WebGPU adapter.");
+  if (!adapter) throw new Error('No WebGPU adapter.');
   const device = await adapter.requestDevice();
 
   // The WebGPU flag enums are runtime globals not declared as values in this
   // TS lib; read them off globalThis (present whenever navigator.gpu is).
-  const BUF = (globalThis as unknown as { GPUBufferUsage: { STORAGE: number; COPY_DST: number; COPY_SRC: number; UNIFORM: number; MAP_READ: number } }).GPUBufferUsage;
+  const BUF = (
+    globalThis as unknown as {
+      GPUBufferUsage: {
+        STORAGE: number;
+        COPY_DST: number;
+        COPY_SRC: number;
+        UNIFORM: number;
+        MAP_READ: number;
+      };
+    }
+  ).GPUBufferUsage;
   const MAP = (globalThis as unknown as { GPUMapMode: { READ: number } }).GPUMapMode;
 
   const elements = n * n;
@@ -65,7 +75,10 @@ export async function runMatmulBenchmark(n = 384): Promise<ComputeResult> {
   device.queue.writeBuffer(nBuf, 0, new Uint32Array([n]));
 
   const module = device.createShaderModule({ code: MATMUL_WGSL });
-  const pipeline = device.createComputePipeline({ layout: "auto", compute: { module, entryPoint: "main" } });
+  const pipeline = device.createComputePipeline({
+    layout: 'auto',
+    compute: { module, entryPoint: 'main' },
+  });
   const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [

@@ -48,11 +48,7 @@
         "track the demon progenitor",
         "keep Nezuko's secret from the Corps' hardliners"
       ],
-      "resources": [
-        "nichirin blades",
-        "wisteria charms",
-        "kasugai crows"
-      ],
+      "resources": ["nichirin blades", "wisteria charms", "kasugai crows"],
       "reputation": 2
     },
     {
@@ -62,11 +58,7 @@
         "erase witnesses",
         "remain invisible inside the crowd"
       ],
-      "resources": [
-        "demon blood",
-        "night cover",
-        "human disguise"
-      ],
+      "resources": ["demon blood", "night cover", "human disguise"],
       "reputation": -4
     }
   ],
@@ -81,46 +73,21 @@
         "bodyType": "lean athletic teenager",
         "hair": "dark burgundy hair, messy",
         "outfit": "black-and-green checkered haori over Corps uniform, hanafuda earrings",
-        "palette": [
-          "#2e4a3f",
-          "#7a2a2a",
-          "#e8c9a0"
-        ],
+        "palette": ["#2e4a3f", "#7a2a2a", "#e8c9a0"],
         "silhouette": "Checkered haori, slim build, a wooden box taller than his shoulders.",
-        "visualTags": [
-          "checkered haori",
-          "scar",
-          "earrings",
-          "kind eyes"
-        ]
+        "visualTags": ["checkered haori", "scar", "earrings", "kind eyes"]
       },
-      "traits": [
-        "empathetic",
-        "determined",
-        "earnest"
-      ],
-      "values": [
-        "family",
-        "mercy even for demons",
-        "hard work"
-      ],
-      "flaws": [
-        "too trusting",
-        "cries easily"
-      ],
-      "fears": [
-        "losing Nezuko",
-        "failing the people beside him"
-      ],
+      "traits": ["empathetic", "determined", "earnest"],
+      "values": ["family", "mercy even for demons", "hard work"],
+      "flaws": ["too trusting", "cries easily"],
+      "fears": ["losing Nezuko", "failing the people beside him"],
       "speechStyle": "polite, warm, painfully sincere",
       "goals": [
         "find a cure for Nezuko",
         "track the demon scent threading through the market",
         "protect Asakusa's night crowds"
       ],
-      "secrets": [
-        "The box on his back hides his demon sister from the Corps."
-      ],
+      "secrets": ["The box on his back hides his demon sister from the Corps."],
       "memories": [
         "A demon's scent crossed the market road at dusk — the same scent as the night my family died.",
         "Nezuko stirred in the box when the lanterns came on."
@@ -136,47 +103,18 @@
         "bodyType": "petite girl, sometimes shrinking smaller",
         "hair": "long black hair fading to flame orange, tied",
         "outfit": "pink kimono with asanoha pattern, bamboo muzzle, dark haori",
-        "palette": [
-          "#e8a8b8",
-          "#2a2330",
-          "#f2d8a0"
-        ],
+        "palette": ["#e8a8b8", "#2a2330", "#f2d8a0"],
         "silhouette": "Small girl with a long ponytail and a bamboo muzzle.",
-        "visualTags": [
-          "pink kimono",
-          "bamboo muzzle",
-          "ponytail",
-          "she"
-        ]
+        "visualTags": ["pink kimono", "bamboo muzzle", "ponytail", "she"]
       },
-      "traits": [
-        "protective",
-        "gentle",
-        "fierce when family is threatened"
-      ],
-      "values": [
-        "her brother",
-        "humans as family"
-      ],
-      "flaws": [
-        "cannot speak",
-        "burns in sunlight"
-      ],
-      "fears": [
-        "hurting a human"
-      ],
+      "traits": ["protective", "gentle", "fierce when family is threatened"],
+      "values": ["her brother", "humans as family"],
+      "flaws": ["cannot speak", "burns in sunlight"],
+      "fears": ["hurting a human"],
       "speechStyle": "muffled hums and nods; she cannot speak through the muzzle",
-      "goals": [
-        "guard Tanjiro",
-        "resist the hunger",
-        "nap safely through the day"
-      ],
-      "secrets": [
-        "Her demon blood art sparks pink fire when she fights."
-      ],
-      "memories": [
-        "A human child smiled at me near the udon stand and I did not feel hungry."
-      ]
+      "goals": ["guard Tanjiro", "resist the hunger", "nap safely through the day"],
+      "secrets": ["Her demon blood art sparks pink fire when she fights."],
+      "memories": ["A human child smiled at me near the udon stand and I did not feel hungry."]
     },
     {
       "name": "Zenitsu Agatsuma",
@@ -188,49 +126,18 @@
         "bodyType": "slim, perpetually cowering",
         "hair": "short blond with orange tips",
         "outfit": "yellow gradient haori patterned like lightning over Corps uniform",
-        "palette": [
-          "#e8c95a",
-          "#f2e2b0",
-          "#8a5a3c"
-        ],
+        "palette": ["#e8c95a", "#f2e2b0", "#8a5a3c"],
         "silhouette": "Slim boy in a lightning-yellow haori, usually mid-flinch.",
-        "visualTags": [
-          "yellow haori",
-          "lightning",
-          "blond"
-        ]
+        "visualTags": ["yellow haori", "lightning", "blond"]
       },
-      "traits": [
-        "cowardly",
-        "loyal",
-        "dramatic"
-      ],
-      "values": [
-        "being needed",
-        "pretty girls",
-        "his late master"
-      ],
-      "flaws": [
-        "panics loudly",
-        "self-pitying"
-      ],
-      "fears": [
-        "demons",
-        "dying unloved",
-        "Inosuke's headbutts"
-      ],
+      "traits": ["cowardly", "loyal", "dramatic"],
+      "values": ["being needed", "pretty girls", "his late master"],
+      "flaws": ["panics loudly", "self-pitying"],
+      "fears": ["demons", "dying unloved", "Inosuke's headbutts"],
       "speechStyle": "shrill panic that collapses into earnest mumbling",
-      "goals": [
-        "survive the night patrol",
-        "impress someone, anyone",
-        "nap (strategically)"
-      ],
-      "secrets": [
-        "He remembers everything he does while asleep but pretends not to."
-      ],
-      "memories": [
-        "The sound near the shadowed alley had no heartbeat at all. None."
-      ]
+      "goals": ["survive the night patrol", "impress someone, anyone", "nap (strategically)"],
+      "secrets": ["He remembers everything he does while asleep but pretends not to."],
+      "memories": ["The sound near the shadowed alley had no heartbeat at all. None."]
     },
     {
       "name": "Inosuke Hashibira",
@@ -242,44 +149,21 @@
         "bodyType": "broad muscled shoulders, shirtless",
         "hair": "wild black mane under a grey boar mask",
         "outfit": "boar's-head mask, bare chest, fur-trimmed hakama",
-        "palette": [
-          "#6a7280",
-          "#3a3330",
-          "#c9b8a0"
-        ],
+        "palette": ["#6a7280", "#3a3330", "#c9b8a0"],
         "silhouette": "Broad shirtless frame topped by a boar head.",
-        "visualTags": [
-          "boar mask",
-          "broad",
-          "wild"
-        ]
+        "visualTags": ["boar mask", "broad", "wild"]
       },
-      "traits": [
-        "aggressive",
-        "competitive",
-        "secretly soft"
-      ],
-      "values": [
-        "strength",
-        "winning",
-        "comrades (he would never say it)"
-      ],
-      "flaws": [
-        "cannot read",
-        "charges first, thinks never"
-      ],
-      "fears": [
-        "being seen as weak"
-      ],
+      "traits": ["aggressive", "competitive", "secretly soft"],
+      "values": ["strength", "winning", "comrades (he would never say it)"],
+      "flaws": ["cannot read", "charges first, thinks never"],
+      "fears": ["being seen as weak"],
       "speechStyle": "bellowed challenges and mangled names",
       "goals": [
         "fight the strongest thing in Asakusa",
         "beat Tanjiro at anything",
         "headbutt the alley demon"
       ],
-      "secrets": [
-        "He keeps the rice ball an old woman gave him wrapped and uneaten."
-      ],
+      "secrets": ["He keeps the rice ball an old woman gave him wrapped and uneaten."],
       "memories": [
         "Something in the alley dodged my blade without footsteps. I want to fight it again."
       ]
@@ -294,44 +178,21 @@
         "bodyType": "petite and graceful",
         "hair": "black hair to purple, butterfly pin, she",
         "outfit": "white haori fading to butterfly-wing teal and purple over uniform",
-        "palette": [
-          "#9a7ab8",
-          "#d8e8e2",
-          "#2a2330"
-        ],
+        "palette": ["#9a7ab8", "#d8e8e2", "#2a2330"],
         "silhouette": "Small, elegant, haori spread like wings.",
-        "visualTags": [
-          "butterfly haori",
-          "purple",
-          "she",
-          "smile"
-        ]
+        "visualTags": ["butterfly haori", "purple", "she", "smile"]
       },
-      "traits": [
-        "serene",
-        "razor-tongued",
-        "patient"
-      ],
-      "values": [
-        "her sister's dream of mercy",
-        "precision"
-      ],
-      "flaws": [
-        "smiles instead of grieving",
-        "provokes the strong"
-      ],
-      "fears": [
-        "forgetting her sister's face"
-      ],
+      "traits": ["serene", "razor-tongued", "patient"],
+      "values": ["her sister's dream of mercy", "precision"],
+      "flaws": ["smiles instead of grieving", "provokes the strong"],
+      "fears": ["forgetting her sister's face"],
       "speechStyle": "sweetly polite with a poisoned edge",
       "goals": [
         "brew a wisteria poison strong enough for an upper rank",
         "keep the wounded breathing",
         "watch the Kamado siblings — they interest her"
       ],
-      "secrets": [
-        "Her new poison recipe requires demon blood fresher than any sample she has."
-      ],
+      "secrets": ["Her new poison recipe requires demon blood fresher than any sample she has."],
       "memories": [
         "The disappearances near the theater follow the pattern of a blood-spreading demon, not a hungry one."
       ]
@@ -346,35 +207,14 @@
         "bodyType": "tall and composed",
         "hair": "black curls under a white fedora",
         "outfit": "white fedora, black western suit, red eyes when angered",
-        "palette": [
-          "#2a2330",
-          "#e8e4dc",
-          "#a01828"
-        ],
+        "palette": ["#2a2330", "#e8e4dc", "#a01828"],
         "silhouette": "A tall gentleman silhouette with a pale hat in lantern light.",
-        "visualTags": [
-          "fedora",
-          "suit",
-          "crimson eyes"
-        ]
+        "visualTags": ["fedora", "suit", "crimson eyes"]
       },
-      "traits": [
-        "cold",
-        "vain",
-        "absolute"
-      ],
-      "values": [
-        "self-preservation",
-        "perfection",
-        "erasure of weakness"
-      ],
-      "flaws": [
-        "pathological fear of the sun and of being known"
-      ],
-      "fears": [
-        "the breath users finding his scent",
-        "sunlight"
-      ],
+      "traits": ["cold", "vain", "absolute"],
+      "values": ["self-preservation", "perfection", "erasure of weakness"],
+      "flaws": ["pathological fear of the sun and of being known"],
+      "fears": ["the breath users finding his scent", "sunlight"],
       "speechStyle": "soft, courteous, terrifyingly final",
       "goals": [
         "seed new demons in Asakusa's crowds",
@@ -399,47 +239,22 @@
         "bodyType": "tall, composed swordsman",
         "hair": "long black hair tied low",
         "outfit": "half-solid red, half-patterned haori over Corps uniform",
-        "palette": [
-          "#31466e",
-          "#8a2f2a",
-          "#e8c9a0"
-        ],
+        "palette": ["#31466e", "#8a2f2a", "#e8c9a0"],
         "silhouette": "A tall, still figure whose mismatched haori catches the lantern light.",
-        "visualTags": [
-          "mismatched haori",
-          "long ponytail",
-          "calm"
-        ]
+        "visualTags": ["mismatched haori", "long ponytail", "calm"]
       },
-      "traits": [
-        "stoic",
-        "principled",
-        "socially oblivious"
-      ],
-      "values": [
-        "duty",
-        "the few he has saved",
-        "quiet"
-      ],
-      "flaws": [
-        "cannot explain himself",
-        "carries survivor's guilt"
-      ],
-      "fears": [
-        "being the last one standing again"
-      ],
+      "traits": ["stoic", "principled", "socially oblivious"],
+      "values": ["duty", "the few he has saved", "quiet"],
+      "flaws": ["cannot explain himself", "carries survivor's guilt"],
+      "fears": ["being the last one standing again"],
       "speechStyle": "few words, flat delivery, accidentally harsh",
       "goals": [
         "watch the shadowed alley at night",
         "judge whether Nezuko remains safe",
         "drill the young slayers"
       ],
-      "secrets": [
-        "He does not consider himself worthy of the Hashira title."
-      ],
-      "memories": [
-        "Sabito's voice still answers when I train alone at dawn."
-      ]
+      "secrets": ["He does not consider himself worthy of the Hashira title."],
+      "memories": ["Sabito's voice still answers when I train alone at dawn."]
     },
     {
       "name": "Kanao Tsuyuri",
@@ -451,47 +266,18 @@
         "bodyType": "small, graceful",
         "hair": "dark hair, side ponytail with a butterfly ornament",
         "outfit": "Corps uniform with white-pink cape, butterfly hairpiece",
-        "palette": [
-          "#d88aa8",
-          "#3a3548",
-          "#f2d8c0"
-        ],
+        "palette": ["#d88aa8", "#3a3548", "#f2d8c0"],
         "silhouette": "A girl poised like a dancer, butterfly pin glinting. She flips a coin and smiles.",
-        "visualTags": [
-          "butterfly pin",
-          "cape",
-          "coin",
-          "she"
-        ]
+        "visualTags": ["butterfly pin", "cape", "coin", "she"]
       },
-      "traits": [
-        "serene",
-        "precise",
-        "indecisive about her own wants"
-      ],
-      "values": [
-        "Shinobu's approval",
-        "the coin's fairness"
-      ],
-      "flaws": [
-        "defers all choices",
-        "hides behind a smile"
-      ],
-      "fears": [
-        "choosing wrong and losing someone"
-      ],
+      "traits": ["serene", "precise", "indecisive about her own wants"],
+      "values": ["Shinobu's approval", "the coin's fairness"],
+      "flaws": ["defers all choices", "hides behind a smile"],
+      "fears": ["choosing wrong and losing someone"],
       "speechStyle": "soft, sparse, often just a smile",
-      "goals": [
-        "tend the wounded at the mansion",
-        "shadow Shinobu's rounds",
-        "flip the coin less"
-      ],
-      "secrets": [
-        "She once ignored the coin to save a stranger, and has told no one."
-      ],
-      "memories": [
-        "The coin came up heads, so I spoke to the udon cook today."
-      ]
+      "goals": ["tend the wounded at the mansion", "shadow Shinobu's rounds", "flip the coin less"],
+      "secrets": ["She once ignored the coin to save a stranger, and has told no one."],
+      "memories": ["The coin came up heads, so I spoke to the udon cook today."]
     },
     {
       "name": "Sakonji Urokodaki",
@@ -503,46 +289,22 @@
         "bodyType": "weathered, broad through the shoulders",
         "hair": "grey hair under a long-nosed tengu mask",
         "outfit": "cloud-patterned haori, red tengu mask",
-        "palette": [
-          "#5a6e8e",
-          "#a03828",
-          "#d8ccb0"
-        ],
+        "palette": ["#5a6e8e", "#a03828", "#d8ccb0"],
         "silhouette": "A masked elder whose stillness makes crowds part around him.",
-        "visualTags": [
-          "tengu mask",
-          "cloud haori",
-          "elder"
-        ]
+        "visualTags": ["tengu mask", "cloud haori", "elder"]
       },
-      "traits": [
-        "gruff",
-        "exacting",
-        "secretly soft-hearted"
-      ],
-      "values": [
-        "discipline",
-        "his students' lives",
-        "clean water"
-      ],
-      "flaws": [
-        "hides his face and his grief"
-      ],
-      "fears": [
-        "sending another child to die"
-      ],
+      "traits": ["gruff", "exacting", "secretly soft-hearted"],
+      "values": ["discipline", "his students' lives", "clean water"],
+      "flaws": ["hides his face and his grief"],
+      "fears": ["sending another child to die"],
       "speechStyle": "clipped instructions; praise arrives years late",
       "goals": [
         "inspect the forge's blades",
         "drill anyone who asks properly",
         "buy dried wisteria for the mountain"
       ],
-      "secrets": [
-        "He carves a wooden mask for every student he has lost."
-      ],
-      "memories": [
-        "The forge's quench-water smells wrong — too much iron, or too much blood."
-      ]
+      "secrets": ["He carves a wooden mask for every student he has lost."],
+      "memories": ["The forge's quench-water smells wrong — too much iron, or too much blood."]
     },
     {
       "name": "Tamayo",
@@ -554,37 +316,14 @@
         "bodyType": "elegant, unhurried",
         "hair": "black hair in a soft updo with a kanzashi pin",
         "outfit": "lavender-grey kimono, doctor's satchel",
-        "palette": [
-          "#8a7fb8",
-          "#2a2433",
-          "#e8d8e0"
-        ],
+        "palette": ["#8a7fb8", "#2a2433", "#e8d8e0"],
         "silhouette": "A graceful lady whose shadow does not quite match the lanterns. She carries a medicine case.",
-        "visualTags": [
-          "kimono",
-          "kanzashi",
-          "medicine case",
-          "she",
-          "lady"
-        ]
+        "visualTags": ["kimono", "kanzashi", "medicine case", "she", "lady"]
       },
-      "traits": [
-        "compassionate",
-        "guarded",
-        "methodical"
-      ],
-      "values": [
-        "atonement",
-        "medicine",
-        "Yushiro's safety"
-      ],
-      "flaws": [
-        "trusts no one fully",
-        "must drink purchased blood to live"
-      ],
-      "fears": [
-        "Muzan finding her clinic"
-      ],
+      "traits": ["compassionate", "guarded", "methodical"],
+      "values": ["atonement", "medicine", "Yushiro's safety"],
+      "flaws": ["trusts no one fully", "must drink purchased blood to live"],
+      "fears": ["Muzan finding her clinic"],
       "speechStyle": "measured, courteous, clinically precise",
       "goals": [
         "run the hidden clinic behind Udon Stand Row",
@@ -595,9 +334,7 @@
         "She is a demon, and her clinic's basement holds her research.",
         "She can break Muzan's curse in others."
       ],
-      "memories": [
-        "A slayer boy with hanafuda earrings smelled me and did not draw his blade."
-      ]
+      "memories": ["A slayer boy with hanafuda earrings smelled me and did not draw his blade."]
     },
     {
       "name": "Yushiro",
@@ -609,46 +346,22 @@
         "bodyType": "slight, quick",
         "hair": "dark green hair, short",
         "outfit": "plain kimono with paper talismans tucked in the sleeve",
-        "palette": [
-          "#3f6e5a",
-          "#2a2330",
-          "#e8e4d8"
-        ],
+        "palette": ["#3f6e5a", "#2a2330", "#e8e4d8"],
         "silhouette": "A sharp-eyed boy who appears beside you without footsteps.",
-        "visualTags": [
-          "talisman",
-          "scowl",
-          "quick"
-        ]
+        "visualTags": ["talisman", "scowl", "quick"]
       },
-      "traits": [
-        "devoted",
-        "jealous",
-        "blunt"
-      ],
-      "values": [
-        "Tamayo above all",
-        "secrecy"
-      ],
-      "flaws": [
-        "rude to everyone but Tamayo",
-        "acts before thinking"
-      ],
-      "fears": [
-        "Tamayo sacrificed for strangers"
-      ],
+      "traits": ["devoted", "jealous", "blunt"],
+      "values": ["Tamayo above all", "secrecy"],
+      "flaws": ["rude to everyone but Tamayo", "acts before thinking"],
+      "fears": ["Tamayo sacrificed for strangers"],
       "speechStyle": "curt insults, softening only when reporting to Tamayo",
       "goals": [
         "screen the clinic's visitors",
         "post warding talismans along the alley",
         "glare at Zenitsu"
       ],
-      "secrets": [
-        "His blood art hides the clinic from demon senses."
-      ],
-      "memories": [
-        "A trembling blond boy asked if the lady doctor was single. Unforgivable."
-      ]
+      "secrets": ["His blood art hides the clinic from demon senses."],
+      "memories": ["A trembling blond boy asked if the lady doctor was single. Unforgivable."]
     },
     {
       "name": "Susamaru",
@@ -660,34 +373,14 @@
         "bodyType": "athletic girl, six arms when fighting",
         "hair": "black bob with a center ribbon",
         "outfit": "short patterned kimono, bright temari ball under one arm",
-        "palette": [
-          "#c8503c",
-          "#2a2330",
-          "#e8c95a"
-        ],
+        "palette": ["#c8503c", "#2a2330", "#e8c95a"],
         "silhouette": "A grinning girl bouncing a temari ball that cracks the cobblestones.",
-        "visualTags": [
-          "temari",
-          "grin",
-          "she"
-        ]
+        "visualTags": ["temari", "grin", "she"]
       },
-      "traits": [
-        "playful",
-        "cruel",
-        "approval-starved"
-      ],
-      "values": [
-        "Muzan's praise",
-        "a good game"
-      ],
-      "flaws": [
-        "cannot resist a challenge",
-        "says Muzan's name too easily"
-      ],
-      "fears": [
-        "the curse in her own blood"
-      ],
+      "traits": ["playful", "cruel", "approval-starved"],
+      "values": ["Muzan's praise", "a good game"],
+      "flaws": ["cannot resist a challenge", "says Muzan's name too easily"],
+      "fears": ["the curse in her own blood"],
       "speechStyle": "sing-song taunts, counting throws like a playground rhyme",
       "goals": [
         "patrol the shadowed alley",
@@ -706,11 +399,7 @@
     {
       "title": "The progenitor walks the market",
       "pressure": 52,
-      "involved": [
-        "Muzan Kibutsuji",
-        "Tanjiro Kamado",
-        "Shadowed Alley"
-      ],
+      "involved": ["Muzan Kibutsuji", "Tanjiro Kamado", "Shadowed Alley"],
       "antagonist": "Muzan Kibutsuji",
       "objective": "Convert fresh demons in the alley, erase the earring boy's trail, and vanish before any pillar arrives.",
       "clue": "The vanishings cluster within a lantern's walk of the theater district, always after the last tram."
@@ -718,11 +407,7 @@
     {
       "title": "Nezuko's secret strains the Corps",
       "pressure": 38,
-      "involved": [
-        "Nezuko Kamado",
-        "Shinobu Kocho",
-        "Butterfly Mansion"
-      ],
+      "involved": ["Nezuko Kamado", "Shinobu Kocho", "Butterfly Mansion"],
       "antagonist": "Shinobu Kocho",
       "objective": "Shinobu watches the box-carrying boy: if the demon girl ever feeds, her poison is ready.",
       "clue": "Butterfly Mansion's medicine log has a new page titled only 'K. siblings — observation'."

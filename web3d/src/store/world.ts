@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-import type { Npc, PlayerAction, TickSummary, World } from "../../../src/types.ts";
+import type { Npc, PlayerAction, TickSummary, World } from '../../../src/types.ts';
 import {
   fetchAgentLoopStatus,
   fetchState,
@@ -9,16 +9,16 @@ import {
   postTick,
   setAgentLoopRunning,
   subscribeEvents,
-} from "../api/client.ts";
-import { useBanterStore } from "../characters/banter.ts";
-import { useDirectorStore } from "../director/store.ts";
-import { useUiStore } from "./ui.ts";
+} from '../api/client.ts';
+import { useBanterStore } from '../characters/banter.ts';
+import { useDirectorStore } from '../director/store.ts';
+import { useUiStore } from './ui.ts';
 
 export interface WorldEvent {
   id: number;
   actorId: string | null;
   text: string;
-  actionType: TickSummary["actions"][number]["action"]["type"];
+  actionType: TickSummary['actions'][number]['action']['type'];
   fromDirector: boolean;
   expiresAt: number;
 }
@@ -47,8 +47,10 @@ let eventSeq = 0;
 
 /** lazily imported to avoid a require cycle (combat store imports this store) */
 async function markHostilesFrom(summary: TickSummary): Promise<void> {
-  const { useCombatStore } = await import("../combat/store.ts");
-  useCombatStore.getState().setHostileFromSummaryActions(summary.actions.map((entry) => entry.action));
+  const { useCombatStore } = await import('../combat/store.ts');
+  useCombatStore
+    .getState()
+    .setHostileFromSummaryActions(summary.actions.map((entry) => entry.action));
 }
 
 export function resetTransientWorldUiState(): void {
@@ -61,10 +63,10 @@ export function resetTransientWorldUiState(): void {
 }
 
 async function resetCombatForWorld(): Promise<void> {
-  const { useCombatStore } = await import("../combat/store.ts");
-  const { clearFollowers } = await import("../characters/followers.ts");
-  const { useDirectorStore: directorStore } = await import("../director/store.ts");
-  const { useBanterStore: banterStore } = await import("../characters/banter.ts");
+  const { useCombatStore } = await import('../combat/store.ts');
+  const { clearFollowers } = await import('../characters/followers.ts');
+  const { useDirectorStore: directorStore } = await import('../director/store.ts');
+  const { useBanterStore: banterStore } = await import('../characters/banter.ts');
   useCombatStore.getState().resetForWorld();
   clearFollowers();
   directorStore.getState().reset();
@@ -77,7 +79,8 @@ function toastsFrom(summary: TickSummary): WorldEvent[] {
   const now = performance.now();
   return summary.actions.map((entry): WorldEvent => {
     const a = entry.action;
-    const text = a.type === "talk" || a.type === "gossip" || a.type === "confront" ? a.text : entry.text;
+    const text =
+      a.type === 'talk' || a.type === 'gossip' || a.type === 'confront' ? a.text : entry.text;
     return {
       id: ++eventSeq,
       actorId: a.actorId ?? null,
@@ -92,12 +95,25 @@ function toastsFrom(summary: TickSummary): WorldEvent[] {
 /** NPC↔NPC talk becomes overhearable speech bubbles in the player's district */
 function surfaceNpcBanter(summary: TickSummary, world: World): void {
   for (const entry of summary.actions) {
-    const action = entry.action as { type: string; actorId?: string; targetId?: string; text?: string };
-    if (!["talk", "gossip", "confront"].includes(action.type)) continue;
-    if (!action.actorId || !action.targetId || action.actorId === "player" || action.targetId === "player") continue;
+    const action = entry.action as {
+      type: string;
+      actorId?: string;
+      targetId?: string;
+      text?: string;
+    };
+    if (!['talk', 'gossip', 'confront'].includes(action.type)) continue;
+    if (
+      !action.actorId ||
+      !action.targetId ||
+      action.actorId === 'player' ||
+      action.targetId === 'player'
+    )
+      continue;
     const actor = world.npcs.find((npc) => npc.id === action.actorId);
     if (!actor || actor.locationId !== world.player.locationId) continue;
-    useBanterStore.getState().show(action.actorId, action.targetId, action.text ?? entry.text, action.type === "confront");
+    useBanterStore
+      .getState()
+      .show(action.actorId, action.targetId, action.text ?? entry.text, action.type === 'confront');
   }
 }
 
@@ -106,15 +122,26 @@ const INITIATION_COOLDOWN_MS = 90_000;
 /** the world talks back: a same-place NPC addressing the player opens the conversation */
 async function maybeNpcInitiatesDialogue(summary: TickSummary, world: World): Promise<void> {
   const ui = useUiStore.getState();
-  if (ui.gamePhase !== "playing" || ui.dialogueNpcId || ui.interiorBuildingId) return;
+  if (ui.gamePhase !== 'playing' || ui.dialogueNpcId || ui.interiorBuildingId) return;
   if (useDirectorStore.getState().cutscene) return;
-  const { useCombatStore } = await import("../combat/store.ts");
-  if (Object.values(useCombatStore.getState().enemies).some((enemy) => enemy.hostile && !enemy.defeated)) return;
-  if (performance.now() - useWorldStore.getState().lastNpcInitiationAt < INITIATION_COOLDOWN_MS) return;
+  const { useCombatStore } = await import('../combat/store.ts');
+  if (
+    Object.values(useCombatStore.getState().enemies).some(
+      (enemy) => enemy.hostile && !enemy.defeated
+    )
+  )
+    return;
+  if (performance.now() - useWorldStore.getState().lastNpcInitiationAt < INITIATION_COOLDOWN_MS)
+    return;
   for (const entry of summary.actions) {
-    const action = entry.action as { type: string; actorId?: string; targetId?: string; text?: string };
-    if (!["talk", "confront", "gossip"].includes(action.type)) continue;
-    if (action.targetId !== "player" || !action.actorId || action.actorId === "player") continue;
+    const action = entry.action as {
+      type: string;
+      actorId?: string;
+      targetId?: string;
+      text?: string;
+    };
+    if (!['talk', 'confront', 'gossip'].includes(action.type)) continue;
+    if (action.targetId !== 'player' || !action.actorId || action.actorId === 'player') continue;
     const npc = world.npcs.find((candidate) => candidate.id === action.actorId);
     if (!npc || npc.combat?.defeated || npc.locationId !== world.player.locationId) continue;
     useWorldStore.setState({ lastNpcInitiationAt: performance.now() });
@@ -140,12 +167,12 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       const world = await fetchState();
       set({ world, loading: false });
       const status = await fetchAgentLoopStatus();
-      if (status.state === "running") {
+      if (status.state === 'running') {
         set({ agentLoopRunning: true });
       } else {
         // the world is alive by default — the HUD chip is a pause override
         const started = await setAgentLoopRunning(true);
-        set({ agentLoopRunning: started.state === "running" });
+        set({ agentLoopRunning: started.state === 'running' });
       }
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -219,7 +246,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   async toggleAgentLoop() {
     try {
       const status = await setAgentLoopRunning(!get().agentLoopRunning);
-      set({ agentLoopRunning: status.state === "running" });
+      set({ agentLoopRunning: status.state === 'running' });
     } catch (error) {
       set({ error: (error as Error).message });
     }
@@ -232,11 +259,12 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       try {
         parsed = JSON.parse(text);
       } catch {
-        throw new Error("World source is not valid JSON");
+        throw new Error('World source is not valid JSON');
       }
-      if (!parsed || typeof parsed !== "object") throw new Error("World source is empty or malformed");
-      const source = "source" in parsed ? (parsed as { source?: unknown }).source : parsed;
-      if (!source || typeof source !== "object") throw new Error("World source is missing");
+      if (!parsed || typeof parsed !== 'object')
+        throw new Error('World source is empty or malformed');
+      const source = 'source' in parsed ? (parsed as { source?: unknown }).source : parsed;
+      if (!source || typeof source !== 'object') throw new Error('World source is missing');
       const result = await importWorldSource(source as never);
       set({
         world: result.state,

@@ -10,15 +10,15 @@
  * offline catch-up (the literal "sleep"), and optionally via the LLM in the loop.
  */
 
-import { completeText, type CompleteTextResult } from "./llm/router.ts";
-import type { Memory, Npc, World } from "./types.ts";
+import { completeText, type CompleteTextResult } from './llm/router.ts';
+import type { Memory, Npc, World } from './types.ts';
 
 /** Don't refresh the impression more often than this many ticks. */
 const IMPRESSION_REFRESH_TICKS = 12;
 const IMPRESSION_MEMORY_WINDOW = 15;
 
 type CompleteTextFn = (req: {
-  tier: "normal" | "quest" | "background";
+  tier: 'normal' | 'quest' | 'background';
   system: string;
   user: string;
   timeoutMs?: number;
@@ -26,7 +26,9 @@ type CompleteTextFn = (req: {
 }) => Promise<CompleteTextResult>;
 
 function playerMemories(npc: Npc): Memory[] {
-  return npc.memories.filter((memory) => memory.meta?.subject === "player" || memory.meta?.tags?.includes("reflection"));
+  return npc.memories.filter(
+    (memory) => memory.meta?.subject === 'player' || memory.meta?.tags?.includes('reflection')
+  );
 }
 
 /** True when enough time has passed AND there is new player-related material to consolidate. */
@@ -37,20 +39,22 @@ export function impressionDue(npc: Npc, tick: number): boolean {
 }
 
 function sentimentOf(npc: Npc): string {
-  const axes = npc.relationshipAxes?.["player"];
-  if (!axes) return "uncertain about";
-  if ((axes.suspicion ?? 0) >= 3 || (axes.fear ?? 0) >= 3) return "wary of";
-  if ((axes.trust ?? 0) + (axes.affection ?? 0) >= 4) return "warming to";
-  if ((axes.respect ?? 0) >= 3) return "respectful of";
-  return "neutral toward";
+  const axes = npc.relationshipAxes?.['player'];
+  if (!axes) return 'uncertain about';
+  if ((axes.suspicion ?? 0) >= 3 || (axes.fear ?? 0) >= 3) return 'wary of';
+  if ((axes.trust ?? 0) + (axes.affection ?? 0) >= 4) return 'warming to';
+  if ((axes.respect ?? 0) >= 3) return 'respectful of';
+  return 'neutral toward';
 }
 
 /** Deterministic consolidation (no LLM) — used in offline catch-up + tests. */
 export function consolidatePlayerImpressionScripted(world: World, npc: Npc): string | null {
-  const recent = [...npc.memories].filter((memory) => memory.meta?.subject === "player").sort((a, b) => b.tick - a.tick)[0];
-  const hasAxes = Boolean(npc.relationshipAxes?.["player"]);
+  const recent = [...npc.memories]
+    .filter((memory) => memory.meta?.subject === 'player')
+    .sort((a, b) => b.tick - a.tick)[0];
+  const hasAxes = Boolean(npc.relationshipAxes?.['player']);
   if (!recent && !hasAxes) return null;
-  const playerName = world.player.name ?? "the player";
+  const playerName = world.player.name ?? 'the player';
   const impression = recent
     ? `My standing read on ${playerName}: I am ${sentimentOf(npc)} them. Lately: ${recent.text}`
     : `My standing read on ${playerName}: I am ${sentimentOf(npc)} them.`;
@@ -60,20 +64,30 @@ export function consolidatePlayerImpressionScripted(world: World, npc: Npc): str
 }
 
 /** LLM consolidation — distils player memories into one standing impression. Null on failure. */
-export async function consolidatePlayerImpression(world: World, npc: Npc, complete: CompleteTextFn = completeText): Promise<string | null> {
+export async function consolidatePlayerImpression(
+  world: World,
+  npc: Npc,
+  complete: CompleteTextFn = completeText
+): Promise<string | null> {
   const memories = playerMemories(npc).slice(-IMPRESSION_MEMORY_WINDOW);
   if (memories.length === 0) return null;
-  const playerName = world.player.name ?? "the player";
+  const playerName = world.player.name ?? 'the player';
   const system =
     `In ONE first-person sentence, state your current standing impression of ${playerName} — ` +
     `how you regard them going forward — grounded ONLY in the memories. Return only the sentence.`;
-  const identity = [npc.name, npc.role ? `(${npc.role})` : ""].filter(Boolean).join(" ");
-  const user = `${identity}\nMemories about ${playerName}:\n${memories.map((memory) => `- ${memory.text}`).join("\n")}`;
+  const identity = [npc.name, npc.role ? `(${npc.role})` : ''].filter(Boolean).join(' ');
+  const user = `${identity}\nMemories about ${playerName}:\n${memories.map((memory) => `- ${memory.text}`).join('\n')}`;
 
-  const result = await complete({ tier: "normal", system, user, timeoutMs: 20_000, model: process.env["LLM_MODEL_PROPOSE"] ?? undefined });
-  if ("skipped" in result && result.skipped) return null;
-  if ("error" in result && result.error) return null;
-  if (!("text" in result) || !result.text) return null;
+  const result = await complete({
+    tier: 'normal',
+    system,
+    user,
+    timeoutMs: 20_000,
+    model: process.env['LLM_MODEL_PROPOSE'] ?? undefined,
+  });
+  if ('skipped' in result && result.skipped) return null;
+  if ('error' in result && result.error) return null;
+  if (!('text' in result) || !result.text) return null;
   const impression = result.text.trim();
   if (!impression) return null;
 

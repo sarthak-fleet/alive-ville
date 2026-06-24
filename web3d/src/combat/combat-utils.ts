@@ -8,5 +8,5 @@
  * meaning an incoming enemy swing would whiff.
  */
 export function wasDodgedInWindow(playerStateKind: string): boolean {
-  return playerStateKind === "dodge";
+  return playerStateKind === 'dodge';
 }

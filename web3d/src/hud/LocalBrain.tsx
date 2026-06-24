@@ -1,18 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-import { type ComputeResult, runMatmulBenchmark } from "../ai/gpu-compute.ts";
-import { startRenderDemo } from "../ai/gpu-render.ts";
-import { useLocalBrain } from "../ai/local-llm.ts";
-import { webTransportSupported } from "../platform/webtransport.ts";
+import { type ComputeResult, runMatmulBenchmark } from '../ai/gpu-compute.ts';
+import { startRenderDemo } from '../ai/gpu-render.ts';
+import { useLocalBrain } from '../ai/local-llm.ts';
+import { webTransportSupported } from '../platform/webtransport.ts';
 
 /** Default persona so the user can prove local generation in one click. */
 const SYSTEM_PERSONA =
-  "You are Borin, a gruff but kind-hearted blacksmith in a small fantasy town. " +
-  "Stay in character. Reply in one or two short sentences.";
-const DEFAULT_PROMPT = "A stranger walks up and asks why your forge is cold today.";
+  'You are Borin, a gruff but kind-hearted blacksmith in a small fantasy town. ' +
+  'Stay in character. Reply in one or two short sentences.';
+const DEFAULT_PROMPT = 'A stranger walks up and asks why your forge is cold today.';
 
 function Pill({ on, label }: { on: boolean; label: string }): React.ReactElement {
-  return <span className={`cap-pill ${on ? "on" : "off"}`}>{on ? "✓" : "✗"} {label}</span>;
+  return (
+    <span className={`cap-pill ${on ? 'on' : 'off'}`}>
+      {on ? '✓' : '✗'} {label}
+    </span>
+  );
 }
 
 export function LocalBrain(): React.ReactElement {
@@ -23,7 +27,18 @@ export function LocalBrain(): React.ReactElement {
   const [renderOn, setRenderOn] = useState(false);
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
   const renderStopRef = useRef<(() => void) | null>(null);
-  const { caps, status, progress, progressText, modelId, error, lastReply, detect, load, generate } = useLocalBrain();
+  const {
+    caps,
+    status,
+    progress,
+    progressText,
+    modelId,
+    error,
+    lastReply,
+    detect,
+    load,
+    generate,
+  } = useLocalBrain();
 
   useEffect(() => {
     void detect();
@@ -64,11 +79,19 @@ export function LocalBrain(): React.ReactElement {
   };
 
   const chipLabel =
-    status === "ready" || status === "generating" ? "🧠 Local AI ●" : status === "loading" ? "🧠 Local AI…" : "🧠 Local AI";
+    status === 'ready' || status === 'generating'
+      ? '🧠 Local AI ●'
+      : status === 'loading'
+        ? '🧠 Local AI…'
+        : '🧠 Local AI';
 
   return (
     <>
-      <button type="button" className={`chip ${status === "ready" ? "on" : ""}`} onClick={() => setOpen((value) => !value)}>
+      <button
+        type="button"
+        className={`chip ${status === 'ready' ? 'on' : ''}`}
+        onClick={() => setOpen((value) => !value)}
+      >
         {chipLabel}
       </button>
 
@@ -76,7 +99,12 @@ export function LocalBrain(): React.ReactElement {
         <div className="local-brain-panel">
           <div className="local-brain-head">
             <strong>Local AI — runs in your browser, no server</strong>
-            <button type="button" className="local-brain-close" onClick={() => setOpen(false)} aria-label="Close">
+            <button
+              type="button"
+              className="local-brain-close"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            >
               ✕
             </button>
           </div>
@@ -91,44 +119,67 @@ export function LocalBrain(): React.ReactElement {
             <Pill on={webTransportSupported()} label="WebTransport" />
           </div>
 
-          {status === "unsupported" ? (
-            <div className="local-brain-msg warn">No WebGPU adapter here — the game falls back to the cloud LLM.</div>
+          {status === 'unsupported' ? (
+            <div className="local-brain-msg warn">
+              No WebGPU adapter here — the game falls back to the cloud LLM.
+            </div>
           ) : null}
 
           {caps?.webgpu ? (
             <div className="local-brain-compute">
-              <button type="button" className="local-brain-action" disabled={computing} onClick={() => void runCompute()}>
-                {computing ? "Running on GPU…" : "Run WebGPU compute (384² matmul)"}
+              <button
+                type="button"
+                className="local-brain-action"
+                disabled={computing}
+                onClick={() => void runCompute()}
+              >
+                {computing ? 'Running on GPU…' : 'Run WebGPU compute (384² matmul)'}
               </button>
               {compute ? (
                 <div className="local-brain-msg ok">
-                  {compute.gflops.toFixed(1)} GFLOP/s · {compute.ms.toFixed(1)} ms · check{" "}
-                  {compute.checkValue === compute.checkExpected ? "✓" : `✗ (${compute.checkValue}≠${compute.checkExpected})`}
+                  {compute.gflops.toFixed(1)} GFLOP/s · {compute.ms.toFixed(1)} ms · check{' '}
+                  {compute.checkValue === compute.checkExpected
+                    ? '✓'
+                    : `✗ (${compute.checkValue}≠${compute.checkExpected})`}
                 </div>
               ) : null}
-              <button type="button" className="local-brain-action" onClick={() => setRenderOn((value) => !value)}>
-                {renderOn ? "Stop WebGPU render" : "Run WebGPU render demo"}
+              <button
+                type="button"
+                className="local-brain-action"
+                onClick={() => setRenderOn((value) => !value)}
+              >
+                {renderOn ? 'Stop WebGPU render' : 'Run WebGPU render demo'}
               </button>
-              {renderOn ? <canvas ref={renderCanvasRef} className="local-brain-canvas" width={280} height={120} /> : null}
+              {renderOn ? (
+                <canvas
+                  ref={renderCanvasRef}
+                  className="local-brain-canvas"
+                  width={280}
+                  height={120}
+                />
+              ) : null}
             </div>
           ) : null}
 
-          {status === "idle" ? (
+          {status === 'idle' ? (
             <button type="button" className="local-brain-action" onClick={() => void load()}>
               Load model in-browser ↓
             </button>
           ) : null}
 
-          {status === "loading" ? (
+          {status === 'loading' ? (
             <div className="local-brain-progress">
               <div className="local-brain-progress-track">
-                <div className="local-brain-progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
+                <div
+                  className="local-brain-progress-fill"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
+                />
               </div>
-              <div className="local-brain-msg">{progressText || "Downloading weights…"}</div>
+              <div className="local-brain-msg">{progressText || 'Downloading weights…'}</div>
             </div>
           ) : null}
 
-          {status === "ready" || status === "generating" ? (
+          {status === 'ready' || status === 'generating' ? (
             <>
               <div className="local-brain-msg ok">
                 Model {modelId} resident on your GPU · 0 server calls
@@ -142,10 +193,10 @@ export function LocalBrain(): React.ReactElement {
               <button
                 type="button"
                 className="local-brain-action"
-                disabled={status === "generating"}
+                disabled={status === 'generating'}
                 onClick={() => void generate(SYSTEM_PERSONA, prompt)}
               >
-                {status === "generating" ? "Thinking locally…" : "Generate reply (on-device)"}
+                {status === 'generating' ? 'Thinking locally…' : 'Generate reply (on-device)'}
               </button>
               {lastReply ? <div className="local-brain-reply">“{lastReply}”</div> : null}
             </>

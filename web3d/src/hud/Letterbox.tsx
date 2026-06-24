@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-import { useDirectorStore } from "../director/store.ts";
-import { npcById, useWorldStore } from "../store/world.ts";
+import { useDirectorStore } from '../director/store.ts';
+import { npcById, useWorldStore } from '../store/world.ts';
 
 export function Letterbox() {
   const cutscene = useDirectorStore((state) => state.cutscene);
@@ -11,10 +11,10 @@ export function Letterbox() {
   useEffect(() => {
     if (!cutscene) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.code === "Escape" || event.code === "Enter") endCutscene();
+      if (event.code === 'Escape' || event.code === 'Enter') endCutscene();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [cutscene, endCutscene]);
 
   if (!cutscene) return null;
@@ -26,7 +26,9 @@ export function Letterbox() {
       <div className="letterbox-bar top" />
       <div className="letterbox-bar bottom" />
       <div className="letterbox-beat">
-        <div className="letterbox-kind">{cutscene.kind === "villain" ? "The plan advances" : "Story beat"}</div>
+        <div className="letterbox-kind">
+          {cutscene.kind === 'villain' ? 'The plan advances' : 'Story beat'}
+        </div>
         <div className="letterbox-text">
           {actor ? <span className="letterbox-actor">{actor.name} — </span> : null}
           {cutscene.text}

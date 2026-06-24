@@ -1,12 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
-import { activeObjectives } from "../../../src/objectives.ts";
-import { timeOfDay } from "../../../src/types.ts";
-import { followersStore } from "../characters/followers.ts";
-import { useCombatStore } from "../combat/store.ts";
-import { cameraState, npcRegistry, playerHeading, playerPosition } from "../controls/runtime.ts";
-import { useWorldStore } from "../store/world.ts";
-import { cityModelFor } from "../worldgen/cache.ts";
+import { activeObjectives } from '../../../src/objectives.ts';
+import { timeOfDay } from '../../../src/types.ts';
+import { followersStore } from '../characters/followers.ts';
+import { useCombatStore } from '../combat/store.ts';
+import { cameraState, npcRegistry, playerHeading, playerPosition } from '../controls/runtime.ts';
+import { useWorldStore } from '../store/world.ts';
+import { cityModelFor } from '../worldgen/cache.ts';
 import {
   bakeParchment,
   desaturateTowardParchment,
@@ -16,7 +16,7 @@ import {
   hashedJitter,
   INK,
   labelTrim,
-} from "./minimap-style.ts";
+} from './minimap-style.ts';
 
 const WIDTH = 320;
 const HEIGHT = 240;
@@ -30,7 +30,7 @@ export function Minimap() {
   useEffect(() => {
     if (!world) return;
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
     // Bake parchment once per world
@@ -40,7 +40,7 @@ export function Minimap() {
     const { bounds } = model;
     const scale = Math.min(
       (WIDTH - PADDING * 2) / (bounds.maxX - bounds.minX),
-      (HEIGHT - PADDING * 2) / (bounds.maxZ - bounds.minZ),
+      (HEIGHT - PADDING * 2) / (bounds.maxZ - bounds.minZ)
     );
     const offsetX = (WIDTH - (bounds.maxX - bounds.minX) * scale) / 2;
     const offsetZ = (HEIGHT - (bounds.maxZ - bounds.minZ) * scale) / 2;
@@ -72,7 +72,7 @@ export function Minimap() {
           ctx.save();
           ctx.translate(offset, 0);
           ctx.beginPath();
-          ctx.lineCap = "round";
+          ctx.lineCap = 'round';
           ctx.strokeStyle = INK.street;
           ctx.lineWidth = w;
           street.points.forEach((point, index) => {
@@ -102,7 +102,7 @@ export function Minimap() {
         // Fill — desaturate toward parchment for non-active districts
         ctx.save();
         ctx.shadowBlur = isActive ? 0 : 3;
-        ctx.shadowColor = "rgba(59,42,26,0.18)";
+        ctx.shadowColor = 'rgba(59,42,26,0.18)';
         roundRect(ctx, x + jx, y + jy, w + jw, h + jh, 4);
         ctx.fillStyle = desaturateTowardParchment(district.palette.ground, isActive ? 0.1 : 0.22);
         ctx.globalAlpha = isActive ? 0.92 : 0.72;
@@ -130,7 +130,7 @@ export function Minimap() {
           ctx.globalAlpha = isActive ? 0.7 : 0.45;
           ctx.fillRect(bx, by, bw, bh);
           ctx.globalAlpha = 1;
-          ctx.strokeStyle = "rgba(59,42,26,0.3)";
+          ctx.strokeStyle = 'rgba(59,42,26,0.3)';
           ctx.lineWidth = 0.7;
           ctx.strokeRect(bx, by, bw, bh);
         }
@@ -141,26 +141,26 @@ export function Minimap() {
           const ly = y + h / 2;
           const label = labelTrim(district.name, 10);
           ctx.save();
-          ctx.font = `${isActive ? "bold " : ""}9px Georgia, serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "rgba(244,236,216,0.85)";
+          ctx.font = `${isActive ? 'bold ' : ''}9px Georgia, serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = 'rgba(244,236,216,0.85)';
           ctx.fillText(label, lx + 0.5, ly + 0.5);
-          ctx.fillStyle = isActive ? "rgba(59,30,8,0.95)" : "rgba(59,42,26,0.7)";
+          ctx.fillStyle = isActive ? 'rgba(59,30,8,0.95)' : 'rgba(59,42,26,0.7)';
           ctx.fillText(label, lx, ly);
           ctx.restore();
         }
       }
 
       // Doors of the active district
-      ctx.fillStyle = "rgba(210, 180, 130, 0.92)";
+      ctx.fillStyle = 'rgba(210, 180, 130, 0.92)';
       for (const door of model.doors) {
         if (door.districtId !== activeId) continue;
         ctx.fillRect(toX(door.x) - 1.5, toY(door.z) - 1.5, 3, 3);
       }
 
       // Item diamonds
-      ctx.fillStyle = "#c89a30";
+      ctx.fillStyle = '#c89a30';
       for (const district of model.districts) {
         for (const item of world.items) {
           if (item.holderId || item.locationId !== district.locationId) continue;
@@ -176,23 +176,23 @@ export function Minimap() {
         const defeated = enemy?.defeated || npc?.combat?.defeated;
         const following = followersStore.has(actor.npcId);
 
-        let kind: "hostile" | "follower" | "quest" | "neutral" | "defeated";
+        let kind: 'hostile' | 'follower' | 'quest' | 'neutral' | 'defeated';
         let color: string;
         if (defeated) {
-          kind = "defeated";
-          color = "rgba(140, 130, 120, 0.65)";
+          kind = 'defeated';
+          color = 'rgba(140, 130, 120, 0.65)';
         } else if (enemy?.hostile) {
-          kind = "hostile";
-          color = "#c84030";
+          kind = 'hostile';
+          color = '#c84030';
         } else if (following) {
-          kind = "follower";
-          color = "#6ab8e8";
-        } else if (npc?.tier === "quest") {
-          kind = "quest";
-          color = "#c89a30";
+          kind = 'follower';
+          color = '#6ab8e8';
+        } else if (npc?.tier === 'quest') {
+          kind = 'quest';
+          color = '#c89a30';
         } else {
-          kind = "neutral";
-          color = "#b8bec8";
+          kind = 'neutral';
+          color = '#b8bec8';
         }
 
         drawNpcDot(ctx, toX(actor.position.x), toY(actor.position.z), color, kind);
@@ -206,8 +206,8 @@ export function Minimap() {
       ctx.translate(px, py);
       ctx.rotate(camAngle + Math.PI);
       const cone = ctx.createLinearGradient(0, 0, 0, -30);
-      cone.addColorStop(0, "rgba(201,140,70,0.32)");
-      cone.addColorStop(1, "rgba(201,140,70,0)");
+      cone.addColorStop(0, 'rgba(201,140,70,0.32)');
+      cone.addColorStop(1, 'rgba(201,140,70,0)');
       ctx.fillStyle = cone;
       ctx.beginPath();
       ctx.moveTo(0, 0);
@@ -221,7 +221,7 @@ export function Minimap() {
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(Math.PI - playerHeading.value);
-      ctx.fillStyle = "#6ab8e8";
+      ctx.fillStyle = '#6ab8e8';
       ctx.strokeStyle = INK.brown;
       ctx.lineWidth = 1.4;
       ctx.beginPath();
@@ -239,7 +239,7 @@ export function Minimap() {
       if (objective) {
         let ox: number | null = null;
         let oy: number | null = null;
-        if (objective.targetType === "npc") {
+        if (objective.targetType === 'npc') {
           const actor = npcRegistry.get(objective.targetId);
           if (actor) {
             ox = toX(actor.position.x);
@@ -247,7 +247,9 @@ export function Minimap() {
           }
         }
         if (ox === null || oy === null) {
-          const district = model.districts.find((entry) => entry.locationId === objective.locationId);
+          const district = model.districts.find(
+            (entry) => entry.locationId === objective.locationId
+          );
           if (district) {
             ox = toX(district.courtyard.x);
             oy = toY(district.courtyard.z);
@@ -281,11 +283,11 @@ export function Minimap() {
   // Current district name for the badge above the map
   const currentDistrict = (() => {
     const model = cityModelFor(world);
-    return model.districts.find((d) => d.locationId === world.player.locationId)?.name ?? "";
+    return model.districts.find((d) => d.locationId === world.player.locationId)?.name ?? '';
   })();
 
   const tod = timeOfDay(world.clock);
-  const hour = String(Math.floor(world.clock.hour)).padStart(2, "0");
+  const hour = String(Math.floor(world.clock.hour)).padStart(2, '0');
   const clockLine = `Day ${world.clock.day} — ${hour}:00 (${tod})`;
 
   return (
@@ -299,7 +301,14 @@ export function Minimap() {
   );
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -320,6 +329,6 @@ function diamond(ctx: CanvasRenderingContext2D, x: number, y: number, r: number)
 }
 
 function hexWithAlpha(hex: string, alpha: number): string {
-  const value = Number.parseInt(hex.replace("#", ""), 16);
+  const value = Number.parseInt(hex.replace('#', ''), 16);
   return `rgba(${(value >> 16) & 0xff}, ${(value >> 8) & 0xff}, ${value & 0xff}, ${alpha})`;
 }

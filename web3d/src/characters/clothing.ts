@@ -1,6 +1,6 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
-import { type ActorVisual, stableHash } from "../mapping/visuals.ts";
+import { type ActorVisual, stableHash } from '../mapping/visuals.ts';
 
 export interface OutfitColors {
   skin: string;
@@ -10,7 +10,7 @@ export interface OutfitColors {
   belt: string;
 }
 
-const SKIN_TONES = ["#f0c8a0", "#e8b48c", "#d9a06e", "#c08a5c", "#9c6b44", "#f3d3b3"];
+const SKIN_TONES = ['#f0c8a0', '#e8b48c', '#d9a06e', '#c08a5c', '#9c6b44', '#f3d3b3'];
 
 /** schema palettes often put a clothing color in the skin slot — only trust it when it actually reads as skin */
 export function isPlausibleSkin(hex: string): boolean {
@@ -18,7 +18,9 @@ export function isPlausibleSkin(hex: string): boolean {
   const hsl = { h: 0, s: 0, l: 0 };
   color.getHSL(hsl);
   const degrees = hsl.h * 360;
-  return degrees >= 10 && degrees <= 50 && hsl.s >= 0.1 && hsl.s <= 0.75 && hsl.l >= 0.3 && hsl.l <= 0.9;
+  return (
+    degrees >= 10 && degrees <= 50 && hsl.s >= 0.1 && hsl.s <= 0.75 && hsl.l >= 0.3 && hsl.l <= 0.9
+  );
 }
 
 function mix(hex: string, toward: string, amount: number): string {
@@ -26,12 +28,12 @@ function mix(hex: string, toward: string, amount: number): string {
 }
 
 export function outfitColorsFor(visual: ActorVisual, seedId: string): OutfitColors {
-  if (visual.bodyShape === "mechanical") {
+  if (visual.bodyShape === 'mechanical') {
     return {
-      skin: mix(visual.color, "#aab2c0", 0.35),
+      skin: mix(visual.color, '#aab2c0', 0.35),
       shirt: visual.color,
-      pants: mix(visual.color, "#11151f", 0.45),
-      shoes: "#1c222e",
+      pants: mix(visual.color, '#11151f', 0.45),
+      shoes: '#1c222e',
       belt: visual.accentColor,
     };
   }
@@ -41,8 +43,8 @@ export function outfitColorsFor(visual: ActorVisual, seedId: string): OutfitColo
   return {
     skin,
     shirt: visual.color,
-    pants: mix(visual.color, "#171c28", 0.52),
-    shoes: mix(visual.accentColor, "#11151f", 0.55),
+    pants: mix(visual.color, '#171c28', 0.52),
+    shoes: mix(visual.accentColor, '#11151f', 0.55),
     belt: visual.accentColor,
   };
 }
@@ -60,8 +62,12 @@ export interface OutfitCut {
   shorts?: boolean;
 }
 
-export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors, cut: OutfitCut = {}): void {
-  const position = geometry.getAttribute("position");
+export function paintOutfit(
+  geometry: THREE.BufferGeometry,
+  outfit: OutfitColors,
+  cut: OutfitCut = {}
+): void {
+  const position = geometry.getAttribute('position');
   if (!position) return;
   let minY = Number.POSITIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
@@ -88,10 +94,13 @@ export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors
     const ny = (position.getY(index) - minY) / height;
     const nx = Math.abs(position.getX(index)) / span;
     let color: THREE.Color;
-    if (nx > (cut.shortSleeves ? 0.58 : 0.82) && ny > 0.2) color = palette.skin; // hands / bare forearms
-    else if (ny > 0.84) color = palette.skin; // head + neck
+    if (nx > (cut.shortSleeves ? 0.58 : 0.82) && ny > 0.2)
+      color = palette.skin; // hands / bare forearms
+    else if (ny > 0.84)
+      color = palette.skin; // head + neck
     else if (ny < 0.075) color = palette.shoes;
-    else if (cut.shorts && ny < 0.3) color = palette.skin; // bare calves
+    else if (cut.shorts && ny < 0.3)
+      color = palette.skin; // bare calves
     else if (ny < 0.53) color = palette.pants;
     else if (ny < 0.56) color = palette.belt;
     else color = palette.shirt;
@@ -99,5 +108,5 @@ export function paintOutfit(geometry: THREE.BufferGeometry, outfit: OutfitColors
     colors[index * 3 + 1] = color.g;
     colors[index * 3 + 2] = color.b;
   }
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 }

@@ -9,19 +9,19 @@
  * LLM-judge rather than regex: avoids false positives from name variants and
  * pronoun references; judges against a compact world-facts bullet list.
  */
-import { clearDialogueHistories, generateDialogueReply } from "../dialogue.ts";
-import type { World } from "../types.ts";
-import type { ProbeOpts, ProbeResult } from "./index.ts";
-import type { JudgeFn } from "./judge.ts";
-import { judgeBinary } from "./judge.ts";
-import { loadProbeWorld, snapshotWorld } from "./world-loader.ts";
+import { clearDialogueHistories, generateDialogueReply } from '../dialogue.ts';
+import type { World } from '../types.ts';
+import type { ProbeOpts, ProbeResult } from './index.ts';
+import type { JudgeFn } from './judge.ts';
+import { judgeBinary } from './judge.ts';
+import { loadProbeWorld, snapshotWorld } from './world-loader.ts';
 
 const PROMPTS = [
   "What's happening in town today?",
-  "Tell me something about the other people here.",
-  "Have you heard about any recent events?",
-  "What do you know about the places around here?",
-  "Is anything unusual going on lately?",
+  'Tell me something about the other people here.',
+  'Have you heard about any recent events?',
+  'What do you know about the places around here?',
+  'Is anything unusual going on lately?',
 ] as const;
 
 const NPCS_TO_SAMPLE = 4;
@@ -34,11 +34,11 @@ export async function runGroundingProbe(opts: ProbeOpts = {}): Promise<ProbeResu
 
   if (npcs.length === 0 || !opts.complete) {
     return {
-      id: "grounding",
-      label: "World-state grounding audit",
-      status: "skip",
+      id: 'grounding',
+      label: 'World-state grounding audit',
+      status: 'skip',
       score: 1,
-      detail: opts.complete ? "no NPCs available" : "no completer (not an LLM run)",
+      detail: opts.complete ? 'no NPCs available' : 'no completer (not an LLM run)',
       tokenSpend: 0,
     };
   }
@@ -80,21 +80,21 @@ export async function runGroundingProbe(opts: ProbeOpts = {}): Promise<ProbeResu
 
   if (totalChecked === 0) {
     return {
-      id: "grounding",
-      label: "World-state grounding audit",
-      status: "skip",
+      id: 'grounding',
+      label: 'World-state grounding audit',
+      status: 'skip',
       score: 1,
-      detail: "no utterances collected",
+      detail: 'no utterances collected',
       tokenSpend: totalTokenSpend,
     };
   }
 
   const rate = hallucinated / totalChecked;
-  const status = rate < PASS_THRESHOLD ? "pass" : rate < WARN_THRESHOLD ? "warn" : "fail";
+  const status = rate < PASS_THRESHOLD ? 'pass' : rate < WARN_THRESHOLD ? 'warn' : 'fail';
 
   return {
-    id: "grounding",
-    label: "World-state grounding audit",
+    id: 'grounding',
+    label: 'World-state grounding audit',
     status,
     score: 1 - rate,
     detail: `checked=${totalChecked} hallucinated=${hallucinated} rate=${(rate * 100).toFixed(1)}%`,
@@ -105,20 +105,20 @@ export async function runGroundingProbe(opts: ProbeOpts = {}): Promise<ProbeResu
 function buildWorldFacts(world: World): string {
   const lines: string[] = [
     `World: "${world.name}"`,
-    `NPCs: ${world.npcs.map((n) => n.name).join(", ")}`,
-    `Locations: ${world.locations.map((l) => l.name).join(", ")}`,
-    `Items: ${world.items.map((i) => i.name).join(", ")}`,
+    `NPCs: ${world.npcs.map((n) => n.name).join(', ')}`,
+    `Locations: ${world.locations.map((l) => l.name).join(', ')}`,
+    `Items: ${world.items.map((i) => i.name).join(', ')}`,
   ];
 
   if (world.chronicle && world.chronicle.length > 0) {
     const recent = world.chronicle.slice(-5).map((e) => e.text);
-    lines.push(`Recent chronicle events: ${recent.join("; ")}`);
+    lines.push(`Recent chronicle events: ${recent.join('; ')}`);
   }
 
   const factions = world.factions ?? [];
   if (factions.length > 0) {
-    lines.push(`Factions: ${factions.map((f) => f.name).join(", ")}`);
+    lines.push(`Factions: ${factions.map((f) => f.name).join(', ')}`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }

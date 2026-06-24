@@ -2,20 +2,26 @@
 // pairs a small hook with the component that consumes it, matching the
 // `RiggedCharacter.tsx` pattern elsewhere in the scene layer.
 /* eslint-disable react-refresh/only-export-components */
-import { Outlines, useGLTF } from "@react-three/drei";
-import { useMemo } from "react";
-import * as THREE from "three";
-import { clone as cloneScene } from "three/addons/utils/SkeletonUtils.js";
+import { Outlines, useGLTF } from '@react-three/drei';
+import { useMemo } from 'react';
+import * as THREE from 'three';
+import { clone as cloneScene } from 'three/addons/utils/SkeletonUtils.js';
 
-import { toonGradientMap } from "./toon.ts";
+import { toonGradientMap } from './toon.ts';
 
 /**
  * Cached intrinsic bounds (in model space) per GLB url. Used to size GLBs
  * to a target footprint without re-walking the geometry per instance.
  */
-const boundsCache = new Map<string, { min: THREE.Vector3; max: THREE.Vector3; size: THREE.Vector3 }>();
+const boundsCache = new Map<
+  string,
+  { min: THREE.Vector3; max: THREE.Vector3; size: THREE.Vector3 }
+>();
 
-function getBounds(url: string, scene: THREE.Object3D): { size: THREE.Vector3; min: THREE.Vector3 } {
+function getBounds(
+  url: string,
+  scene: THREE.Object3D
+): { size: THREE.Vector3; min: THREE.Vector3 } {
   const cached = boundsCache.get(url);
   if (cached) return cached;
   const box = new THREE.Box3().setFromObject(scene);
@@ -35,7 +41,9 @@ function getBounds(url: string, scene: THREE.Object3D): { size: THREE.Vector3; m
  * Results are memoized per (url) so each scene placement gets its own cloned
  * scene + materials (callers may scale/tint per-instance).
  */
-export function useToonGlb(url: string): { scene: THREE.Group; size: THREE.Vector3; min: THREE.Vector3 } | null {
+export function useToonGlb(
+  url: string
+): { scene: THREE.Group; size: THREE.Vector3; min: THREE.Vector3 } | null {
   // useGLTF caches the parsed gltf by url, so this is a single network/parse.
   const gltf = useGLTF(url) as { scene: THREE.Group };
 
@@ -55,7 +63,7 @@ export function useToonGlb(url: string): { scene: THREE.Group; size: THREE.Vecto
           color?: THREE.Color;
           map?: THREE.Texture | null;
         };
-        const color = src.color ? src.color.clone() : new THREE.Color("#ffffff");
+        const color = src.color ? src.color.clone() : new THREE.Color('#ffffff');
         return new THREE.MeshToonMaterial({
           color,
           map: src.map ?? null,
@@ -71,7 +79,7 @@ export function useToonGlb(url: string): { scene: THREE.Group; size: THREE.Vecto
   }, [gltf, url]);
 }
 
-const OUTLINE = "#101421";
+const OUTLINE = '#101421';
 const OUTLINE_THICKNESS = 0.03;
 
 interface ToonGlbProps {
@@ -127,7 +135,9 @@ export function ToonGlb({
     <group position={position} rotation={[0, rotationY, 0]}>
       <group scale={[sx, sy, sz]} position={[0, yLift, 0]}>
         <primitive object={scene} />
-        {outline ? <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} screenspace={false} /> : null}
+        {outline ? (
+          <Outlines thickness={OUTLINE_THICKNESS} color={OUTLINE} screenspace={false} />
+        ) : null}
       </group>
     </group>
   );

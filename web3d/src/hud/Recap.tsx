@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-import { useWorldStore } from "../store/world.ts";
+import { useWorldStore } from '../store/world.ts';
 
 /** the world advanced without you — show what happened, once per recap */
 export function Recap() {
   const recap = useWorldStore((state) => state.world?.recap);
   const [dismissedKey, setDismissedKey] = useState<string | null>(() => {
     try {
-      return localStorage.getItem("aliveville_recap_seen");
+      return localStorage.getItem('aliveville_recap_seen');
     } catch {
       return null;
     }
@@ -20,7 +20,7 @@ export function Recap() {
   const dismiss = () => {
     setDismissedKey(key);
     try {
-      localStorage.setItem("aliveville_recap_seen", key);
+      localStorage.setItem('aliveville_recap_seen', key);
     } catch {
       // private mode: shows again next visit, harmless
     }
@@ -33,8 +33,8 @@ export function Recap() {
     <div className="recap">
       <div className="recap-title">While you were away ({away})</div>
       <div className="recap-sub">
-        Day {recap.since.day} {String(recap.since.hour).padStart(2, "0")}:00 → Day {recap.until.day}{" "}
-        {String(recap.until.hour).padStart(2, "0")}:00
+        Day {recap.since.day} {String(recap.since.hour).padStart(2, '0')}:00 → Day {recap.until.day}{' '}
+        {String(recap.until.hour).padStart(2, '0')}:00
       </div>
       <ul className="recap-lines">
         {recap.lines.map((line) => (

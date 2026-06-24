@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
 /** smoothstep ease: maps t ∈ [0,1] → [0,1] with ease-in-out */
 export function smoothstep(t: number): number {

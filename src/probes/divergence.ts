@@ -14,23 +14,71 @@
  * on short dialogue utterances (empirically, 0.85 cosine ≈ 0.55-0.65 Jaccard
  * on 2-3 sentence NPC replies). Document in docs/probes-design.md.
  */
-import { clearDialogueHistories, generateDialogueReply } from "../dialogue.ts";
-import type { Npc, World } from "../types.ts";
-import type { ProbeOpts, ProbeResult } from "./index.ts";
-import { loadProbeWorld, snapshotWorld } from "./world-loader.ts";
+import { clearDialogueHistories, generateDialogueReply } from '../dialogue.ts';
+import type { Npc, World } from '../types.ts';
+import type { ProbeOpts, ProbeResult } from './index.ts';
+import { loadProbeWorld, snapshotWorld } from './world-loader.ts';
 
-const QUESTION = "How is town these days?";
+const QUESTION = 'How is town these days?';
 const MAX_NPCS = 6;
-const JACCARD_THRESHOLD = 0.60;
+const JACCARD_THRESHOLD = 0.6;
 const PASS_THRESHOLD = 0; // 0 flagged pairs
 const WARN_THRESHOLD = 1; // 1 flagged pair
 
 const STOPWORDS = new Set([
-  "a", "an", "the", "is", "it", "in", "on", "at", "to", "for", "of", "and",
-  "or", "but", "i", "you", "we", "they", "he", "she", "my", "your", "our",
-  "its", "are", "was", "be", "been", "have", "has", "do", "does", "with",
-  "that", "this", "what", "how", "not", "so", "as", "by", "from", "up",
-  "about", "out", "if", "no", "just", "very", "too", "more", "some", "here",
+  'a',
+  'an',
+  'the',
+  'is',
+  'it',
+  'in',
+  'on',
+  'at',
+  'to',
+  'for',
+  'of',
+  'and',
+  'or',
+  'but',
+  'i',
+  'you',
+  'we',
+  'they',
+  'he',
+  'she',
+  'my',
+  'your',
+  'our',
+  'its',
+  'are',
+  'was',
+  'be',
+  'been',
+  'have',
+  'has',
+  'do',
+  'does',
+  'with',
+  'that',
+  'this',
+  'what',
+  'how',
+  'not',
+  'so',
+  'as',
+  'by',
+  'from',
+  'up',
+  'about',
+  'out',
+  'if',
+  'no',
+  'just',
+  'very',
+  'too',
+  'more',
+  'some',
+  'here',
 ]);
 
 export async function runDivergenceProbe(opts: ProbeOpts = {}): Promise<ProbeResult> {
@@ -39,11 +87,13 @@ export async function runDivergenceProbe(opts: ProbeOpts = {}): Promise<ProbeRes
 
   if (candidates.length < 2 || !opts.complete) {
     return {
-      id: "divergence",
-      label: "Multi-NPC divergence check",
-      status: "skip",
+      id: 'divergence',
+      label: 'Multi-NPC divergence check',
+      status: 'skip',
       score: 1,
-      detail: opts.complete ? `only ${candidates.length} NPC(s) available` : "no completer (not an LLM run)",
+      detail: opts.complete
+        ? `only ${candidates.length} NPC(s) available`
+        : 'no completer (not an LLM run)',
       tokenSpend: 0,
     };
   }
@@ -70,11 +120,11 @@ export async function runDivergenceProbe(opts: ProbeOpts = {}): Promise<ProbeRes
 
   if (replies.length < 2) {
     return {
-      id: "divergence",
-      label: "Multi-NPC divergence check",
-      status: "skip",
+      id: 'divergence',
+      label: 'Multi-NPC divergence check',
+      status: 'skip',
       score: 1,
-      detail: "insufficient replies collected",
+      detail: 'insufficient replies collected',
       tokenSpend: totalTokenSpend,
     };
   }
@@ -90,20 +140,16 @@ export async function runDivergenceProbe(opts: ProbeOpts = {}): Promise<ProbeRes
   }
 
   const status =
-    flagged.length <= PASS_THRESHOLD
-      ? "pass"
-      : flagged.length <= WARN_THRESHOLD
-        ? "warn"
-        : "fail";
+    flagged.length <= PASS_THRESHOLD ? 'pass' : flagged.length <= WARN_THRESHOLD ? 'warn' : 'fail';
 
   return {
-    id: "divergence",
-    label: "Multi-NPC divergence check",
+    id: 'divergence',
+    label: 'Multi-NPC divergence check',
     status,
     score: Math.max(0, 1 - flagged.length / Math.max(1, replies.length)),
     detail:
       flagged.length > 0
-        ? `flagged pairs: ${flagged.join(", ")}`
+        ? `flagged pairs: ${flagged.join(', ')}`
         : `${replies.length} NPCs replied, 0 pairs flagged`,
     tokenSpend: totalTokenSpend,
   };
@@ -146,7 +192,7 @@ function contentWords(text: string): Set<string> {
   return new Set(
     text
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter((w) => w.length > 1 && !STOPWORDS.has(w))
   );

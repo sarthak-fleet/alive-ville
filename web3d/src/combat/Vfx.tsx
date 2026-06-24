@@ -1,9 +1,9 @@
-import { Billboard, Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
-import * as THREE from "three";
+import { Billboard, Text } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
+import * as THREE from 'three';
 
-import { useCombatStore, type VfxEvent } from "./store.ts";
+import { useCombatStore, type VfxEvent } from './store.ts';
 
 export function CombatVfx() {
   const vfx = useCombatStore((state) => state.vfx);
@@ -20,11 +20,11 @@ export function CombatVfx() {
   return (
     <>
       {vfx.map((event) =>
-        event.kind === "spark" ? (
+        event.kind === 'spark' ? (
           <Spark key={event.id} event={event} />
-        ) : event.kind === "damage" ? (
+        ) : event.kind === 'damage' ? (
           <DamageNumber key={event.id} event={event} />
-        ) : event.kind === "dust" ? (
+        ) : event.kind === 'dust' ? (
           <DustPuff key={event.id} event={event} />
         ) : (
           <TelegraphRing key={event.id} event={event} />
@@ -49,7 +49,13 @@ function Spark({ event }: { event: VfxEvent }) {
   return (
     <mesh ref={mesh} position={[event.x, event.y, event.z]}>
       <icosahedronGeometry args={[0.3, 0]} />
-      <meshBasicMaterial ref={material} color={event.color} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        ref={material}
+        color={event.color}
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -63,8 +69,15 @@ function DamageNumber({ event }: { event: VfxEvent }) {
   return (
     <group ref={group} position={[event.x, event.y + 0.4, event.z]}>
       <Billboard>
-        <Text fontSize={0.42} color={event.color} outlineWidth={0.04} outlineColor="#101421" anchorX="center" fontWeight="bold">
-          {event.text ?? ""}
+        <Text
+          fontSize={0.42}
+          color={event.color}
+          outlineWidth={0.04}
+          outlineColor="#101421"
+          anchorX="center"
+          fontWeight="bold"
+        >
+          {event.text ?? ''}
         </Text>
       </Billboard>
     </group>

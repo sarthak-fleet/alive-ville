@@ -1,5 +1,5 @@
-import { completeText, type CompleteTextResult } from "./llm/router.ts";
-import type { Memory, Npc, World } from "./types.ts";
+import { completeText, type CompleteTextResult } from './llm/router.ts';
+import type { Memory, Npc, World } from './types.ts';
 
 // Generative Agents paper used a threshold of ~150 on a dense event stream;
 // our importance scale tops at 7 and events are sparser, so 24 is roughly
@@ -8,7 +8,7 @@ const REFLECTION_IMPORTANCE_THRESHOLD = 24;
 const REFLECTION_MEMORY_WINDOW = 15;
 
 type CompleteTextFn = (req: {
-  tier: "normal" | "quest" | "background";
+  tier: 'normal' | 'quest' | 'background';
   system: string;
   user: string;
   timeoutMs?: number;
@@ -49,33 +49,33 @@ export async function reflectNpc(
 
   const system =
     "You distill an NPC's recent experiences into ONE belief or realization, " +
-    "first person, one sentence, concrete, grounded ONLY in the listed memories. " +
-    "Return only the sentence.";
+    'first person, one sentence, concrete, grounded ONLY in the listed memories. ' +
+    'Return only the sentence.';
 
   const identityLine = [
     npc.name,
-    npc.role ? `(${npc.role})` : "",
-    npc.traits?.personality?.length ? npc.traits.personality.join(", ") : "",
+    npc.role ? `(${npc.role})` : '',
+    npc.traits?.personality?.length ? npc.traits.personality.join(', ') : '',
   ]
     .filter(Boolean)
-    .join(" — ");
+    .join(' — ');
 
-  const memoriesText = recentMemories.map((m) => `- ${m.text}`).join("\n");
+  const memoriesText = recentMemories.map((m) => `- ${m.text}`).join('\n');
 
   const user = `${identityLine}\n\nRecent memories:\n${memoriesText}`;
 
   const result = await complete({
-    tier: "normal",
+    tier: 'normal',
     system,
     user,
     timeoutMs: 20_000,
-    model: process.env["LLM_MODEL_PROPOSE"] ?? undefined,
+    model: process.env['LLM_MODEL_PROPOSE'] ?? undefined,
   });
 
   // treat skipped and errors as failures — retry later
-  if ("skipped" in result && result.skipped) return null;
-  if ("error" in result && result.error) return null;
-  if (!("text" in result) || !result.text) return null;
+  if ('skipped' in result && result.skipped) return null;
+  if ('error' in result && result.error) return null;
+  if (!('text' in result) || !result.text) return null;
 
   const insight = result.text.trim();
   if (!insight) return null;
@@ -83,7 +83,7 @@ export async function reflectNpc(
   npc.memories.push({
     tick: world.tick,
     text: insight,
-    meta: { importance: 5, visibility: "private", tags: ["reflection"] },
+    meta: { importance: 5, visibility: 'private', tags: ['reflection'] },
   });
   npc.plan = { ...(npc.plan ?? {}), lastReflectionTick: world.tick };
 
@@ -113,7 +113,7 @@ export function reflectNpcScripted(world: World, npc: Npc): string | null {
   npc.memories.push({
     tick: world.tick,
     text: insight,
-    meta: { importance: 5, visibility: "private", tags: ["reflection"] },
+    meta: { importance: 5, visibility: 'private', tags: ['reflection'] },
   });
   npc.plan = { ...(npc.plan ?? {}), lastReflectionTick: world.tick };
 

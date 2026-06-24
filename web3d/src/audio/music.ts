@@ -7,16 +7,16 @@
  * silent audio decoding.
  */
 
-const MUTE_STORAGE_KEY = "alive.music.muted";
+const MUTE_STORAGE_KEY = 'alive.music.muted';
 const BASE_GAIN = 0.3;
 const FADE_MS = 1000;
 const FADE_STEP_MS = 50;
 
-export type MusicKey = "village-day" | "village-night" | "city" | "interior" | "combat" | "menu";
+export type MusicKey = 'village-day' | 'village-night' | 'city' | 'interior' | 'combat' | 'menu';
 
 /** map of music key to public asset URL. uses Vite's BASE_URL so it works on /game/. */
 function trackUrl(key: MusicKey): string {
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
   return `${base}/assets/audio/music/${key}.mp3`;
 }
 
@@ -34,7 +34,7 @@ const listeners = new Set<(muted: boolean) => void>();
 
 function readMuted(): boolean {
   try {
-    return localStorage.getItem(MUTE_STORAGE_KEY) === "1";
+    return localStorage.getItem(MUTE_STORAGE_KEY) === '1';
   } catch {
     return false;
   }
@@ -42,7 +42,7 @@ function readMuted(): boolean {
 
 function writeMuted(next: boolean): void {
   try {
-    localStorage.setItem(MUTE_STORAGE_KEY, next ? "1" : "0");
+    localStorage.setItem(MUTE_STORAGE_KEY, next ? '1' : '0');
   } catch {
     /* private-mode storage failures are non-fatal */
   }
@@ -78,7 +78,12 @@ function applyGain(el: HTMLAudioElement, value: number): void {
   el.volume = Math.max(0, Math.min(1, value));
 }
 
-function fadeTo(track: ActiveTrack, targetGain: number, durationMs: number, onDone?: () => void): void {
+function fadeTo(
+  track: ActiveTrack,
+  targetGain: number,
+  durationMs: number,
+  onDone?: () => void
+): void {
   if (track.fader !== null) {
     window.clearInterval(track.fader);
     track.fader = null;
@@ -104,8 +109,8 @@ function fadeTo(track: ActiveTrack, targetGain: number, durationMs: number, onDo
 function createTrack(key: MusicKey): ActiveTrack {
   const el = new Audio(trackUrl(key));
   el.loop = true;
-  el.preload = "auto";
-  el.crossOrigin = "anonymous";
+  el.preload = 'auto';
+  el.crossOrigin = 'anonymous';
   el.volume = 0;
   return { key, el, fader: null };
 }
@@ -126,7 +131,7 @@ export function playTrack(key: MusicKey): void {
   if (pending) {
     if (pending.fader !== null) window.clearInterval(pending.fader);
     pending.el.pause();
-    pending.el.src = "";
+    pending.el.src = '';
     pending = null;
   }
 
@@ -140,7 +145,7 @@ export function playTrack(key: MusicKey): void {
       const outgoing = current;
       fadeTo(outgoing, 0, FADE_MS, () => {
         outgoing.el.pause();
-        outgoing.el.src = "";
+        outgoing.el.src = '';
       });
     }
     current = next;
@@ -164,20 +169,20 @@ export function stopMusic(): void {
   if (current) {
     if (current.fader !== null) window.clearInterval(current.fader);
     current.el.pause();
-    current.el.src = "";
+    current.el.src = '';
     current = null;
   }
   if (pending) {
     if (pending.fader !== null) window.clearInterval(pending.fader);
     pending.el.pause();
-    pending.el.src = "";
+    pending.el.src = '';
     pending = null;
   }
 }
 
 // visibility: pause when tab is hidden, resume when shown (and not muted)
-if (typeof document !== "undefined") {
-  document.addEventListener("visibilitychange", () => {
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
     if (!current) return;
     if (document.hidden) {
       current.el.pause();
@@ -196,9 +201,9 @@ if (typeof document !== "undefined") {
     if (pending && !muted && !document.hidden) {
       void pending.el.play().catch(() => {});
     }
-    window.removeEventListener("pointerdown", onGesture);
-    window.removeEventListener("keydown", onGesture);
+    window.removeEventListener('pointerdown', onGesture);
+    window.removeEventListener('keydown', onGesture);
   };
-  window.addEventListener("pointerdown", onGesture, { passive: true });
-  window.addEventListener("keydown", onGesture);
+  window.addEventListener('pointerdown', onGesture, { passive: true });
+  window.addEventListener('keydown', onGesture);
 }

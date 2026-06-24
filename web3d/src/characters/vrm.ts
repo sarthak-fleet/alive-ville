@@ -56,12 +56,8 @@ function hashRotate<T>(seed: string, pool: readonly T[]): T {
  *   - `hero` — Seed-san; tall, stylized, hero silhouette.
  *   - `acolyte` — robed/spell-coded silhouette.
  */
-export function pickVrm(
-  personaText: string,
-  role: string,
-  visualTags: string[]
-): VrmKey | null {
-  const text = `${personaText} ${role} ${visualTags.join(" ")}`.toLowerCase();
+export function pickVrm(personaText: string, role: string, visualTags: string[]): VrmKey | null {
+  const text = `${personaText} ${role} ${visualTags.join(' ')}`.toLowerCase();
   const seed = `${role}:${personaText.slice(0, 32)}`;
 
   // hero / protagonist coded — knight, captain, champion, sword-bearing
@@ -70,7 +66,7 @@ export function pickVrm(
       text
     )
   ) {
-    return "hero";
+    return 'hero';
   }
 
   // mage / mystical / robed coded — anything spell, witch, monk, sage, priest
@@ -79,7 +75,7 @@ export function pickVrm(
       text
     )
   ) {
-    return "acolyte";
+    return 'acolyte';
   }
 
   // generic civilian / villager pool — any "person in the world" persona maps
@@ -90,7 +86,7 @@ export function pickVrm(
       text
     )
   ) {
-    return hashRotate(seed, ["villagerA", "villagerB", "villagerC"] as const);
+    return hashRotate(seed, ['villagerA', 'villagerB', 'villagerC'] as const);
   }
 
   return null;

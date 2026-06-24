@@ -1,6 +1,6 @@
-import { getNpc } from "./simulation.ts";
-import { directorStoryBeatText, storyDirectorNpc } from "./story-context.ts";
-import type { Action, ProposeRequest, ProposeResult, World } from "./types.ts";
+import { getNpc } from './simulation.ts';
+import { directorStoryBeatText, storyDirectorNpc } from './story-context.ts';
+import type { Action, ProposeRequest, ProposeResult, World } from './types.ts';
 
 export interface Tension {
   score: number;
@@ -40,7 +40,7 @@ function storyBeatAction(world: World): Action | null {
   const actorId = storyDirectorNpc(world)?.id;
   if (!text || !actorId) return null;
   state.lastNudgeTick = world.tick;
-  return { type: "remember", actorId, text };
+  return { type: 'remember', actorId, text };
 }
 
 function revealAction(world: World): Action | null {
@@ -55,7 +55,7 @@ function revealAction(world: World): Action | null {
   if (!witness) return null;
 
   return {
-    type: "remember",
+    type: 'remember',
     actorId: witness.id,
     text: `Director clue: ${reveal}`,
   };
@@ -80,12 +80,15 @@ export function findHighestTension(world: World): Tension | null {
 function scriptedAction(world: World, tension: Tension): Action {
   const from = getNpc(world, tension.fromId);
   if (!from) {
-    return { type: "remember", actorId: tension.fromId, text: "Tension lingers." };
+    return { type: 'remember', actorId: tension.fromId, text: 'Tension lingers.' };
   }
-  const witness = world.npcs.find((npc) => npc.id !== tension.fromId && npc.id !== tension.toId && npc.locationId === from.locationId);
+  const witness = world.npcs.find(
+    (npc) =>
+      npc.id !== tension.fromId && npc.id !== tension.toId && npc.locationId === from.locationId
+  );
   if (witness) {
     return {
-      type: "gossip",
+      type: 'gossip',
       actorId: tension.fromId,
       targetId: witness.id,
       aboutId: tension.toId,
@@ -93,7 +96,7 @@ function scriptedAction(world: World, tension: Tension): Action {
     };
   }
   return {
-    type: "remember",
+    type: 'remember',
     actorId: tension.fromId,
     text: `Tension with ${getNpc(world, tension.toId)?.name ?? tension.toId} keeps lingering.`,
   };
@@ -102,19 +105,23 @@ function scriptedAction(world: World, tension: Tension): Action {
 async function tryLlmDirector(
   world: World,
   tension: Tension,
-  propose: NonNullable<DirectorOptions["propose"]>
+  propose: NonNullable<DirectorOptions['propose']>
 ): Promise<Action | null> {
   const result = await propose({
-    tier: "quest",
-    system: "You are the world's narrative director. Inject one in-character event that pushes unresolved tension forward without railroading. Pick rumor, confront, or request. Stay short.",
-    user: `Tension: ${tension.fromId} vs ${tension.toId} (relationship ${tension.score}). Locations and NPCs follow.\n\n${JSON.stringify({
-      tick: world.tick,
-      npcs: world.npcs.map((npc) => ({ id: npc.id, name: npc.name, locationId: npc.locationId })),
-      locations: world.locations.map((loc) => loc.id),
-    })}`,
+    tier: 'quest',
+    system:
+      "You are the world's narrative director. Inject one in-character event that pushes unresolved tension forward without railroading. Pick rumor, confront, or request. Stay short.",
+    user: `Tension: ${tension.fromId} vs ${tension.toId} (relationship ${tension.score}). Locations and NPCs follow.\n\n${JSON.stringify(
+      {
+        tick: world.tick,
+        npcs: world.npcs.map((npc) => ({ id: npc.id, name: npc.name, locationId: npc.locationId })),
+        locations: world.locations.map((loc) => loc.id),
+      }
+    )}`,
   });
-  if ("skipped" in result && result.skipped) return null;
-  if ("error" in result && result.error) return null;
-  if (!("action" in result) || !result.action || (result.action.type as string) === "skip") return null;
+  if ('skipped' in result && result.skipped) return null;
+  if ('error' in result && result.error) return null;
+  if (!('action' in result) || !result.action || (result.action.type as string) === 'skip')
+    return null;
   return result.action as Action;
 }

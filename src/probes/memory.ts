@@ -8,18 +8,18 @@
  *
  * LLM-judge approach (not regex) avoids false positives from name variants.
  */
-import { clearDialogueHistories, generateDialogueReply } from "../dialogue.ts";
-import type { Npc, World } from "../types.ts";
-import type { ProbeOpts, ProbeResult } from "./index.ts";
-import type { JudgeFn } from "./judge.ts";
-import { judgeBinary } from "./judge.ts";
-import { loadProbeWorld, snapshotWorld } from "./world-loader.ts";
+import { clearDialogueHistories, generateDialogueReply } from '../dialogue.ts';
+import type { Npc, World } from '../types.ts';
+import type { ProbeOpts, ProbeResult } from './index.ts';
+import type { JudgeFn } from './judge.ts';
+import { judgeBinary } from './judge.ts';
+import { loadProbeWorld, snapshotWorld } from './world-loader.ts';
 
 const QUESTIONS = [
-  "Tell me about your relationships in this town.",
-  "What have you been up to lately?",
-  "Have you heard any news recently?",
-  "Who do you know here and how do you feel about them?",
+  'Tell me about your relationships in this town.',
+  'What have you been up to lately?',
+  'Have you heard any news recently?',
+  'Who do you know here and how do you feel about them?',
   "What's the most important thing that happened to you recently?",
 ] as const;
 
@@ -32,11 +32,11 @@ export async function runMemoryProbe(opts: ProbeOpts = {}): Promise<ProbeResult>
 
   if (!targetNpc || !opts.complete) {
     return {
-      id: "memory",
-      label: "Cross-session memory coherence",
-      status: "skip",
+      id: 'memory',
+      label: 'Cross-session memory coherence',
+      status: 'skip',
       score: 0,
-      detail: opts.complete ? "no NPC available" : "no completer (not an LLM run)",
+      detail: opts.complete ? 'no NPC available' : 'no completer (not an LLM run)',
       tokenSpend: 0,
     };
   }
@@ -44,7 +44,7 @@ export async function runMemoryProbe(opts: ProbeOpts = {}): Promise<ProbeResult>
   const snap = snapshotWorld(world);
   snap.player.locationId = targetNpc.locationId;
 
-  const historyKey = "probe:memory";
+  const historyKey = 'probe:memory';
   clearDialogueHistories(historyKey);
 
   const judge: JudgeFn = opts.judge ?? ((req) => opts.complete!(req));
@@ -82,21 +82,21 @@ export async function runMemoryProbe(opts: ProbeOpts = {}): Promise<ProbeResult>
 
   if (checkedClaims === 0) {
     return {
-      id: "memory",
-      label: "Cross-session memory coherence",
-      status: "skip",
+      id: 'memory',
+      label: 'Cross-session memory coherence',
+      status: 'skip',
       score: 0,
-      detail: "no claims checked",
+      detail: 'no claims checked',
       tokenSpend: totalTokenSpend,
     };
   }
 
   const rate = hallucinated / checkedClaims;
-  const status = rate < PASS_THRESHOLD ? "pass" : rate < WARN_THRESHOLD ? "warn" : "fail";
+  const status = rate < PASS_THRESHOLD ? 'pass' : rate < WARN_THRESHOLD ? 'warn' : 'fail';
 
   return {
-    id: "memory",
-    label: "Cross-session memory coherence",
+    id: 'memory',
+    label: 'Cross-session memory coherence',
     status,
     score: 1 - rate,
     detail: `NPC=${targetNpc.name} checked=${checkedClaims} hallucinated=${hallucinated} rate=${(rate * 100).toFixed(1)}%`,
@@ -112,10 +112,10 @@ function buildMemoryContext(world: World, npc: Npc): string {
   const npcNames = new Set(world.npcs.map((n) => n.name));
   const locationNames = new Set(world.locations.map((l) => l.name));
   const lines: string[] = [
-    `NPCs in the world: ${[...npcNames].join(", ")}`,
-    `Locations: ${[...locationNames].join(", ")}`,
+    `NPCs in the world: ${[...npcNames].join(', ')}`,
+    `Locations: ${[...locationNames].join(', ')}`,
     `${npc.name}'s memories:`,
     ...npc.memories.slice(-10).map((m) => `  - ${m.text}`),
   ];
-  return lines.join("\n");
+  return lines.join('\n');
 }

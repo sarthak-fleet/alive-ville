@@ -1,19 +1,25 @@
-import { readFileSync } from "node:fs";
+import { readFileSync } from 'node:fs';
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { clearDialogueHistories, type DialogueCompleter, generateDialogueReply } from "../src/dialogue.ts";
-import type { Npc, World } from "../src/types.ts";
+import {
+  clearDialogueHistories,
+  type DialogueCompleter,
+  generateDialogueReply,
+} from '../src/dialogue.ts';
+import type { Npc, World } from '../src/types.ts';
 
 function loadWorld(): World {
-  return JSON.parse(readFileSync(new URL("../worlds/one-punch-man.json", import.meta.url), "utf8")) as World;
+  return JSON.parse(
+    readFileSync(new URL('../worlds/one-punch-man.json', import.meta.url), 'utf8')
+  ) as World;
 }
 
 function makeNpc(overrides: Partial<Npc> = {}): Npc {
   return {
-    id: "npc_test",
-    name: "Genos",
-    locationId: "loc_plaza",
+    id: 'npc_test',
+    name: 'Genos',
+    locationId: 'loc_plaza',
     relationships: {},
     memories: [],
     ...overrides,
@@ -23,25 +29,26 @@ function makeNpc(overrides: Partial<Npc> = {}): Npc {
 function makeWorld(npc: Npc): World {
   const world = loadWorld();
   world.locations = [
-    { id: "loc_plaza", name: "Town Plaza", x: 0, y: 0, w: 10, h: 10 },
-    { id: "loc_market", name: "Market", x: 20, y: 0, w: 10, h: 10 },
+    { id: 'loc_plaza', name: 'Town Plaza', x: 0, y: 0, w: 10, h: 10 },
+    { id: 'loc_market', name: 'Market', x: 20, y: 0, w: 10, h: 10 },
   ];
-  world.exits = [{ from: "loc_plaza", to: "loc_market", bidirectional: true }];
-  world.player.locationId = "loc_plaza";
+  world.exits = [{ from: 'loc_plaza', to: 'loc_market', bidirectional: true }];
+  world.player.locationId = 'loc_plaza';
   world.npcs = [npc];
   world.chronicle = [];
   return world;
 }
 
 // Incoherent reply: NPC at plaza claims to be at Market — triggers coherence retry
-const INCOHERENT = "I'm at the Market right now, come find me there.@@{\"action\":null,\"disposition\":0}";
-const COHERENT = "I am right here at the plaza, good to see you.@@{\"action\":null,\"disposition\":0}";
+const INCOHERENT =
+  'I\'m at the Market right now, come find me there.@@{"action":null,"disposition":0}';
+const COHERENT = 'I am right here at the plaza, good to see you.@@{"action":null,"disposition":0}';
 
 beforeEach(() => clearDialogueHistories());
 
-describe("dialogue stream abort — pre-retry cancellation", () => {
-  it("aborted before coherence retry: returns cancelled, no second LLM call", async () => {
-    const npc = makeNpc({ locationId: "loc_plaza" });
+describe('dialogue stream abort — pre-retry cancellation', () => {
+  it('aborted before coherence retry: returns cancelled, no second LLM call', async () => {
+    const npc = makeNpc({ locationId: 'loc_plaza' });
     const world = makeWorld(npc);
 
     const controller = new AbortController();
@@ -56,28 +63,28 @@ describe("dialogue stream abort — pre-retry cancellation", () => {
       return Promise.resolve({
         text: INCOHERENT,
         raw: INCOHERENT,
-        meta: { tier: req.tier, model: "test", latencyMs: 1, error: null, jsonOk: false },
+        meta: { tier: req.tier, model: 'test', latencyMs: 1, error: null, jsonOk: false },
       });
     };
 
-    const result = await generateDialogueReply(world, npc.id, "Where are you?", {
+    const result = await generateDialogueReply(world, npc.id, 'Where are you?', {
       complete,
       signal: controller.signal,
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("cancelled");
+    if (!result.ok) expect(result.reason).toBe('cancelled');
     // No second LLM call after abort
     expect(llmCalls).toBe(1);
     // No coherence_caught chronicle since retry never ran
-    const caught = (world.chronicle ?? []).filter((e) => e.kind === "coherence_caught");
+    const caught = (world.chronicle ?? []).filter((e) => e.kind === 'coherence_caught');
     expect(caught).toHaveLength(0);
   });
 });
 
-describe("dialogue stream abort — pre-existing abort signal", () => {
-  it("signal already aborted before retry: returns cancelled immediately", async () => {
-    const npc = makeNpc({ locationId: "loc_plaza" });
+describe('dialogue stream abort — pre-existing abort signal', () => {
+  it('signal already aborted before retry: returns cancelled immediately', async () => {
+    const npc = makeNpc({ locationId: 'loc_plaza' });
     const world = makeWorld(npc);
 
     const controller = new AbortController();
@@ -90,24 +97,24 @@ describe("dialogue stream abort — pre-existing abort signal", () => {
       return Promise.resolve({
         text: INCOHERENT,
         raw: INCOHERENT,
-        meta: { tier: req.tier, model: "test", latencyMs: 1, error: null, jsonOk: false },
+        meta: { tier: req.tier, model: 'test', latencyMs: 1, error: null, jsonOk: false },
       });
     };
 
-    const result = await generateDialogueReply(world, npc.id, "Where are you?", {
+    const result = await generateDialogueReply(world, npc.id, 'Where are you?', {
       complete,
       signal: controller.signal,
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("cancelled");
+    if (!result.ok) expect(result.reason).toBe('cancelled');
     expect(llmCalls).toBe(1);
   });
 });
 
-describe("dialogue stream abort — mid-pacedFlush cancellation", () => {
-  it("abort mid-flush: onToken stops receiving after abort", async () => {
-    const npc = makeNpc({ locationId: "loc_plaza" });
+describe('dialogue stream abort — mid-pacedFlush cancellation', () => {
+  it('abort mid-flush: onToken stops receiving after abort', async () => {
+    const npc = makeNpc({ locationId: 'loc_plaza' });
     const world = makeWorld(npc);
 
     const controller = new AbortController();
@@ -119,7 +126,7 @@ describe("dialogue stream abort — mid-pacedFlush cancellation", () => {
       return Promise.resolve({
         text: COHERENT,
         raw: COHERENT,
-        meta: { tier: req.tier, model: "test", latencyMs: 1, error: null, jsonOk: false },
+        meta: { tier: req.tier, model: 'test', latencyMs: 1, error: null, jsonOk: false },
       });
     };
 
@@ -133,7 +140,7 @@ describe("dialogue stream abort — mid-pacedFlush cancellation", () => {
       }
     };
 
-    const result = await generateDialogueReply(world, npc.id, "Hello", {
+    const result = await generateDialogueReply(world, npc.id, 'Hello', {
       complete,
       onToken,
       signal: controller.signal,
@@ -141,19 +148,19 @@ describe("dialogue stream abort — mid-pacedFlush cancellation", () => {
 
     // Result is cancelled (abort happened during flush)
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("cancelled");
+    if (!result.ok) expect(result.reason).toBe('cancelled');
 
     // Only the first chunk was emitted; subsequent chunks were suppressed
     expect(tokens.length).toBeGreaterThanOrEqual(1);
     // Full reply text is longer than one chunk — abort cut it short
-    const fullReply = "I am right here at the plaza, good to see you.";
-    expect(tokens.join("").length).toBeLessThan(fullReply.length);
+    const fullReply = 'I am right here at the plaza, good to see you.';
+    expect(tokens.join('').length).toBeLessThan(fullReply.length);
   });
 });
 
-describe("dialogue abort — coherence_caught recorded when retry fires before abort", () => {
-  it("abort after retry resolves: chronicle still records coherence_caught", async () => {
-    const npc = makeNpc({ locationId: "loc_plaza" });
+describe('dialogue abort — coherence_caught recorded when retry fires before abort', () => {
+  it('abort after retry resolves: chronicle still records coherence_caught', async () => {
+    const npc = makeNpc({ locationId: 'loc_plaza' });
     const world = makeWorld(npc);
 
     const controller = new AbortController();
@@ -165,7 +172,7 @@ describe("dialogue abort — coherence_caught recorded when retry fires before a
       return Promise.resolve({
         text,
         raw: text,
-        meta: { tier: req.tier, model: "test", latencyMs: 1, error: null, jsonOk: false },
+        meta: { tier: req.tier, model: 'test', latencyMs: 1, error: null, jsonOk: false },
       });
     };
 
@@ -183,16 +190,16 @@ describe("dialogue abort — coherence_caught recorded when retry fires before a
     };
 
     const tokens: string[] = [];
-    const result = await generateDialogueReply(world, npc.id, "Where are you?", {
+    const result = await generateDialogueReply(world, npc.id, 'Where are you?', {
       complete: wrappedComplete,
       onToken: (delta) => tokens.push(delta),
       signal: controller.signal,
     });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("cancelled");
+    if (!result.ok) expect(result.reason).toBe('cancelled');
     // Retry fired, so chronicle should have recorded coherence_caught
-    const caught = (world.chronicle ?? []).filter((e) => e.kind === "coherence_caught");
+    const caught = (world.chronicle ?? []).filter((e) => e.kind === 'coherence_caught');
     expect(caught).toHaveLength(1);
     // No tokens should have been emitted since abort happened before flush
     expect(tokens).toHaveLength(0);

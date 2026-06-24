@@ -8,8 +8,8 @@
  * zero network — embeddings are an optional argument, never required.
  */
 
-import { cosineSimilarity } from "./llm/cosine.ts";
-import type { Memory } from "./types.ts";
+import { cosineSimilarity } from './llm/cosine.ts';
+import type { Memory } from './types.ts';
 
 export interface ScoredMemory extends Memory {
   score: number;
@@ -25,7 +25,12 @@ export function tokenize(text: string): string[] {
   return text.toLowerCase().split(/\W+/).filter(Boolean);
 }
 
-function scoreMemory(currentTick: number, memory: Memory, terms: string[], queryEmbedding?: number[]): number {
+function scoreMemory(
+  currentTick: number,
+  memory: Memory,
+  terms: string[],
+  queryEmbedding?: number[]
+): number {
   const text = memory.text.toLowerCase();
   const tags = (memory.meta?.tags ?? []).map((tag) => tag.toLowerCase());
   // relevance: semantic cosine when both vectors exist, else keyword/tag overlap.
@@ -33,7 +38,10 @@ function scoreMemory(currentTick: number, memory: Memory, terms: string[], query
   if (queryEmbedding && memory.meta?.embedding) {
     relevance = (cosineSimilarity(queryEmbedding, memory.meta.embedding) + 1) / 2;
   } else {
-    const hits = terms.length === 0 ? 0 : terms.filter((term) => text.includes(term) || tags.includes(term)).length;
+    const hits =
+      terms.length === 0
+        ? 0
+        : terms.filter((term) => text.includes(term) || tags.includes(term)).length;
     relevance = terms.length === 0 ? 0 : hits / terms.length;
   }
   const importance = Math.min(1, Math.max(0, (memory.meta?.importance ?? 1) / 10));
@@ -48,10 +56,19 @@ function scoreMemory(currentTick: number, memory: Memory, terms: string[], query
 }
 
 /** Rank memories by combined score, top-k. Pure — safe in node, worker, or browser. */
-export function rankMemories(memories: Memory[], currentTick: number, query: string, limit = 5, queryEmbedding?: number[]): ScoredMemory[] {
+export function rankMemories(
+  memories: Memory[],
+  currentTick: number,
+  query: string,
+  limit = 5,
+  queryEmbedding?: number[]
+): ScoredMemory[] {
   const terms = tokenize(query);
   return memories
-    .map((memory) => ({ ...memory, score: scoreMemory(currentTick, memory, terms, queryEmbedding) }))
+    .map((memory) => ({
+      ...memory,
+      score: scoreMemory(currentTick, memory, terms, queryEmbedding),
+    }))
     .filter((memory) => memory.score > 0)
     .sort((a, b) => b.score - a.score || b.tick - a.tick)
     .slice(0, limit);

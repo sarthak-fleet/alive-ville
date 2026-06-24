@@ -1,11 +1,11 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-import { combatMovesFor } from "../../../src/combat.ts";
-import type { World } from "../../../src/types.ts";
-import { api } from "../api/client.ts";
-import { deathThud, hitImpact, hurt, victorySting } from "../audio/sfx.ts";
-import { addCameraShake, combatToastHook, hitstop, playerFlashHook } from "../controls/runtime.ts";
-import { useWorldStore } from "../store/world.ts";
+import { combatMovesFor } from '../../../src/combat.ts';
+import type { World } from '../../../src/types.ts';
+import { api } from '../api/client.ts';
+import { deathThud, hitImpact, hurt, victorySting } from '../audio/sfx.ts';
+import { addCameraShake, combatToastHook, hitstop, playerFlashHook } from '../controls/runtime.ts';
+import { useWorldStore } from '../store/world.ts';
 
 export interface EnemyCombat {
   hp: number;
@@ -20,7 +20,7 @@ export interface EnemyCombat {
 
 export interface VfxEvent {
   id: number;
-  kind: "spark" | "damage" | "telegraph" | "dust";
+  kind: 'spark' | 'damage' | 'telegraph' | 'dust';
   x: number;
   y: number;
   z: number;
@@ -48,10 +48,16 @@ interface CombatStore {
   setPlayerGrowth: (level: number) => void;
   damageEnemy: (npcId: string, amount: number, at: { x: number; y: number; z: number }) => void;
   /** attackerName is threaded through so the death overlay can name who finished the player */
-  damagePlayer: (amount: number, at: { x: number; y: number; z: number }, attackerName?: string) => void;
-  setHostileFromSummaryActions: (actions: Array<{ type: string; actorId?: string; targetId?: string }>) => void;
+  damagePlayer: (
+    amount: number,
+    at: { x: number; y: number; z: number },
+    attackerName?: string
+  ) => void;
+  setHostileFromSummaryActions: (
+    actions: Array<{ type: string; actorId?: string; targetId?: string }>
+  ) => void;
   setLockTarget: (npcId: string | null) => void;
-  addVfx: (event: Omit<VfxEvent, "id">) => void;
+  addVfx: (event: Omit<VfxEvent, 'id'>) => void;
   pruneVfx: (now: number) => void;
   respawnPlayer: () => void;
   resetForWorld: () => void;
@@ -115,15 +121,31 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       const hp = Math.max(floor, enemy.hp - amount);
       const won = hp <= floor;
       set({
-        enemies: { ...get().enemies, [npcId]: { ...enemy, hp: won ? enemy.maxHp : hp, hostile: !won, spar: !won } },
+        enemies: {
+          ...get().enemies,
+          [npcId]: { ...enemy, hp: won ? enemy.maxHp : hp, hostile: !won, spar: !won },
+        },
         ...(won && get().lockTargetId === npcId ? { lockTargetId: null } : {}),
         ...(won ? { playerHp: Math.min(get().playerMaxHp, get().playerHp + 30) } : {}),
       });
       addCameraShake(0.1);
       hitstop(won ? 160 : 60);
       hitImpact(false);
-      get().addVfx({ kind: "spark", ...at, color: "#7fd0ff", startedAt: performance.now(), expiresAt: performance.now() + 380 });
-      get().addVfx({ kind: "damage", ...at, text: String(amount), color: "#9fd7ff", startedAt: performance.now(), expiresAt: performance.now() + 850 });
+      get().addVfx({
+        kind: 'spark',
+        ...at,
+        color: '#7fd0ff',
+        startedAt: performance.now(),
+        expiresAt: performance.now() + 380,
+      });
+      get().addVfx({
+        kind: 'damage',
+        ...at,
+        text: String(amount),
+        color: '#9fd7ff',
+        startedAt: performance.now(),
+        expiresAt: performance.now() + 850,
+      });
       if (won) void reportSparWon();
       return;
     }
@@ -138,17 +160,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
     if (defeated) {
       deathThud();
       victorySting();
-      const npcName = useWorldStore.getState().world?.npcs.find((entry) => entry.id === npcId)?.name;
-      combatToastHook.fire?.(`Defeated ${npcName ?? "enemy"}.`, "defeat");
+      const npcName = useWorldStore
+        .getState()
+        .world?.npcs.find((entry) => entry.id === npcId)?.name;
+      combatToastHook.fire?.(`Defeated ${npcName ?? 'enemy'}.`, 'defeat');
     } else {
       hitImpact(amount >= 35);
     }
-    get().addVfx({ kind: "spark", ...at, color: "#ffd84d", startedAt: performance.now(), expiresAt: performance.now() + 380 });
     get().addVfx({
-      kind: "damage",
+      kind: 'spark',
+      ...at,
+      color: '#ffd84d',
+      startedAt: performance.now(),
+      expiresAt: performance.now() + 380,
+    });
+    get().addVfx({
+      kind: 'damage',
       ...at,
       text: String(amount),
-      color: defeated ? "#ff7a7a" : "#ffffff",
+      color: defeated ? '#ff7a7a' : '#ffffff',
       startedAt: performance.now(),
       expiresAt: performance.now() + 850,
     });
@@ -166,7 +196,9 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
         // spar lost: end all spars gracefully, restore enemies
         const enemies = Object.fromEntries(
           Object.entries(get().enemies).map(([id, enemy]) =>
-            enemy.spar ? [id, { ...enemy, hostile: false, spar: false, hp: enemy.maxHp }] : [id, enemy]
+            enemy.spar
+              ? [id, { ...enemy, hostile: false, spar: false, hp: enemy.maxHp }]
+              : [id, enemy]
           )
         );
         set({ playerHp: Math.round(get().playerMaxHp * 0.5), enemies });
@@ -178,19 +210,34 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
       return;
     }
     const playerHp = Math.max(0, get().playerHp - amount);
-    set({ playerHp, playerDown: playerHp <= 0, ...(playerHp <= 0 && attackerName ? { playerDownAttacker: attackerName } : {}) });
+    set({
+      playerHp,
+      playerDown: playerHp <= 0,
+      ...(playerHp <= 0 && attackerName ? { playerDownAttacker: attackerName } : {}),
+    });
     addCameraShake(playerHp <= 0 ? 0.45 : 0.22);
     playerFlashHook.fire?.();
     if (playerHp <= 0) deathThud();
     else hurt();
-    get().addVfx({ kind: "spark", ...at, color: "#ff6a5a", startedAt: performance.now(), expiresAt: performance.now() + 380 });
+    get().addVfx({
+      kind: 'spark',
+      ...at,
+      color: '#ff6a5a',
+      startedAt: performance.now(),
+      expiresAt: performance.now() + 380,
+    });
   },
 
   setHostileFromSummaryActions(actions) {
     for (const action of actions) {
-      if (action.type !== "fight") continue;
-      const npcId = action.targetId === "player" ? action.actorId : action.actorId === "player" ? action.targetId : null;
-      if (npcId && npcId !== "player") get().engage(npcId);
+      if (action.type !== 'fight') continue;
+      const npcId =
+        action.targetId === 'player'
+          ? action.actorId
+          : action.actorId === 'player'
+            ? action.targetId
+            : null;
+      if (npcId && npcId !== 'player') get().engage(npcId);
     }
   },
 
@@ -210,11 +257,25 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
   },
 
   respawnPlayer() {
-    set({ playerHp: get().playerMaxHp, playerDown: false, playerDownAttacker: null, lockTargetId: null });
+    set({
+      playerHp: get().playerMaxHp,
+      playerDown: false,
+      playerDownAttacker: null,
+      lockTargetId: null,
+    });
   },
 
   resetForWorld() {
-    set({ playerHp: PLAYER_MAX_HP, playerMaxHp: PLAYER_MAX_HP, playerLevel: 1, playerDown: false, playerDownAttacker: null, lockTargetId: null, enemies: {}, vfx: [] });
+    set({
+      playerHp: PLAYER_MAX_HP,
+      playerMaxHp: PLAYER_MAX_HP,
+      playerLevel: 1,
+      playerDown: false,
+      playerDownAttacker: null,
+      lockTargetId: null,
+      enemies: {},
+      vfx: [],
+    });
   },
 }));
 
@@ -225,10 +286,10 @@ export const useCombatStore = create<CombatStore>((set, get) => ({
  */
 async function reportSparWon(): Promise<void> {
   try {
-    await fetch(api("/api/arc/event"), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ kind: "spar_won" }),
+    await fetch(api('/api/arc/event'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ kind: 'spar_won' }),
     });
   } catch {
     // arc event is best-effort; the toast comes via SSE when it lands
@@ -239,27 +300,38 @@ async function reportDefeatToSim(npcId: string): Promise<void> {
   const worldStore = useWorldStore.getState();
   const world = worldStore.world;
   if (!world) return;
-  const finisher = combatMovesFor(world).find((move) => move.style === "finisher");
+  const finisher = combatMovesFor(world).find((move) => move.style === 'finisher');
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const state = useWorldStore.getState().world;
     const npc = state?.npcs.find((entry) => entry.id === npcId);
     if (npc?.combat?.defeated) break;
-    const summary = await useWorldStore.getState().send({ type: "fight", targetId: npcId, moveId: finisher?.id });
+    const summary = await useWorldStore
+      .getState()
+      .send({ type: 'fight', targetId: npcId, moveId: finisher?.id });
     if (!summary) break;
   }
   const enemies = useCombatStore.getState().enemies;
   const enemy = enemies[npcId];
-  if (enemy) useCombatStore.setState({ enemies: { ...enemies, [npcId]: { ...enemy, reported: true } } });
+  if (enemy)
+    useCombatStore.setState({ enemies: { ...enemies, [npcId]: { ...enemy, reported: true } } });
 }
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
-  (window as unknown as Record<string, unknown>)["__combat"] = useCombatStore;
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>)['__combat'] = useCombatStore;
 }
 
 export function enemyStateFor(world: World | null, npcId: string): EnemyCombat | null {
   const client = useCombatStore.getState().enemies[npcId];
   if (client) return client;
   const npc = world?.npcs.find((entry) => entry.id === npcId);
-  if (npc?.combat?.defeated) return { hp: 0, maxHp: npc.combat.maxHp, hostile: false, defeated: true, spar: false, reported: true };
+  if (npc?.combat?.defeated)
+    return {
+      hp: 0,
+      maxHp: npc.combat.maxHp,
+      hostile: false,
+      defeated: true,
+      spar: false,
+      reported: true,
+    };
   return null;
 }

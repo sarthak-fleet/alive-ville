@@ -1,4 +1,4 @@
-import type { AgentGoalKind, Npc, World } from "./types.ts";
+import type { AgentGoalKind, Npc, World } from './types.ts';
 
 export interface CoherenceContext {
   /** The player's message that prompted this candidate reply. */
@@ -41,7 +41,7 @@ export function checkCoherence(
   return {
     ok: false,
     violations,
-    hint: `COHERENCE CORRECTION: the following facts must be respected:\n${violations.map((v) => `- ${v}`).join("\n")}`,
+    hint: `COHERENCE CORRECTION: the following facts must be respected:\n${violations.map((v) => `- ${v}`).join('\n')}`,
   };
 }
 
@@ -63,7 +63,9 @@ const FOURTH_WALL_PATTERNS: RegExp[] = [
 
 function checkFourthWall(lower: string, violations: string[]): void {
   if (FOURTH_WALL_PATTERNS.some((pattern) => pattern.test(lower))) {
-    violations.push("Never break character or admit to being an AI/model/program — you ARE this character, fully in-world.");
+    violations.push(
+      'Never break character or admit to being an AI/model/program — you ARE this character, fully in-world.'
+    );
   }
 }
 
@@ -85,7 +87,9 @@ function checkLocation(world: World, npc: Npc, lower: string, violations: string
     const claimed = match[1]!.trim();
     if (claimed === actualName) continue;
     // Only flag if another real location's name appears in the claimed text
-    const claimedLoc = world.locations.find((loc) => claimed.includes(loc.name.toLowerCase()) && loc.id !== npc.locationId);
+    const claimedLoc = world.locations.find(
+      (loc) => claimed.includes(loc.name.toLowerCase()) && loc.id !== npc.locationId
+    );
     if (claimedLoc) {
       violations.push(`You are at "${actualLoc.name}", not "${claimedLoc.name}".`);
     }
@@ -93,19 +97,19 @@ function checkLocation(world: World, npc: Npc, lower: string, violations: string
 }
 
 /** Goal-kind keywords whose opposites signal a contradiction. */
-const HOSTILE_GOAL_KINDS: AgentGoalKind[] = ["harm"];
+const HOSTILE_GOAL_KINDS: AgentGoalKind[] = ['harm'];
 const PEACEFUL_PHRASES = [
-  "at peace with",
-  "we are friends",
-  "i have forgiven",
-  "everything is fine between us",
-  "no problem with",
-  "nothing against",
+  'at peace with',
+  'we are friends',
+  'i have forgiven',
+  'everything is fine between us',
+  'no problem with',
+  'nothing against',
 ];
 
 function checkGoal(world: World, npc: Npc, lower: string, violations: string[]): void {
   const hostileGoals = (npc.ambitions ?? []).filter(
-    (goal) => HOSTILE_GOAL_KINDS.includes(goal.kind) && (goal.status ?? "active") === "active"
+    (goal) => HOSTILE_GOAL_KINDS.includes(goal.kind) && (goal.status ?? 'active') === 'active'
   );
   if (hostileGoals.length === 0) return;
 
@@ -133,10 +137,19 @@ function checkGoal(world: World, npc: Npc, lower: string, violations: string[]):
   }
 }
 
-const ALONE_PHRASES = ["i am alone", "i'm alone", "there is no one", "there's no one", "nobody else is here", "no one else is here"];
+const ALONE_PHRASES = [
+  'i am alone',
+  "i'm alone",
+  'there is no one',
+  "there's no one",
+  'nobody else is here',
+  'no one else is here',
+];
 
 function checkPresence(world: World, npc: Npc, lower: string, violations: string[]): void {
-  const presentNpcs = world.npcs.filter((other) => other.id !== npc.id && other.locationId === npc.locationId);
+  const presentNpcs = world.npcs.filter(
+    (other) => other.id !== npc.id && other.locationId === npc.locationId
+  );
   const presentNames = presentNpcs.map((other) => other.name.toLowerCase());
 
   // "Alone" claims only contradict when OTHER NPCs are present; talking to the
@@ -144,7 +157,7 @@ function checkPresence(world: World, npc: Npc, lower: string, violations: string
   if (presentNames.length > 0) {
     for (const phrase of ALONE_PHRASES) {
       if (lower.includes(phrase)) {
-        violations.push(`You are not alone — also present: ${presentNames.join(", ")}.`);
+        violations.push(`You are not alone — also present: ${presentNames.join(', ')}.`);
         break;
       }
     }
@@ -161,18 +174,20 @@ function checkPresence(world: World, npc: Npc, lower: string, violations: string
       `\\b${escapeRegex(absentLower)}\\s+is\\s+(?:here|with\\s+(?:me|us))`
     );
     if (presentClaim.test(lower)) {
-      violations.push(`${absent.name} is not here (they are at "${locationNameById(world, absent.locationId)}").`);
+      violations.push(
+        `${absent.name} is not here (they are at "${locationNameById(world, absent.locationId)}").`
+      );
     }
   }
 }
 
 /** High-importance memories the NPC can't plausibly deny. */
 const DENIAL_PHRASES = [
-  "that never happened",
+  'that never happened',
   "i don't remember that",
-  "i have no memory of",
-  "nothing happened",
-  "i never did that",
+  'i have no memory of',
+  'nothing happened',
+  'i never did that',
   "that didn't happen",
 ];
 const HIGH_IMPORTANCE_THRESHOLD = 6;
@@ -200,10 +215,17 @@ function checkMemoryDenial(npc: Npc, lower: string, violations: string[]): void 
 }
 
 /** Reflection-tagged memories represent crystallized beliefs — don't contradict them. */
-const CONTRADICTION_PREFIXES = ["i never", "i don't", "i do not", "i haven't", "i have never", "that's not who i am"];
+const CONTRADICTION_PREFIXES = [
+  'i never',
+  "i don't",
+  'i do not',
+  "i haven't",
+  'i have never',
+  "that's not who i am",
+];
 
 function checkBeliefs(npc: Npc, lower: string, violations: string[]): void {
-  const beliefs = npc.memories.filter((mem) => mem.meta?.tags?.includes("reflection"));
+  const beliefs = npc.memories.filter((mem) => mem.meta?.tags?.includes('reflection'));
   if (beliefs.length === 0) return;
 
   for (const belief of beliefs) {
@@ -218,7 +240,9 @@ function checkBeliefs(npc: Npc, lower: string, violations: string[]): void {
       const fragWords = significantWords(fragment);
       const overlap = beliefWords.filter((w) => fragWords.includes(w));
       if (overlap.length >= 2) {
-        violations.push(`You hold the belief: "${belief.text.slice(0, 80)}" — don't contradict it.`);
+        violations.push(
+          `You hold the belief: "${belief.text.slice(0, 80)}" — don't contradict it.`
+        );
         break;
       }
     }
@@ -230,17 +254,66 @@ function checkBeliefs(npc: Npc, lower: string, violations: string[]): void {
 // ---------------------------------------------------------------------------
 
 const STOP_WORDS = new Set([
-  "a", "an", "the", "i", "me", "my", "we", "our", "you", "your", "it", "its",
-  "is", "am", "are", "was", "were", "be", "been", "being", "have", "has", "had",
-  "do", "does", "did", "will", "would", "could", "should", "may", "might",
-  "to", "of", "in", "at", "by", "for", "on", "with", "that", "this", "and",
-  "or", "but", "not", "no", "so", "if", "as", "up", "out", "from", "into",
+  'a',
+  'an',
+  'the',
+  'i',
+  'me',
+  'my',
+  'we',
+  'our',
+  'you',
+  'your',
+  'it',
+  'its',
+  'is',
+  'am',
+  'are',
+  'was',
+  'were',
+  'be',
+  'been',
+  'being',
+  'have',
+  'has',
+  'had',
+  'do',
+  'does',
+  'did',
+  'will',
+  'would',
+  'could',
+  'should',
+  'may',
+  'might',
+  'to',
+  'of',
+  'in',
+  'at',
+  'by',
+  'for',
+  'on',
+  'with',
+  'that',
+  'this',
+  'and',
+  'or',
+  'but',
+  'not',
+  'no',
+  'so',
+  'if',
+  'as',
+  'up',
+  'out',
+  'from',
+  'into',
 ]);
 
 function significantWords(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
 }
@@ -250,5 +323,5 @@ function locationNameById(world: World, locationId: string): string {
 }
 
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

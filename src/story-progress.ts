@@ -1,17 +1,17 @@
-import { storyPhaseLocations } from "./story-context.ts";
-import type { Quest, StoryProgress, World } from "./types.ts";
+import { storyPhaseLocations } from './story-context.ts';
+import type { Quest, StoryProgress, World } from './types.ts';
 
-export const ASHMENT_STORY_ID = "ember_beneath_ashment";
+export const ASHMENT_STORY_ID = 'ember_beneath_ashment';
 
-export const STARTER_QUEST_IDS = ["return_shears", "rekindle_forge", "bridge_whisper"] as const;
+export const STARTER_QUEST_IDS = ['return_shears', 'rekindle_forge', 'bridge_whisper'] as const;
 
 export const STORY_CUTSCENES = {
-  intro: "ashment_intro_square",
-  shears: "garden_morning",
-  forge: "forge_rekindled",
-  bridge: "bridge_whisper",
-  villain: "villain_lantern_shadow",
-  dawn: "dawn_after_tasks",
+  intro: 'ashment_intro_square',
+  shears: 'garden_morning',
+  forge: 'forge_rekindled',
+  bridge: 'bridge_whisper',
+  villain: 'villain_lantern_shadow',
+  dawn: 'dawn_after_tasks',
 } as const;
 
 const QUEST_CUTSCENE_IDS: Record<string, string> = {
@@ -22,11 +22,11 @@ const QUEST_CUTSCENE_IDS: Record<string, string> = {
 
 export function ensureStoryProgress(world: World): StoryProgress {
   world.storyProgress ??= {
-    phase: "starter",
+    phase: 'starter',
     unlockedCutsceneIds: [],
     playedCutsceneIds: [],
   };
-  world.storyProgress.phase ??= "starter";
+  world.storyProgress.phase ??= 'starter';
   world.storyProgress.unlockedCutsceneIds ??= [];
   world.storyProgress.playedCutsceneIds ??= [];
   unlockCutscene(world, STORY_CUTSCENES.intro);
@@ -37,8 +37,8 @@ export function ensureStoryProgress(world: World): StoryProgress {
 
 export function syncStoryProgress(world: World): StoryProgress {
   const progress = ensureStoryProgress(world);
-  if (progress.phase === "starter" && starterPathComplete(world)) {
-    progress.phase = "nightfall_warning";
+  if (progress.phase === 'starter' && starterPathComplete(world)) {
+    progress.phase = 'nightfall_warning';
   }
   unlockCompletedQuestCutscenes(world);
   unlockPhaseCutscenes(world);
@@ -48,16 +48,16 @@ export function syncStoryProgress(world: World): StoryProgress {
 export function advanceNightfallTravel(world: World, locationId: string): void {
   const progress = syncStoryProgress(world);
   const { hubId, reportId } = storyPhaseLocations(world);
-  if (progress.phase === "nightfall_warning" && (locationId === reportId || locationId === hubId)) {
-    progress.phase = "shadow_confrontation";
+  if (progress.phase === 'nightfall_warning' && (locationId === reportId || locationId === hubId)) {
+    progress.phase = 'shadow_confrontation';
     unlockPhaseCutscenes(world);
   }
 }
 
 export function resolveShadowConfrontation(world: World): void {
   const progress = syncStoryProgress(world);
-  if (progress.phase !== "shadow_confrontation") return;
-  progress.phase = "dawn_after_tasks";
+  if (progress.phase !== 'shadow_confrontation') return;
+  progress.phase = 'dawn_after_tasks';
   unlockPhaseCutscenes(world);
 }
 
@@ -71,22 +71,32 @@ export function isCutsceneUnlocked(world: World | null | undefined, cutsceneId: 
   const progress = ensureStoryProgress(world);
   if (progress.unlockedCutsceneIds.includes(cutsceneId)) return true;
   if (cutsceneId === STORY_CUTSCENES.intro) return true;
-  if (cutsceneId === STORY_CUTSCENES.villain) return progress.phase !== "starter";
-  if (cutsceneId === STORY_CUTSCENES.dawn) return progress.phase === "dawn_after_tasks";
-  return world.quests?.some((quest) => quest.status === "done" && QUEST_CUTSCENE_IDS[quest.id] === cutsceneId) ?? false;
+  if (cutsceneId === STORY_CUTSCENES.villain) return progress.phase !== 'starter';
+  if (cutsceneId === STORY_CUTSCENES.dawn) return progress.phase === 'dawn_after_tasks';
+  return (
+    world.quests?.some(
+      (quest) => quest.status === 'done' && QUEST_CUTSCENE_IDS[quest.id] === cutsceneId
+    ) ?? false
+  );
 }
 
 export function starterPathComplete(world: World): boolean {
-  const starterQuests = STARTER_QUEST_IDS
-    .map((questId) => questById(world, questId))
-    .filter((quest): quest is Quest => Boolean(quest));
-  const requiredQuests = starterQuests.length > 0 ? starterQuests : (world.quests ?? []).slice(0, STARTER_QUEST_IDS.length);
-  return requiredQuests.length >= STARTER_QUEST_IDS.length && requiredQuests.every((quest) => quest.status === "done");
+  const starterQuests = STARTER_QUEST_IDS.map((questId) => questById(world, questId)).filter(
+    (quest): quest is Quest => Boolean(quest)
+  );
+  const requiredQuests =
+    starterQuests.length > 0
+      ? starterQuests
+      : (world.quests ?? []).slice(0, STARTER_QUEST_IDS.length);
+  return (
+    requiredQuests.length >= STARTER_QUEST_IDS.length &&
+    requiredQuests.every((quest) => quest.status === 'done')
+  );
 }
 
 function unlockCompletedQuestCutscenes(world: World): void {
   for (const quest of world.quests ?? []) {
-    if (quest.status === "done") {
+    if (quest.status === 'done') {
       const cutsceneId = QUEST_CUTSCENE_IDS[quest.id];
       if (cutsceneId) unlockCutscene(world, cutsceneId);
     }
@@ -95,8 +105,8 @@ function unlockCompletedQuestCutscenes(world: World): void {
 
 function unlockPhaseCutscenes(world: World): void {
   const progress = ensureStoryProgressShape(world);
-  if (progress.phase !== "starter") unlockCutscene(world, STORY_CUTSCENES.villain);
-  if (progress.phase === "dawn_after_tasks") unlockCutscene(world, STORY_CUTSCENES.dawn);
+  if (progress.phase !== 'starter') unlockCutscene(world, STORY_CUTSCENES.villain);
+  if (progress.phase === 'dawn_after_tasks') unlockCutscene(world, STORY_CUTSCENES.dawn);
 }
 
 function unlockCutscene(world: World, cutsceneId: string): void {
@@ -106,7 +116,7 @@ function unlockCutscene(world: World, cutsceneId: string): void {
 
 function ensureStoryProgressShape(world: World): StoryProgress {
   world.storyProgress ??= {
-    phase: "starter",
+    phase: 'starter',
     unlockedCutsceneIds: [],
     playedCutsceneIds: [],
   };

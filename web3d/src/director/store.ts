@@ -1,14 +1,14 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-import type { TickSummary, World } from "../../../src/types.ts";
-import { useUiStore } from "../store/ui.ts";
+import type { TickSummary, World } from '../../../src/types.ts';
+import { useUiStore } from '../store/ui.ts';
 
 export interface Cutscene {
   id: number;
   /** actor to frame; camera follows their live position */
   actorId: string;
   text: string;
-  kind: "director" | "villain";
+  kind: 'director' | 'villain';
   startedAt: number;
   durationMs: number;
 }
@@ -27,7 +27,7 @@ export interface IntroCinema {
 interface DirectorStore {
   cutscene: Cutscene | null;
   lastEndedAt: number;
-  beginCutscene: (beat: { actorId: string; text: string; kind: Cutscene["kind"] }) => void;
+  beginCutscene: (beat: { actorId: string; text: string; kind: Cutscene['kind'] }) => void;
   endCutscene: () => void;
   reset: () => void;
   maybeTriggerFromSummary: (summary: TickSummary, prevWorld: World | null, world: World) => void;
@@ -66,7 +66,10 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
         kind: beat.kind,
         startedAt: performance.now(),
         // long enough to actually read the beat
-        durationMs: Math.min(CUTSCENE_MAX_MS, Math.max(CUTSCENE_MIN_MS, beat.text.length * CUTSCENE_MS_PER_CHAR)),
+        durationMs: Math.min(
+          CUTSCENE_MAX_MS,
+          Math.max(CUTSCENE_MIN_MS, beat.text.length * CUTSCENE_MS_PER_CHAR)
+        ),
       },
     });
   },
@@ -96,7 +99,7 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
         state.beginCutscene({
           actorId: plan.actorId,
           text: plan.nextTrigger ?? `${plan.title} advances.`,
-          kind: "villain",
+          kind: 'villain',
         });
         return;
       }
@@ -107,19 +110,22 @@ export const useDirectorStore = create<DirectorStore>((set, get) => ({
       if (!entry.fromDirector) continue;
       const action = entry.action;
       const actorId =
-        action.actorId && action.actorId !== "player"
+        action.actorId && action.actorId !== 'player'
           ? action.actorId
-          : "targetId" in action && action.targetId !== "player"
+          : 'targetId' in action && action.targetId !== 'player'
             ? (action as { targetId?: string }).targetId
             : null;
       if (!actorId) continue;
-      const text = action.type === "talk" || action.type === "confront" || action.type === "gossip" ? action.text : entry.text;
-      state.beginCutscene({ actorId, text, kind: "director" });
+      const text =
+        action.type === 'talk' || action.type === 'confront' || action.type === 'gossip'
+          ? action.text
+          : entry.text;
+      state.beginCutscene({ actorId, text, kind: 'director' });
       return;
     }
   },
 }));
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
-  (window as unknown as Record<string, unknown>)["__director"] = useDirectorStore;
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>)['__director'] = useDirectorStore;
 }
