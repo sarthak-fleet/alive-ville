@@ -19,10 +19,10 @@ Aliveville is a browser-playable AI world simulator deployed at **aliveville.com
 ```sh
 pnpm install
 pnpm dev:server   # sim server on http://localhost:5174
-pnpm dev          # 3D Vite dev server on http://localhost:5173
+pnpm dev          # 3D Vite dev server on http://localhost:5175
 ```
 
-Open `http://localhost:5173`.
+Open `http://localhost:5175`.
 
 Useful server endpoints:
 
