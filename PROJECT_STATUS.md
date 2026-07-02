@@ -1,5 +1,5 @@
 # ai-game — PROJECT STATUS
-Last updated: 2026-06-28
+Last updated: 2026-07-02
 
 ## Why / What
 
@@ -53,6 +53,7 @@ Last updated: 2026-06-28
 
 ## Timeline
 
+- **2026-07-02** — Added React `<ErrorBoundary>` to web3d app (wrapping `App` in `main.tsx`); removed unused `posthog-js` dependency.
 - **2026-06-20** — Headless smoke re-verified: `pnpm playtest:game` exit 0, zero console/page errors.
 - **2026-06-14** — Web-frontier capability layer shipped: in-browser LLM, LocalBrain panel, WebGPU benchmarks, Kokoro TTS, OPFS saves, WebCodecs export, PWA, capability detection HUD.
 - **2026-06 (M4)** — Letterboxed cutscenes, villain-plan advances, story-pressure mood, intro cinematic.
