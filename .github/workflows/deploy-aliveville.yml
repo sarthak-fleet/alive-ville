@@ -1,13 +1,7 @@
 name: Deploy aliveville landing
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "astro-landing/**"
-      - ".github/workflows/deploy-aliveville.yml"
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest

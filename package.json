@@ -30,7 +30,8 @@
     "format:check": "biome format .",
     "check": "biome check .",
     "size": "size-limit",
-    "size:check": "size-limit --json"
+    "size:check": "size-limit --json",
+    "deploy": "node scripts/manual-deploy.mjs deploy-aliveville.yml ci.yml"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.0",
