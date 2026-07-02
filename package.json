@@ -67,7 +67,6 @@
     "@react-three/rapier": "^2.2.0",
     "kokoro-js": "^1.2.1",
     "phaser": "^4.1.0",
-    "posthog-js": "^1.372.1",
     "postprocessing": "^6.39.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
