@@ -1,0 +1,575 @@
+{
+  "id": "rival_duel",
+  "name": "Rival Duel at Iron Hill",
+  "story": {
+    "title": "The Rival at Iron Hill",
+    "premise": "Iron Hill is a frontier mining camp where two prospectors stake the same claim. Kael, your rival, has been sabotaging your operation and turning the camp against you. Today the claim boss will award the deed to whoever proves themselves — by talk or by force.",
+    "opening": "You arrive at the Iron Hill camp at dawn. Kael is already at the saloon, working the room. The claim boss will make her decision by sundown. You have one day to win the camp's respect and face your rival.",
+    "currentObjective": "Win the camp's respect, confront Kael, and claim the deed before the rival turns everyone against you.",
+    "mysteries": [
+      "Who has been stealing ore from your sluice box?",
+      "Why is Kael so desperate to win this claim?",
+      "What will the claim boss do if neither of you backs down?"
+    ],
+    "beats": [
+      "Marta needs help with a collapsed shaft before she'll vouch for you.",
+      "Kael is spreading rumors that you cut his rope line.",
+      "The claim boss will only respect strength — a spar or a showdown.",
+      "If Kael turns enough of the camp, you lose by default."
+    ]
+  },
+  "storyProgress": {
+    "phase": "starter",
+    "unlockedCutsceneIds": ["rival_intro_saloon"],
+    "playedCutsceneIds": []
+  },
+  "tick": 0,
+  "player": {
+    "locationId": "camp_gate",
+    "name": "The Prospector",
+    "appearance": {
+      "hair": "sun-bleached short hair",
+      "outfit": "dusty canvas jacket with a copper pick pin",
+      "palette": ["#8b5e3c", "#d4a76a", "#b87333"],
+      "silhouette": "lean",
+      "visualTags": ["pick pin", "canvas jacket", "dusty"]
+    }
+  },
+  "clock": {
+    "hoursPerTick": 2,
+    "hour": 6,
+    "day": 1
+  },
+  "rules": [
+    {
+      "id": "camp_respect",
+      "kind": "social",
+      "text": "The camp respects deeds over words. Help people, win a spar, and the camp leans your way."
+    },
+    {
+      "id": "rival_pressure",
+      "kind": "social",
+      "text": "Kael's pressure rises every tick he's unopposed. If it maxes, the camp turns against you and you lose."
+    },
+    {
+      "id": "claim_deed",
+      "kind": "social",
+      "text": "The claim boss awards the deed at sundown to whoever has more camp respect — or whoever wins the showdown."
+    }
+  ],
+  "factions": [
+    {
+      "id": "camp",
+      "name": "Iron Hill Camp",
+      "goals": ["keep the mine running", "back the stronger prospector"],
+      "resources": ["sluice boxes", "tools", "ore cart"],
+      "reputation": 0
+    },
+    {
+      "id": "kael_gang",
+      "name": "Kael's Crew",
+      "goals": ["win the claim for Kael", "undermine the rival"],
+      "resources": ["rumors", "hired muscle"],
+      "reputation": -2
+    }
+  ],
+  "tensions": [
+    {
+      "id": "claim_dispute",
+      "title": "Two prospectors, one claim",
+      "fromId": "player",
+      "toId": "kael",
+      "score": 80,
+      "summary": "Kael and the Prospector both staked the Iron Hill claim. The boss decides today."
+    },
+    {
+      "id": "shaft_collapse",
+      "title": "Marta's shaft collapsed",
+      "fromId": "marta",
+      "toId": "camp",
+      "score": 45,
+      "summary": "The north shaft caved in. Marta needs help clearing it or she can't vouch for anyone."
+    }
+  ],
+  "villainPlans": [
+    {
+      "id": "kael_sabotage",
+      "actorId": "kael",
+      "title": "Turn the camp against the rival",
+      "objective": "Spread enough rumors and win enough allies that the claim boss hands the deed to Kael by sundown.",
+      "stage": 1,
+      "hidden": false,
+      "pressure": 30,
+      "nextTrigger": "Every tick without opposition, Kael's pressure rises by 10. At 100, you lose.",
+      "knownFacts": [
+        "Kael is at the saloon",
+        "Marta's shaft collapsed",
+        "The claim boss watches both of you"
+      ]
+    }
+  ],
+  "directorState": {
+    "pressure": 30,
+    "quietTicks": 0,
+    "pendingReveals": ["Kael was seen near your sluice box last night."]
+  },
+  "locations": [
+    {
+      "id": "camp_gate",
+      "name": "Camp Gate",
+      "x": 200,
+      "y": 300,
+      "w": 160,
+      "h": 100,
+      "visual": {
+        "role": "entry point",
+        "description": "A wooden arch marks the entrance to Iron Hill camp. Ore carts track the dust.",
+        "palette": { "ground": "#6b5b3e", "structure": "#8b7355", "accent": "#b87333" },
+        "visualTags": ["ore carts", "wooden arch", "dust"],
+        "landmarks": ["gate_arch"],
+        "elevation": 0.03
+      }
+    },
+    {
+      "id": "saloon",
+      "name": "Iron Hill Saloon",
+      "x": 360,
+      "y": 220,
+      "w": 180,
+      "h": 130,
+      "visual": {
+        "role": "social hub",
+        "description": "A weathered saloon with a brass bell and a long bar. Where the camp gathers to talk and fight.",
+        "palette": { "ground": "#4a3828", "structure": "#7a5c3e", "accent": "#f8d44e" },
+        "visualTags": ["saloon", "brass bell", "long bar"],
+        "landmarks": ["brass_bell"],
+        "elevation": 0.04
+      }
+    },
+    {
+      "id": "mine_shaft",
+      "name": "North Mine Shaft",
+      "x": 520,
+      "y": 160,
+      "w": 140,
+      "h": 100,
+      "visual": {
+        "role": "work site",
+        "description": "A collapsed mine shaft with timber props and scattered ore. Marta is working to clear it.",
+        "palette": { "ground": "#3d3328", "structure": "#5c4a35", "accent": "#c87533" },
+        "visualTags": ["mine shaft", "timber props", "ore"],
+        "landmarks": ["shaft_entrance"],
+        "elevation": 0.08
+      }
+    },
+    {
+      "id": "sluice",
+      "name": "Sluice Box",
+      "x": 300,
+      "y": 420,
+      "w": 120,
+      "h": 80,
+      "visual": {
+        "role": "work site",
+        "description": "Your sluice box by the creek. Someone has been stealing ore from it at night.",
+        "palette": { "ground": "#5a6b4e", "structure": "#7a8a6a", "accent": "#d4a76a" },
+        "visualTags": ["sluice box", "creek", "ore"],
+        "landmarks": ["sluice_box"],
+        "elevation": 0.02
+      }
+    },
+    {
+      "id": "boss_office",
+      "name": "Claim Boss Office",
+      "x": 440,
+      "y": 340,
+      "w": 140,
+      "h": 100,
+      "visual": {
+        "role": "authority",
+        "description": "A small wooden office where the claim boss keeps the deeds. She watches both prospectors.",
+        "palette": { "ground": "#4a4035", "structure": "#6b5b48", "accent": "#f8d44e" },
+        "visualTags": ["office", "deeds", "desk"],
+        "landmarks": ["deed_box"],
+        "elevation": 0.05
+      }
+    }
+  ],
+  "exits": [
+    { "from": "camp_gate", "to": "saloon", "bidirectional": true, "label": "main path" },
+    { "from": "saloon", "to": "mine_shaft", "bidirectional": true, "label": "north trail" },
+    { "from": "saloon", "to": "boss_office", "bidirectional": true, "label": "boardwalk" },
+    { "from": "camp_gate", "to": "sluice", "bidirectional": true, "label": "creek path" },
+    { "from": "sluice", "to": "boss_office", "bidirectional": true, "label": "ridge path" }
+  ],
+  "items": [
+    {
+      "id": "stolen_ore",
+      "name": "Stolen ore pouch",
+      "description": "A pouch of copper ore that was taken from your sluice box. Found near Kael's bunk.",
+      "locationId": "saloon"
+    },
+    {
+      "id": "marta_tools",
+      "name": "Marta's digging tools",
+      "description": "Heavy tools Marta needs to clear the collapsed shaft.",
+      "locationId": "saloon"
+    }
+  ],
+  "interactables": [
+    {
+      "id": "brass_bell",
+      "locationId": "saloon",
+      "name": "Brass Bell",
+      "description": "Ring the bell to challenge Kael to a public showdown.",
+      "kind": "trigger"
+    },
+    {
+      "id": "deed_box",
+      "locationId": "boss_office",
+      "name": "Deed Box",
+      "description": "The claim deed is inside. The boss opens it at sundown for the winner.",
+      "kind": "inspect"
+    }
+  ],
+  "npcs": [
+    {
+      "id": "kael",
+      "name": "Kael",
+      "locationId": "saloon",
+      "tier": "quest",
+      "role": "rival prospector",
+      "factionId": "kael_gang",
+      "description": "A lean, sharp-eyed prospector who staked the same claim you did. He's been turning the camp against you with rumors and sabotage. Desperate to win because he's in debt.",
+      "appearance": {
+        "sourceLook": "rival prospector / western antagonist",
+        "bodyType": "lean, tense posture",
+        "hair": "greasy black hair under a wide hat",
+        "outfit": "black vest over a red shirt, leather chaps, spurred boots",
+        "palette": ["#2a2a2a", "#c83838", "#8b5e3c"],
+        "silhouette": "Lean gunslinger silhouette with hat brim and spurred boots.",
+        "visualTags": ["rival", "hat", "red shirt", "spurs"]
+      },
+      "traits": {
+        "personality": ["cunning", "ambitious", "proud"],
+        "values": ["winning", "respect", "independence"],
+        "flaws": ["sabotage over fair competition", "pride blinds him"],
+        "fears": ["losing the claim", "being exposed as a thief"],
+        "speechStyle": "smooth talker with a sharp edge"
+      },
+      "needs": {
+        "safety": 30,
+        "trust": 20,
+        "resources": 75,
+        "curiosity": 40,
+        "duty": 15
+      },
+      "mood": { "emotion": "confident", "stress": 45, "confidence": 78, "suspicion": 30 },
+      "goals": [
+        "win the Iron Hill claim by sundown",
+        "turn the camp against the rival prospector",
+        "keep the ore theft hidden"
+      ],
+      "ambitions": [
+        {
+          "id": "kael_win_claim",
+          "title": "Win the Iron Hill claim",
+          "kind": "achieve",
+          "priority": 90,
+          "status": "active",
+          "targetId": "boss_office"
+        },
+        {
+          "id": "kael_undermine_rival",
+          "title": "Turn the camp against the rival",
+          "kind": "undermine",
+          "priority": 75,
+          "status": "active"
+        }
+      ],
+      "relationshipAxes": {
+        "player": { "trust": -4, "affection": -3, "respect": 2, "suspicion": 5 },
+        "marta": { "trust": 1, "affection": 0, "respect": 3, "suspicion": 2 },
+        "boss": { "trust": 2, "affection": 0, "respect": 4, "suspicion": 1 }
+      },
+      "relationships": { "player": -4, "marta": 1, "boss": 2 },
+      "memories": [
+        {
+          "tick": 0,
+          "text": "I staked this claim first. The rival is an interloper.",
+          "meta": {
+            "importance": 8,
+            "tags": ["claim", "rival"],
+            "visibility": "private",
+            "emotionalWeight": 6,
+            "sourceActorId": "world"
+          }
+        },
+        {
+          "tick": 0,
+          "text": "I took ore from the sluice box last night. No one saw me.",
+          "meta": {
+            "importance": 9,
+            "tags": ["theft", "sluice", "secret"],
+            "visibility": "private",
+            "emotionalWeight": 5,
+            "sourceActorId": "world"
+          }
+        },
+        {
+          "tick": 0,
+          "text": "The claim boss watches both of us. I need to look like the stronger prospector.",
+          "meta": {
+            "importance": 7,
+            "tags": ["boss", "claim", "strategy"],
+            "visibility": "shared",
+            "emotionalWeight": 4,
+            "sourceActorId": "world"
+          }
+        }
+      ],
+      "combat": {
+        "maxHp": 100,
+        "attack": 14,
+        "defense": 8,
+        "moves": [
+          {
+            "id": "quick_draw",
+            "name": "Quick Draw",
+            "damage": 12,
+            "telegraph": "Kael reaches for his pick"
+          },
+          {
+            "id": "dirt_kick",
+            "name": "Dirt Kick",
+            "damage": 6,
+            "telegraph": "Kael kicks dust at your eyes"
+          },
+          {
+            "id": "overhead_slam",
+            "name": "Overhead Slam",
+            "damage": 18,
+            "telegraph": "Kael raises his pick high"
+          }
+        ]
+      },
+      "rumors": [
+        {
+          "text": "Kael was seen near the sluice box after midnight.",
+          "knownBy": ["marta", "boss"]
+        },
+        { "text": "Kael owes money to someone outside the camp.", "knownBy": ["boss"] }
+      ]
+    },
+    {
+      "id": "marta",
+      "name": "Marta",
+      "locationId": "mine_shaft",
+      "tier": "quest",
+      "role": "miner and potential ally",
+      "factionId": "camp",
+      "description": "A stocky, practical miner whose shaft collapsed. She'll vouch for whoever helps her clear it. Respects hard work over sweet talk.",
+      "appearance": {
+        "sourceLook": "frontier miner / sturdy ally",
+        "bodyType": "stocky, broad-shouldered",
+        "hair": "gray-streaked hair in a tight bun",
+        "outfit": "canvas work shirt, heavy belt, mining boots",
+        "palette": ["#6b5b3e", "#a89070", "#4a3828"],
+        "silhouette": "Stocky miner silhouette with heavy belt and boots.",
+        "visualTags": ["miner", "strong", "practical", "boots"]
+      },
+      "traits": {
+        "personality": ["blunt", "hardworking", "fair"],
+        "values": ["honesty", "hard work", "loyalty"],
+        "flaws": ["stubborn once she picks a side"],
+        "fears": ["the shaft collapsing again with someone inside"],
+        "speechStyle": "short, direct sentences"
+      },
+      "needs": {
+        "safety": 60,
+        "trust": 50,
+        "resources": 70,
+        "curiosity": 30,
+        "duty": 80
+      },
+      "mood": { "emotion": "frustrated", "stress": 65, "confidence": 50, "suspicion": 35 },
+      "goals": [
+        "clear the collapsed north shaft",
+        "figure out who is stealing ore",
+        "back the prospector who helps the camp"
+      ],
+      "ambitions": [
+        {
+          "id": "marta_clear_shaft",
+          "title": "Clear the collapsed shaft",
+          "kind": "task",
+          "priority": 85,
+          "status": "active",
+          "targetId": "mine_shaft"
+        }
+      ],
+      "relationshipAxes": {
+        "player": { "trust": 1, "affection": 0, "respect": 1, "suspicion": 2 },
+        "kael": { "trust": 0, "affection": 0, "respect": 2, "suspicion": 4 }
+      },
+      "relationships": { "player": 1, "kael": 0, "boss": 2 },
+      "memories": [
+        {
+          "tick": 0,
+          "text": "The north shaft caved in yesterday. I need help clearing it.",
+          "meta": {
+            "importance": 8,
+            "tags": ["shaft", "collapse", "help"],
+            "visibility": "shared",
+            "emotionalWeight": 5,
+            "sourceActorId": "world"
+          }
+        },
+        {
+          "tick": 0,
+          "text": "Someone has been taking ore from the sluice boxes at night.",
+          "meta": {
+            "importance": 7,
+            "tags": ["theft", "ore", "sluice"],
+            "visibility": "shared",
+            "emotionalWeight": 4,
+            "sourceActorId": "world"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boss",
+      "name": "Claim Boss Verna",
+      "locationId": "boss_office",
+      "tier": "quest",
+      "role": "claim boss and judge",
+      "factionId": "camp",
+      "description": "The claim boss who decides who gets the deed. She watches both prospectors and respects strength and fairness equally.",
+      "appearance": {
+        "sourceLook": "frontier authority / judge figure",
+        "bodyType": "tall, upright posture",
+        "hair": "silver hair pulled back",
+        "outfit": "dark coat with a brass badge, leather gloves",
+        "palette": ["#3a3a3a", "#b87333", "#c0c0c0"],
+        "silhouette": "Tall authority silhouette with brass badge and gloves.",
+        "visualTags": ["authority", "badge", "silver hair", "coat"]
+      },
+      "traits": {
+        "personality": ["observant", "fair", "firm"],
+        "values": ["justice", "strength", "decisiveness"],
+        "flaws": ["won't intervene until someone proves themselves"],
+        "fears": ["awarding the claim to a coward"],
+        "speechStyle": "measured, final"
+      },
+      "needs": {
+        "safety": 55,
+        "trust": 65,
+        "resources": 40,
+        "curiosity": 35,
+        "duty": 90
+      },
+      "mood": { "emotion": "observant", "stress": 30, "confidence": 75, "suspicion": 40 },
+      "goals": [
+        "award the claim to the stronger prospector",
+        "keep the camp peaceful",
+        "see through any sabotage"
+      ],
+      "ambitions": [
+        {
+          "id": "verna_decide_claim",
+          "title": "Decide the claim by sundown",
+          "kind": "judge",
+          "priority": 90,
+          "status": "active",
+          "targetId": "boss_office"
+        }
+      ],
+      "relationshipAxes": {
+        "player": { "trust": 1, "affection": 0, "respect": 1, "suspicion": 2 },
+        "kael": { "trust": 1, "affection": 0, "respect": 2, "suspicion": 3 }
+      },
+      "relationships": { "player": 1, "kael": 1, "marta": 3 },
+      "memories": [
+        {
+          "tick": 0,
+          "text": "Two prospectors staked the same claim. I will decide today.",
+          "meta": {
+            "importance": 9,
+            "tags": ["claim", "decision", "rivalry"],
+            "visibility": "shared",
+            "emotionalWeight": 5,
+            "sourceActorId": "world"
+          }
+        },
+        {
+          "tick": 0,
+          "text": "Kael seems too eager. I will watch him carefully.",
+          "meta": {
+            "importance": 7,
+            "tags": ["kael", "suspicion"],
+            "visibility": "private",
+            "emotionalWeight": 3,
+            "sourceActorId": "world"
+          }
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "clear_shaft",
+      "title": "Help Marta clear the collapsed shaft",
+      "description": "Marta's north shaft caved in. Bring her the digging tools from the saloon and help clear the rubble. She'll vouch for you with the camp.",
+      "giverId": "marta",
+      "status": "open",
+      "rewards": {
+        "relationshipDelta": { "marta": 3, "boss": 2 },
+        "xp": 40
+      },
+      "consequences": {
+        "relationshipDelta": { "marta": -2 }
+      }
+    },
+    {
+      "id": "expose_kael",
+      "title": "Expose Kael's ore theft",
+      "description": "Find the stolen ore pouch in the saloon and bring it to the claim boss. Proving Kael is a thief will swing the camp against him.",
+      "giverId": "boss",
+      "status": "open",
+      "rewards": {
+        "relationshipDelta": { "boss": 3, "kael": -5 },
+        "xp": 30
+      },
+      "consequences": {
+        "relationshipDelta": { "kael": -3 }
+      }
+    },
+    {
+      "id": "showdown",
+      "title": "Challenge Kael to a showdown",
+      "description": "Ring the brass bell at the saloon to challenge Kael publicly. Win the spar and the camp will respect you. Lose and Kael takes the claim.",
+      "giverId": "boss",
+      "status": "locked",
+      "rewards": {
+        "relationshipDelta": { "boss": 5, "marta": 3 },
+        "xp": 80
+      },
+      "consequences": {
+        "relationshipDelta": { "kael": -10 }
+      }
+    }
+  ],
+  "eventLog": [
+    {
+      "tick": 0,
+      "text": "You arrive at Iron Hill at dawn. Kael is already at the saloon.",
+      "type": "arrival"
+    },
+    {
+      "tick": 0,
+      "text": "The claim boss will decide at sundown. You have one day.",
+      "type": "objective"
+    }
+  ]
+}

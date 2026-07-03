@@ -53,6 +53,7 @@ Last updated: 2026-07-02
 
 ## Timeline
 
+- **2026-07-03** — "The Rival" vertical slice authored: `worlds/rival-duel.json` — a self-contained scenario with one named rival NPC (Kael) whose goal conflicts with the player's, a 3-NPC camp (Kael, Marta, Claim Boss Verna), 5 locations, 3 quests (clear shaft, expose theft, showdown), combat stats for the rival, villain plan with rising pressure, and a clear win/lose condition. 7 tests in `tests/rival-duel.test.ts` verify world structure, arc creation, quest loops, and reachability. The spine from `docs/core-gameplay-fix.md` §6 is now wired to a concrete playable scenario — fun-tuning and the human playtest verdict remain.
 - **2026-07-02** — Added React `<ErrorBoundary>` to web3d app (wrapping `App` in `main.tsx`); removed unused `posthog-js` dependency.
 - **2026-06-20** — Headless smoke re-verified: `pnpm playtest:game` exit 0, zero console/page errors.
 - **2026-06-14** — Web-frontier capability layer shipped: in-browser LLM, LocalBrain panel, WebGPU benchmarks, Kokoro TTS, OPFS saves, WebCodecs export, PWA, capability detection HUD.
