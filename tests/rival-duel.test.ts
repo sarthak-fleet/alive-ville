@@ -14,7 +14,7 @@ describe('Rival Duel vertical slice', () => {
     const world = fixture();
     expect(world.id).toBe('rival_duel');
     expect(world.npcs.map((n) => n.id).sort()).toEqual(['boss', 'kael', 'marta']);
-    expect(world.quests.map((q) => q.id).sort()).toEqual([
+    expect(world.quests?.map((q) => q.id).sort()).toEqual([
       'clear_shaft',
       'expose_kael',
       'showdown',
@@ -29,7 +29,7 @@ describe('Rival Duel vertical slice', () => {
     expect(kael).toBeDefined();
     expect(kael?.combat).toBeDefined();
     expect(kael?.combat?.maxHp).toBe(100);
-    expect(kael?.combat?.moves.length).toBeGreaterThanOrEqual(2);
+    expect(kael?.combat?.moves?.length).toBeGreaterThanOrEqual(2);
   });
 
   test('arc auto-creates with Kael as villain and a mentor', () => {

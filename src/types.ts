@@ -237,10 +237,20 @@ export interface AgentSecret {
   knownBy?: Array<ActorId | 'player'>;
 }
 
+export interface CombatMove {
+  id: string;
+  name: string;
+  damage: number;
+  telegraph?: string;
+}
+
 export interface CombatState {
   hp: number;
   maxHp: number;
   posture: number;
+  attack?: number;
+  defense?: number;
+  moves?: CombatMove[];
   defeated?: boolean;
   lastMoveId?: string;
 }
