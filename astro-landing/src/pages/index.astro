@@ -391,6 +391,68 @@ import '../styles/global.css';
     })} />
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Aliveville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Aliveville is a browser-playable AI world simulator where five autonomous AI agents live their own daily lives in a 3D town. They remember people, hold grudges, and gossip while you explore. No install is required — it runs directly in modern web browsers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Aliveville free to play?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Aliveville is free to play. It runs in your browser with no install required. You can walk the 3D town using WASD controls and interact with autonomous AI villagers immediately, with no download, account, or payment needed to start exploring."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do the AI agents in Aliveville have memory?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, NPCs use location-aware memory retrieval. They only recall what is relevant to their current context, state, and social bonds. Autonomous loops continue even when you are away, so agents keep living, remembering, and evolving their relationships over time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I play Aliveville without downloading anything?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Aliveville is browser-playable with no install. It runs directly in modern browsers with real-time lighting and 3D atmosphere. Open the page, pick a hero, and walk the town using WASD controls — there is nothing to download or set up first."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the AI world simulation work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Agents keep their schedules, relationships, memories, and narrative pressure in sync. The world ticks forward autonomously, aging and evolving even when no one is watching. A director nudges things forward when the world goes quiet, so the simulation never stalls."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What can I do in Aliveville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pick a hero, walk the 3D town with WASD controls, and observe autonomous villagers going about their daily lives. You can watch social dynamics like grudges and gossip unfold in real time, and click to talk with the AI agents as you explore."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Aliveville an AI experiment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Aliveville is a persistent ecosystem exploring autonomous agent behavior, narrative emergence, and playable 3D exploration. It is an interactive AI world experiment where five agents live, remember, and react on their own, building emergent stories you can witness firsthand."
+          }
+        }
+      ]
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
       "@type": "VideoGame",
       "name": "Aliveville",
       "url": "https://aliveville.com/game",
@@ -628,6 +690,88 @@ import '../styles/global.css';
                         <p class="mt-2 text-sm text-white/35 leading-relaxed">A director nudges things forward when the world goes quiet.</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ (GEO — AI search engines lift 35-60 word passages) -->
+    <section id="faq" class="relative z-40 border-t border-white/5 bg-[#050507] px-6 py-24">
+        <div class="max-w-3xl mx-auto space-y-12">
+            <div class="space-y-4">
+                <span class="text-[#f8d44e] font-mono text-[0.6rem] uppercase tracking-[0.4em]">FAQ</span>
+                <h2 class="text-4xl md:text-6xl font-black tracking-tight text-white">Questions, answered.</h2>
+            </div>
+
+            <div class="space-y-3">
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>What is Aliveville?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Aliveville is a browser-playable AI world simulator where five autonomous AI agents live their own daily lives in a 3D town. They remember people, hold grudges, and gossip while you explore. No install is required — it runs directly in modern web browsers.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>Is Aliveville free to play?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Yes, Aliveville is free to play. It runs in your browser with no install required. You can walk the 3D town using WASD controls and interact with autonomous AI villagers immediately, with no download, account, or payment needed to start exploring.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>Do the AI agents in Aliveville have memory?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Yes, NPCs use location-aware memory retrieval. They only recall what is relevant to their current context, state, and social bonds. Autonomous loops continue even when you are away, so agents keep living, remembering, and evolving their relationships over time.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>Can I play Aliveville without downloading anything?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Yes, Aliveville is browser-playable with no install. It runs directly in modern browsers with real-time lighting and 3D atmosphere. Open the page, pick a hero, and walk the town using WASD controls — there is nothing to download or set up first.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>How does the AI world simulation work?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Agents keep their schedules, relationships, memories, and narrative pressure in sync. The world ticks forward autonomously, aging and evolving even when no one is watching. A director nudges things forward when the world goes quiet, so the simulation never stalls.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>What can I do in Aliveville?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Pick a hero, walk the 3D town with WASD controls, and observe autonomous villagers going about their daily lives. You can watch social dynamics like grudges and gossip unfold in real time, and click to talk with the AI agents as you explore.
+                    </p>
+                </details>
+
+                <details class="glass-card p-6 group">
+                    <summary class="cursor-pointer list-none flex items-center justify-between gap-4 text-white font-bold text-lg">
+                        <span>Is Aliveville an AI experiment?</span>
+                        <span class="text-[#f8d44e] font-mono text-xl transition-transform group-open:rotate-45">+</span>
+                    </summary>
+                    <p class="mt-4 text-white/45 text-sm leading-relaxed font-light">
+                        Yes, Aliveville is a persistent ecosystem exploring autonomous agent behavior, narrative emergence, and playable 3D exploration. It is an interactive AI world experiment where five agents live, remember, and react on their own, building emergent stories you can witness firsthand.
+                    </p>
+                </details>
             </div>
         </div>
     </section>
