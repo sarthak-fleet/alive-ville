@@ -9,13 +9,19 @@ import '../styles/global.css';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Aliveville — A browser-playable AI world simulator</title>
     <meta name="description" content="Aliveville is a browser-playable AI world simulator. Walk a 3D town where autonomous agents live, remember, and react in real time. No install." />
+    <meta name="keywords" content="AI world simulator, browser AI game, autonomous NPCs, 3D AI town, playable AI simulation, persistent AI agents" />
+    <meta name="author" content="Sarthak Agrawal" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://aliveville.com/" />
     <meta property="og:url" content="https://aliveville.com/" />
     <meta property="og:title" content="Aliveville — A browser-playable AI world simulator" />
     <meta property="og:description" content="Walk a 3D town where autonomous AI agents live, remember, and react in real time. Plays in the browser." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://aliveville.com/assets/ashment_intro_square.jpg" />
+    <meta property="og:site_name" content="Aliveville" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Aliveville — A browser-playable AI world simulator" />
+    <meta name="twitter:description" content="Walk a 3D town where 5 AI agents live their own day — remembering people, holding grudges, and gossiping while you explore." />
     <meta name="twitter:image" content="https://aliveville.com/assets/ashment_intro_square.jpg" />
     <style>
         :root {
@@ -375,14 +381,45 @@ import '../styles/global.css';
             color: var(--accent) !important;
         }
     </style>
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Aliveville",
+      "url": "https://aliveville.com/",
+      "description": "A browser-playable AI world simulator. Walk a 3D town where autonomous agents live, remember, and react in real time.",
+      "inLanguage": "en"
+    })} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Aliveville",
+      "url": "https://aliveville.com/game",
+      "description": "A browser-playable AI world simulator where 5 autonomous agents live their own day in a 3D town — remembering people, holding grudges, and gossiping.",
+      "genre": ["Simulation", "AI", "Sandbox"],
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any (Web Browser)",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free to play in browser, no install required."
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Aliveville",
+        "url": "https://aliveville.com/"
+      }
+    })} />
 </head>
 <body>
     <!-- HERO first in DOM so h1 is the earliest paint target (nav/overlays are fixed). -->
     <section class="relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-6">
         <div class="absolute inset-0 z-0 overflow-hidden">
-            <video preload="none" loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150" data-hero-video>
+            <video preload="none" loop muted playsinline class="w-full h-full object-cover opacity-20 grayscale filter contrast-150" data-hero-video aria-label="Atmospheric video of the town of Ashment">
                 <source src="/assets/villain_lantern_shadow.mp4" type="video/mp4" />
             </video>
+            <p class="sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">Atmospheric background video showing the town of Ashment with shifting lantern light and shadow.</p>
             <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#010102]/90 to-[#010102]"></div>
         </div>
 
@@ -533,7 +570,7 @@ import '../styles/global.css';
         <div class="w-full min-h-screen overflow-hidden flex items-center justify-center px-6 py-32">
 
             <div class="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
-                <video autoplay loop muted playsinline class="w-full h-full object-cover filter brightness-[0.3] contrast-125">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover filter brightness-[0.3] contrast-125" aria-label="Gameplay footage of Aliveville AI agents in the 3D town">
                     <source src="/assets/garden_morning.mp4" type="video/mp4" />
                 </video>
                 <div class="absolute inset-0 bg-gradient-to-b from-[#010102] via-[#010102]/55 to-[#010102]"></div>
