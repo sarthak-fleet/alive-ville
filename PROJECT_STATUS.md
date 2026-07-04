@@ -1,9 +1,11 @@
 # ai-game — PROJECT STATUS
-Last updated: 2026-07-02
+Last updated: 2026-07-04
 
 ## Why / What
 
 **Aliveville** is a browser-playable AI world simulator at **aliveville.com/game**. The product thesis: a living town where autonomous NPC agents, quests, combat, and LLM dialogue make a small district feel alive — not a tech demo of frontier APIs.
+
+**Umbrella:** ai-game is the parent product for the fleet's AI-game research line. **open-historia** (AI grand-strategy history game, separate repo) is a sub-product under this umbrella — separate codebase and deploy, but worked on together as one research effort. See `../open-historia/PROJECT_STATUS.md`.
 
 **Users:** Players exploring a 3D anime-chibi town; fleet operators deploying the sim edge stack; future creators importing fandom/original worlds.
 
