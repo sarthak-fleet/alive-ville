@@ -1,0 +1,5 @@
+- [x] Add OpenSpec planning artifacts for the Director Console slice.
+- [x] Add API/store support for explicit agent-loop status refresh and one-step execution.
+- [x] Build the Director Console HUD rail with loop controls, status, resident roster, trace, and Chronicle summary.
+- [x] Add responsive styling that borrows GOD's side-rail structure while preserving Aliveville's normal HUD.
+- [x] Run the smallest relevant checks and visual smoke where feasible.

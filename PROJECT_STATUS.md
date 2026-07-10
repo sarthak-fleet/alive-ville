@@ -1,5 +1,7 @@
 # ai-game — PROJECT STATUS
 
+**Portfolio state (2026-07-10): Support / capped experiment.** Keep AliveVille alive as a light-support fleet product; finish the current Director Console closure slice, then pause feature expansion until a human Rival playtest records a fun/not-fun verdict.
+
 Last updated: 2026-07-10
 Last updated: 2026-07-05
 
@@ -7,7 +9,7 @@ Last updated: 2026-07-05
 
 **Aliveville** is a browser-playable AI world simulator at **aliveville.com/game**. The product thesis: a living town where autonomous NPC agents, quests, combat, and LLM dialogue make a small district feel alive — not a tech demo of frontier APIs.
 
-**Umbrella:** ai-game is the parent product for the fleet's AI-game research line. **open-historia** (AI grand-strategy history game, separate repo) is a sub-product under this umbrella — separate codebase and deploy, but worked on together as one research effort. See `../open-historia/PROJECT_STATUS.md`.
+**Repository naming:** local checkout is `ai-game`; GitHub repository is `sarthak-fleet/alive-ville`; public product name is AliveVille.
 
 **Users:** Players exploring a 3D anime-chibi town; fleet operators deploying the sim edge stack; future creators importing fandom/original worlds.
 
@@ -188,6 +190,6 @@ Last updated: 2026-07-05
 
 - `tests/web3d-identity.test.ts` `buildVariation` fails (4 cases) on clean HEAD — pre-existing, likely VRM-animation revert; `pnpm verify:readiness` fails on those tests while `pnpm playtest:game` passes independently.
 - Core gameplay §5 playtest bar not met — simulation and player loop still feel disconnected per `docs/core-gameplay-fix.md`.
-- **Closure decision (2026-07-10):** keep Aliveville as a capped learning sandbox and pause feature expansion until a human Rival playtest records a fun/not-fun verdict. Do not begin the deferred north-star work.
+- **Closure decision (2026-07-10):** keep AliveVille as a support / capped experiment and pause feature expansion until a human Rival playtest records a fun/not-fun verdict. Do not begin the deferred north-star work.
 - Worker DO missing 5 local-server endpoints (story-package, import-story-package, load, restore-checkpoint, portrait) — prod parity blocked until ported.
 - Game worker deploy is manual (`pnpm build:3d && npx wrangler deploy`); CI does not deploy game.

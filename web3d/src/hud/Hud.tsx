@@ -18,6 +18,7 @@ import { interiorForBuilding } from '../worldgen/interiors.ts';
 import { ArcPanel } from './ArcPanel.tsx';
 import { Chronicle } from './Chronicle.tsx';
 import { Dialogue } from './Dialogue.tsx';
+import { DirectorConsole } from './DirectorConsole.tsx';
 import { FpsCounter } from './FpsCounter.tsx';
 import { FrontierHud } from './FrontierHud.tsx';
 import { ImportScreen } from './ImportScreen.tsx';
@@ -43,6 +44,7 @@ export function Hud() {
   const interiorBuildingId = useUiStore((state) => state.interiorBuildingId);
   const [importOpen, setImportOpen] = useState(false);
   const [chronicleOpen, setChronicleOpen] = useState(false);
+  const [directorOpen, setDirectorOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(() => isSfxEnabled());
   const [musicMuted, setMusicMutedState] = useState(() => isMusicMuted());
   const [pointerLocked, setPointerLocked] = useState(false);
@@ -209,6 +211,13 @@ export function Hud() {
           >
             Journal (J)
           </button>
+          <button
+            type="button"
+            className={`chip ${directorOpen ? 'on' : ''}`}
+            onClick={() => setDirectorOpen((open) => !open)}
+          >
+            Director
+          </button>
           <PlatformControls />
           <LocalBrain />
           <button
@@ -352,6 +361,8 @@ export function Hud() {
       <Letterbox />
 
       <Chronicle open={chronicleOpen} onClose={() => setChronicleOpen(false)} />
+
+      <DirectorConsole open={directorOpen} onClose={() => setDirectorOpen(false)} />
 
       {importOpen ? <ImportScreen onClose={() => setImportOpen(false)} /> : null}
 

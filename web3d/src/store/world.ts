@@ -2,14 +2,17 @@ import { create } from 'zustand';
 
 import type { Npc, PlayerAction, TickSummary, World } from '../../../src/types.ts';
 import {
+  type AgentLoopStepResponse,
   fetchAgentLoopStatus,
   fetchState,
   importWorldSource,
   loadSnapshot,
   postTick,
   setAgentLoopRunning,
+  stepAgentLoop,
   subscribeEvents,
 } from '../api/client.ts';
+import type { AgentLoopStatus } from '../../../src/agent-loop.ts';
 import { useBanterStore } from '../characters/banter.ts';
 import { useDirectorStore } from '../director/store.ts';
 import { useUiStore } from './ui.ts';
@@ -31,12 +34,15 @@ interface WorldStore {
   sending: boolean;
   events: WorldEvent[];
   agentLoopRunning: boolean;
+  agentLoopStatus: AgentLoopStatus | null;
   importing: boolean;
   lastNpcInitiationAt: number;
   init: () => Promise<void>;
   connectLive: () => () => void;
   send: (action: PlayerAction) => Promise<TickSummary | null>;
+  refreshAgentLoopStatus: () => Promise<AgentLoopStatus | null>;
   toggleAgentLoop: () => Promise<void>;
+  stepAgentLoopOnce: () => Promise<AgentLoopStepResponse | null>;
   importWorldFromJson: (text: string) => Promise<void>;
   loadFromSnapshot: (world: World) => Promise<void>;
   pruneEvents: (now: number) => void;
@@ -158,6 +164,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   sending: false,
   events: [],
   agentLoopRunning: false,
+  agentLoopStatus: null,
   importing: false,
   lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
 
@@ -168,11 +175,11 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       set({ world, loading: false });
       const status = await fetchAgentLoopStatus();
       if (status.state === 'running') {
-        set({ agentLoopRunning: true });
+        set({ agentLoopRunning: true, agentLoopStatus: status });
       } else {
         // the world is alive by default — the HUD chip is a pause override
         const started = await setAgentLoopRunning(true);
-        set({ agentLoopRunning: started.state === 'running' });
+        set({ agentLoopRunning: started.state === 'running', agentLoopStatus: started });
       }
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -186,10 +193,12 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
           try {
             const prevWorld = get().world;
             const world = await fetchState();
+            const agentLoopStatus = get().agentLoopStatus;
             set({
               world,
               lastSummary: summary,
               events: [...get().events, ...toastsFrom(summary)],
+              agentLoopStatus: agentLoopStatus ? { ...agentLoopStatus, lastTick: summary } : null,
             });
             useDirectorStore.getState().maybeTriggerFromSummary(summary, prevWorld, world);
             surfaceNpcBanter(summary, world);
@@ -209,6 +218,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
               events: [],
               lastSummary: null,
               agentLoopRunning: false,
+              agentLoopStatus: null,
               lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
             });
             resetTransientWorldUiState();
@@ -243,12 +253,50 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     }
   },
 
+  async refreshAgentLoopStatus() {
+    try {
+      const status = await fetchAgentLoopStatus();
+      set({ agentLoopRunning: status.state === 'running', agentLoopStatus: status });
+      return status;
+    } catch (error) {
+      set({ error: (error as Error).message });
+      return null;
+    }
+  },
+
   async toggleAgentLoop() {
     try {
       const status = await setAgentLoopRunning(!get().agentLoopRunning);
-      set({ agentLoopRunning: status.state === 'running' });
+      set({ agentLoopRunning: status.state === 'running', agentLoopStatus: status });
     } catch (error) {
       set({ error: (error as Error).message });
+    }
+  },
+
+  async stepAgentLoopOnce() {
+    try {
+      if (get().agentLoopRunning) {
+        const stopped = await setAgentLoopRunning(false);
+        set({ agentLoopRunning: false, agentLoopStatus: stopped });
+      }
+      const prevWorld = get().world;
+      const res = await stepAgentLoop();
+      set({
+        world: res.state,
+        lastSummary: res.summary,
+        events: [...get().events, ...toastsFrom(res.summary)],
+        agentLoopRunning: res.status.state === 'running',
+        agentLoopStatus: res.status,
+        error: null,
+      });
+      useDirectorStore.getState().maybeTriggerFromSummary(res.summary, prevWorld, res.state);
+      surfaceNpcBanter(res.summary, res.state);
+      await maybeNpcInitiatesDialogue(res.summary, res.state);
+      await markHostilesFrom(res.summary);
+      return res;
+    } catch (error) {
+      set({ error: (error as Error).message });
+      return null;
     }
   },
 
@@ -273,6 +321,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
         importing: false,
         error: null,
         agentLoopRunning: false,
+        agentLoopStatus: null,
         lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
       });
       resetTransientWorldUiState();
@@ -294,6 +343,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
         importing: false,
         error: null,
         agentLoopRunning: false,
+        agentLoopStatus: null,
         lastNpcInitiationAt: Number.NEGATIVE_INFINITY,
       });
       resetTransientWorldUiState();

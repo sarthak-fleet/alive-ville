@@ -163,6 +163,21 @@ export async function setAgentLoopRunning(running: boolean): Promise<AgentLoopSt
   return readApiJson<AgentLoopStatus>(res, 'setAgentLoopRunning');
 }
 
+export interface AgentLoopStepResponse {
+  summary: TickSummary;
+  status: AgentLoopStatus;
+  state: World;
+}
+
+export async function stepAgentLoop(): Promise<AgentLoopStepResponse> {
+  const res = await fetch(api('/api/agent-loop/step'), { method: 'POST' });
+  const data = await readApiJson<
+    AgentLoopStepResponse | { error: string; status: AgentLoopStatus }
+  >(res, 'stepAgentLoop');
+  if ('error' in data) throw new Error(data.error);
+  return data;
+}
+
 export interface WorldMutationResponse {
   ok: true;
   state: World;

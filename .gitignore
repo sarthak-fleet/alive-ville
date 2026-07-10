@@ -29,4 +29,5 @@ unreal/**/DerivedDataCache/
 unreal/**/.vs/
 .wrangler/
 .claude/
+.codex/
 modal/__pycache__/
