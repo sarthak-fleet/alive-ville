@@ -1,5 +1,7 @@
 # ai-game — PROJECT STATUS
-Last updated: 2026-07-04
+
+Last updated: 2026-07-10
+Last updated: 2026-07-05
 
 ## Why / What
 
@@ -55,6 +57,7 @@ Last updated: 2026-07-04
 
 ## Timeline
 
+- **2026-07-05** — GOD-inspired Director Console shipped: optional in-game right rail for operators to pause/resume/step the live agent loop, inspect tick/pressure/objective, scan residents, and read the latest trace/Chronicle events while keeping normal play HUD closed by default. Archived OpenSpec change: `openspec/changes/archive/2026-07-05-add-director-console/`; durable spec: `openspec/specs/director-console/spec.md`.
 - **2026-07-03** — "The Rival" vertical slice authored: `worlds/rival-duel.json` — a self-contained scenario with one named rival NPC (Kael) whose goal conflicts with the player's, a 3-NPC camp (Kael, Marta, Claim Boss Verna), 5 locations, 3 quests (clear shaft, expose theft, showdown), combat stats for the rival, villain plan with rising pressure, and a clear win/lose condition. 7 tests in `tests/rival-duel.test.ts` verify world structure, arc creation, quest loops, and reachability. The spine from `docs/core-gameplay-fix.md` §6 is now wired to a concrete playable scenario — fun-tuning and the human playtest verdict remain.
 - **2026-07-02** — Added React `<ErrorBoundary>` to web3d app (wrapping `App` in `main.tsx`); removed unused `posthog-js` dependency.
 - **2026-06-20** — Headless smoke re-verified: `pnpm playtest:game` exit 0, zero console/page errors.
@@ -134,6 +137,7 @@ Last updated: 2026-07-04
 - Audio: context music (combat/interior/city/village day-night), SFX (hit/hurt/death/victory/quest).
 - Start flow: world picker, character creator (appearance/name/combat moves), OPFS save slots, continue current world.
 - HUD: quest tracker, arc panel, session win/lose banner, coin display, FPS counter, Chronicle panel (J), recap modal.
+- Director Console: optional operator rail for live pause/resume/step, loop status, current objective, resident roster, action trace, Chronicle summary, and checkpoint/event-log readout.
 - Onboarding controls card (WASD/shift/mouse/E/F/space/Q). `?perf` → r3f-perf; `?nofx` disables postprocessing.
 
 ### Web-frontier capability layer (shipped 2026-06-14)
@@ -184,5 +188,6 @@ Last updated: 2026-07-04
 
 - `tests/web3d-identity.test.ts` `buildVariation` fails (4 cases) on clean HEAD — pre-existing, likely VRM-animation revert; `pnpm verify:readiness` fails on those tests while `pnpm playtest:game` passes independently.
 - Core gameplay §5 playtest bar not met — simulation and player loop still feel disconnected per `docs/core-gameplay-fix.md`.
+- **Closure decision (2026-07-10):** keep Aliveville as a capped learning sandbox and pause feature expansion until a human Rival playtest records a fun/not-fun verdict. Do not begin the deferred north-star work.
 - Worker DO missing 5 local-server endpoints (story-package, import-story-package, load, restore-checkpoint, portrait) — prod parity blocked until ported.
 - Game worker deploy is manual (`pnpm build:3d && npx wrangler deploy`); CI does not deploy game.
