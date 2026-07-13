@@ -20,4 +20,4 @@
 
 - [x] 4.1 Update `docs/core-gameplay-fix.md` with the locally completed Rival scenario/onboarding evidence while preserving the human fun-verdict boundary.
 - [x] 4.2 Update `PROJECT_STATUS.md` to remove stale readiness failures and identify the exact remaining playtest gate.
-- [ ] 4.3 Conduct a human Rival playtest and record a clear fun/not-fun verdict; if not fun, document the concrete tuning failures before any deferred expansion.
+- [x] 4.3 Product-owner closure (2026-07-13): defer the human Rival playtest and close this milestone for now. No playtest was conducted and no fun/not-fun verdict is claimed; a fresh human playtest remains the first gate before any deferred expansion resumes.

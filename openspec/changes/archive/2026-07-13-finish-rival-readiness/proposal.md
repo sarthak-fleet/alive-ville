@@ -26,4 +26,4 @@ None.
 
 - Affects the 3D HUD, UI/client world state observation, Rival-only agent-loop startup, focused onboarding and identity tests, and the durable Rival closure documentation.
 - Does not change the simulation API, persistence format, world schema, production dependencies, deployment configuration, or the marketing site.
-- The human playtest remains a required product gate after local acceptance passes.
+- The human playtest remains a required product gate before deferred expansion resumes. On 2026-07-13, the product owner explicitly deferred that gate and closed this capped milestone for now; no fun/not-fun verdict is claimed.

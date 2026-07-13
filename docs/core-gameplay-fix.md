@@ -1,6 +1,6 @@
 # Aliveville Core-Gameplay Fix Plan: Make It a Game First
 
-**Status**: Local acceptance complete; human fun verdict pending — 2026-07-13
+**Status**: Capped milestone closed under product-owner deferment; no human fun verdict recorded — 2026-07-13
 **Owner**: Engineering (fleet)
 **Goal in one line**: Turn "an impressive sandbox you wander" into "a game with a loop that pulls you forward and stakes you feel" — *before* any frontier-tech work.
 **Gate**: This blocks `docs/archive/future-prd-deferred-north-star-2026-06-12.md`
@@ -151,7 +151,7 @@ What's **built + tested** (the safely-buildable spine):
   headless desktop and 390×844 Rival runs advance the guide, verify loop
   pause/resume, and finish with zero browser errors.
 
-What's **NOT done — needs a playtest (your verdict, per §5), not more code**:
+What's **deferred — needs a playtest before expansion resumes (your verdict, per §5), not more code**:
 - A human must start a fresh Rival session, complete the guide and the session
   without developer help, and record whether the next action remained clear,
   combat felt responsive/readable, and at least one world consequence was
@@ -160,8 +160,10 @@ What's **NOT done — needs a playtest (your verdict, per §5), not more code**:
   fun, capture the concrete combat-balance, animation, enemy-density, pacing, or
   consequence-legibility failures before implementing tuning.
 
-**This PRD's local implementation is complete and remains human-playtest-gated.**
-It is NOT "the game is now good" — that judgment is the next session's, with
-you driving.
+**This PRD's local implementation is complete. On 2026-07-13, the product owner
+closed the capped milestone for now and deferred the human playtest.** No
+playtest was conducted and this is NOT a claim that "the game is now good."
+That judgment remains unknown until a future human session.
 
-Only after this bar is met should work from the deferred future PRD resume.
+If feature expansion resumes, this human playtest and explicit verdict are the
+first gate before work from the deferred future PRD.

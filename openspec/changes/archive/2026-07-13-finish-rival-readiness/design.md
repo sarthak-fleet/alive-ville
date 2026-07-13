@@ -34,6 +34,8 @@ The checked-in status also claims four `buildVariation` failures. A clean locked
 
 6. **Start the Rival clock after teaching, not on the title screen.** Client initialization will inspect the versioned Rival guide record before applying the existing agent-loop autostart policy. An undismissed or invalid record keeps the Rival loop stopped; the completion acknowledgement starts it. A valid dismissed record and every non-Rival world keep existing autostart. Merely slowing the pressure curve was rejected because it would retune the authored game and still spend the deadline during character selection.
 
+7. **Close the capped milestone under an explicit owner deferment.** On 2026-07-13, the product owner chose to call the Rival-readiness milestone done for now without conducting the human playtest. This administrative closure does not manufacture a fun verdict: the verdict remains unknown and a fresh human playtest is still required before deferred expansion resumes.
+
 ## Risks / Trade-offs
 
 - **[A keydown can occur while movement is temporarily blocked by the intro cinematic]** → ignore typing targets and repeating keys; the next prompt remains spatially grounded, and the human playtest still judges confusion and pacing.
