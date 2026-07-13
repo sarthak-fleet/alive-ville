@@ -117,6 +117,16 @@ describe('Rival Duel vertical slice', () => {
     expect(world.directorState?.pressure).toBeGreaterThanOrEqual(20);
   });
 
+  test('every authored tension has a finite pressure value', () => {
+    const world = fixture();
+    expect(world.tensions).not.toHaveLength(0);
+    for (const tension of world.tensions ?? []) {
+      expect(Number.isFinite(tension.pressure)).toBe(true);
+      expect(tension.pressure).toBeGreaterThanOrEqual(0);
+      expect(tension.pressure).toBeLessThanOrEqual(100);
+    }
+  });
+
   test('all locations are reachable via exits', () => {
     const world = fixture();
     const locationIds = new Set(world.locations.map((l) => l.id));

@@ -79,7 +79,8 @@
       "title": "Two prospectors, one claim",
       "fromId": "player",
       "toId": "kael",
-      "score": 80,
+      "pressure": 80,
+      "status": "escalating",
       "summary": "Kael and the Prospector both staked the Iron Hill claim. The boss decides today."
     },
     {
@@ -87,7 +88,8 @@
       "title": "Marta's shaft collapsed",
       "fromId": "marta",
       "toId": "camp",
-      "score": 45,
+      "pressure": 45,
+      "status": "active",
       "summary": "The north shaft caved in. Marta needs help clearing it or she can't vouch for anyone."
     }
   ],

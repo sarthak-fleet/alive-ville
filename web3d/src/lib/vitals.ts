@@ -30,6 +30,9 @@ function sendToAnalytics(metric: VitalMetric) {
 }
 
 export function initVitals() {
+  // Local and headless sessions should not pollute production RUM or emit
+  // failing cross-origin beacons while the game is being verified.
+  if (import.meta.env.DEV) return;
   onLCP(sendToAnalytics);
   onCLS(sendToAnalytics);
   onINP(sendToAnalytics);

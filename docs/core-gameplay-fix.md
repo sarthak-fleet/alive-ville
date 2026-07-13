@@ -1,6 +1,6 @@
 # Aliveville Core-Gameplay Fix Plan: Make It a Game First
 
-**Status**: Draft — 2026-06-14
+**Status**: Local acceptance complete; human fun verdict pending — 2026-07-13
 **Owner**: Engineering (fleet)
 **Goal in one line**: Turn "an impressive sandbox you wander" into "a game with a loop that pulls you forward and stakes you feel" — *before* any frontier-tech work.
 **Gate**: This blocks `docs/archive/future-prd-deferred-north-star-2026-06-12.md`
@@ -127,7 +127,7 @@ Ship-the-slice criteria (extend `src/probes/` + `tests/` to enforce what's testa
   session (rumor/mood/relationship the player can point to).
 - Verdict is a **playtest call**, not a green test suite. "Tests pass" ≠ "fun."
 
-## 6. Closure status (2026-06-14)
+## 6. Closure status (2026-07-13)
 
 What's **built + tested** (the safely-buildable spine):
 - **Stakes / progression** (dim C) — coin economy + lose 25% of coins on defeat.
@@ -137,14 +137,31 @@ What's **built + tested** (the safely-buildable spine):
 - **Win / lose** (dim A/C) — `sessionOutcome()` derives won (arc complete / dawn
   phase) / lost (director pressure maxes) and shows a HUD banner. Tested.
 - **Combat feel** — confirmed already complete; not touched (see §3B).
+- **The Rival scenario** (§4) — `worlds/rival-duel.json` provides Kael, Marta,
+  Claim Boss Verna, three quests, authored pressure, reachable win/lose paths,
+  and finite tension data. `tests/rival-duel.test.ts` covers the content contract.
+- **Guided first minute** (dim D) — `rival_duel` now uses a persisted,
+  non-modal move → talk to Kael → fight Kael → consequence guide instead of the
+  static controls dump. Each step advances only from observed client state.
+- **Fair first minute** — the Rival agent loop and pressure clock stay stopped
+  through world/character selection and the guide, then resume when the player
+  acknowledges completion. Other worlds keep normal autostart.
+- **Local readiness evidence** — `pnpm verify:readiness` passes (62 files / 463
+  tests, lint/typecheck, production 3D build); strict OpenSpec validation passes;
+  headless desktop and 390×844 Rival runs advance the guide, verify loop
+  pause/resume, and finish with zero browser errors.
 
 What's **NOT done — needs a playtest (your verdict, per §5), not more code**:
-- The "Rival" scenario (§4) as an authored, tuned experience.
-- Game-feel *tuning* (combat balance, animation polish, enemy density).
-- Onboarding redesign (the guided first 60s, dim D).
-- The "is it fun" sign-off itself — only a human can give it.
+- A human must start a fresh Rival session, complete the guide and the session
+  without developer help, and record whether the next action remained clear,
+  combat felt responsive/readable, and at least one world consequence was
+  obvious.
+- The same human must record a clear **fun** or **not fun** verdict. If it is not
+  fun, capture the concrete combat-balance, animation, enemy-density, pacing, or
+  consequence-legibility failures before implementing tuning.
 
-**This PRD is closed as "spine built, fun-tuning playtest-gated."** It is NOT
-"the game is now good" — that judgment is the next session's, with you driving.
+**This PRD's local implementation is complete and remains human-playtest-gated.**
+It is NOT "the game is now good" — that judgment is the next session's, with
+you driving.
 
 Only after this bar is met should work from the deferred future PRD resume.
