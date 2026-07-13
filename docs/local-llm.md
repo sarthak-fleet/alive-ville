@@ -43,7 +43,7 @@ Precedence: `LLM_LOCAL_AI_URL` > `LLM_CLI` > `LLM_BASE_URL`. Replies take
 ## Option 3 — the free-ai gateway (default / production)
 
 ```bash
-LLM_BASE_URL=https://free-ai-gateway.sarthakagrawal927.workers.dev/v1
+LLM_BASE_URL=https://ai-gateway.sassmaker.com/v1
 LLM_API_KEY=<gateway key>
 LLM_PROJECT_ID=ai-game
 LLM_MODEL_NORMAL=mistral-large

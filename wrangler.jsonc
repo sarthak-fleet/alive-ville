@@ -20,7 +20,7 @@
   "services": [{ "binding": "GATEWAY", "service": "free-ai-gateway" }],
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameSessionDO"] }],
   "vars": {
-    "LLM_BASE_URL": "https://free-ai-gateway.sarthakagrawal927.workers.dev/v1",
+    "LLM_BASE_URL": "https://ai-gateway.sassmaker.com/v1",
     // picked from the gateway's /v1/routing/status healthy set; pinned via
     // x-gateway-force-model header (body.model is advisory at the gateway)
     "LLM_MODEL_NORMAL": "mistral-large",
