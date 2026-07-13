@@ -1,9 +1,8 @@
 # ai-game — PROJECT STATUS
 
-**Portfolio state (2026-07-10): Support / capped experiment.** Keep AliveVille alive as a light-support fleet product; finish the current Director Console closure slice, then pause feature expansion until a human Rival playtest records a fun/not-fun verdict.
+**Portfolio state (2026-07-13): Support / capped experiment.** The Rival-readiness milestone is closed for now under an explicit product-owner deferment. No human fun/not-fun verdict was recorded; require one before resuming feature expansion.
 
-Last updated: 2026-07-10
-Last updated: 2026-07-05
+Last updated: 2026-07-13
 
 ## Why / What
 
@@ -59,6 +58,7 @@ Last updated: 2026-07-05
 
 ## Timeline
 
+- **2026-07-13** — Rival local acceptance completed on `agent/rival-readiness`: a non-modal, persisted move → talk → fight → consequence guide replaces the static controls dump for `rival_duel`; Rival pressure now waits until guide acknowledgement; malformed `score` fields in authored tensions were corrected to finite `pressure`; local RUM no longer sends production beacons. `pnpm verify:readiness` passes (62 files / 463 tests plus production 3D build), strict OpenSpec validation passes, and the Rival headless flow completes at desktop and 390×844 with zero browser errors. The product owner closed this capped milestone for now and deferred the human playtest; no fun/not-fun verdict is claimed.
 - **2026-07-05** — GOD-inspired Director Console shipped: optional in-game right rail for operators to pause/resume/step the live agent loop, inspect tick/pressure/objective, scan residents, and read the latest trace/Chronicle events while keeping normal play HUD closed by default. Archived OpenSpec change: `openspec/changes/archive/2026-07-05-add-director-console/`; durable spec: `openspec/specs/director-console/spec.md`.
 - **2026-07-03** — "The Rival" vertical slice authored: `worlds/rival-duel.json` — a self-contained scenario with one named rival NPC (Kael) whose goal conflicts with the player's, a 3-NPC camp (Kael, Marta, Claim Boss Verna), 5 locations, 3 quests (clear shaft, expose theft, showdown), combat stats for the rival, villain plan with rising pressure, and a clear win/lose condition. 7 tests in `tests/rival-duel.test.ts` verify world structure, arc creation, quest loops, and reachability. The spine from `docs/core-gameplay-fix.md` §6 is now wired to a concrete playable scenario — fun-tuning and the human playtest verdict remain.
 - **2026-07-02** — Added React `<ErrorBoundary>` to web3d app (wrapping `App` in `main.tsx`); removed unused `posthog-js` dependency.
@@ -166,30 +166,28 @@ Last updated: 2026-07-05
 
 ### Tests (Vitest + Playwright)
 
-- 60 Vitest files covering simulation, combat, dialogue, coherence, chronicle, currency, director, ingest, LLM router, server integration, web3d identity/worldgen/UI/mood/minimap.
-- Playwright: `game-shots.ts` (3D smoke), `astro-landing.ts` (landing smoke).
+- 62 Vitest files covering simulation, combat, dialogue, coherence, chronicle, currency, director, ingest, LLM router, server integration, Rival onboarding, and web3d identity/worldgen/UI/mood/minimap.
+- Playwright: `game-shots.ts` (3D smoke plus Rival guide pause/resume acceptance), `astro-landing.ts` (landing smoke).
 
 ## Todo / Planned / Deferred / Blocked
 
 ### Planned
 
-1. **Playtest gate** — `docs/core-gameplay-fix.md` §5: "The Rival" vertical slice, guided first 60s onboarding, fun verdict; blocks deferred north-star work.
-2. Interior depth: quest NPC inside anchor building, interior interactables/clues (`web3d/src/interiors/`).
-3. In-game buy/sell vendor/shop UI for coin economy (`web3d/` HUD + `src/` economy actions).
-4. Enable cloud LLM mode: add `LLM_API_KEY` to `.env` / `wrangler secret put LLM_API_KEY`.
-5. Real-device verification of frontier GPU/AI/TTS features; deploy frontier build to prod when ready.
-6. Port missing local-only endpoints to Worker DO if prod parity needed: `load`, `story-package`, `portrait`.
+1. Interior depth: quest NPC inside anchor building, interior interactables/clues (`web3d/src/interiors/`).
+2. In-game buy/sell vendor/shop UI for coin economy (`web3d/` HUD + `src/` economy actions).
+3. Enable cloud LLM mode: add `LLM_API_KEY` to `.env` / `wrangler secret put LLM_API_KEY`.
+4. Real-device verification of frontier GPU/AI/TTS features; deploy frontier build to prod when ready.
+5. Port missing local-only endpoints to Worker DO if prod parity needed: `load`, `story-package`, `portrait`.
 
 ### Deferred
 
+- **Human Rival playtest verdict** — The product owner closed the capped Rival-readiness milestone for now on 2026-07-13 without conducting the playtest. No fun/not-fun verdict is claimed. If feature expansion resumes, first complete a fresh Rival session without developer help and record the verdict plus any confusion, combat-feel, or consequence-legibility failures.
 - **Future north star (2026–2028)** — asset pipeline (Poly Haven/Kenney/AI gen), full Chronicle UI everywhere, reflection maturity, sycophancy/divergence/coherence as build blockers, creator platform, multi-world persistence, Nemesis-lite, larger cities; gated on core-gameplay-fix §5.
 - **Web-frontier remaining ops** — real-GPU browser checks for local LLM, compute benchmarks, TTS/dictation; local LLM can hitch frames during gameplay.
 - **WebXR VR mode** — was in PRD scope but closed/not implemented in code.
 
 ### Blocked
 
-- `tests/web3d-identity.test.ts` `buildVariation` fails (4 cases) on clean HEAD — pre-existing, likely VRM-animation revert; `pnpm verify:readiness` fails on those tests while `pnpm playtest:game` passes independently.
-- Core gameplay §5 playtest bar not met — simulation and player loop still feel disconnected per `docs/core-gameplay-fix.md`.
-- **Closure decision (2026-07-10):** keep AliveVille as a support / capped experiment and pause feature expansion until a human Rival playtest records a fun/not-fun verdict. Do not begin the deferred north-star work.
+- **Closure decision (updated 2026-07-13):** keep AliveVille as a support / capped experiment. The Rival-readiness milestone is administratively closed for now; the human verdict is deferred, not passed, and remains the first gate before any deferred north-star expansion.
 - Worker DO missing 5 local-server endpoints (story-package, import-story-package, load, restore-checkpoint, portrait) — prod parity blocked until ported.
 - Game worker deploy is manual (`pnpm build:3d && npx wrangler deploy`); CI does not deploy game.

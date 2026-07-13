@@ -17,6 +17,7 @@ import { chromium } from '@playwright/test';
 
 const BASE_URL = process.env['GAME_URL'] ?? 'http://localhost:5175/game/';
 const OUT = process.env['GAME_SHOTS_DIR'] ?? 'tmp/playtest-artifacts/game';
+const RIVAL_GUIDE = process.env['GAME_RIVAL_GUIDE'] === '1';
 
 async function nonBlankPixels(page: import('@playwright/test').Page): Promise<number> {
   return page.evaluate(() => {
@@ -58,6 +59,27 @@ async function reachable(url: string): Promise<boolean> {
   }
 }
 
+async function enterCurrentWorld(page: import('@playwright/test').Page): Promise<void> {
+  // GAME_SHOWCASE=1 selects the AI-demo showcase card; else continue the active world.
+  const cardSel = process.env['GAME_SHOWCASE'] ? '.start-card.showcase' : '.start-card';
+  await page.locator(cardSel).first().waitFor({ timeout: 20_000 });
+  await page.locator(cardSel).first().click();
+  await page.locator('.char-pick').first().waitFor({ timeout: 10_000 });
+  await page.locator('.char-pick').first().click();
+}
+
+async function readAgentLoopState(page: import('@playwright/test').Page): Promise<string | null> {
+  return page.evaluate(async () => {
+    const session = localStorage.getItem('aliveville_session');
+    if (!session) return null;
+    const response = await fetch(
+      `/game/api/agent-loop/status?session=${encodeURIComponent(session)}`
+    );
+    if (!response.ok) return null;
+    return ((await response.json()) as { state?: string }).state ?? null;
+  });
+}
+
 async function main(): Promise<void> {
   mkdirSync(OUT, { recursive: true });
 
@@ -92,42 +114,44 @@ async function main(): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(`console: ${m.text()}`);
-  });
-
-  // suppress the one-time "How to live here" onboarding modal so shots are clean
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem('aliveville_controls_seen', '1');
-    } catch {
-      /* ignore */
+    if (m.type() === 'error') {
+      const location = m.location().url;
+      errors.push(`console: ${m.text()}${location ? ` (${location})` : ''}`);
     }
   });
+
+  if (!RIVAL_GUIDE) {
+    // suppress the one-time generic controls modal so baseline shots are clean
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('aliveville_controls_seen', '1');
+      } catch {
+        /* ignore */
+      }
+    });
+  }
 
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
 
   // --- click through the start flow: world -> character -> playing ---
-  // GAME_SHOWCASE=1 selects the AI-demo showcase card; else the first world.
-  const cardSel = process.env['GAME_SHOWCASE'] ? '.start-card.showcase' : '.start-card';
   try {
-    await page.locator(cardSel).first().waitFor({ timeout: 20_000 });
-    await page.locator(cardSel).first().click();
-    await page.locator('.char-pick').first().waitFor({ timeout: 10_000 });
-    await page.locator('.char-pick').first().click();
+    await enterCurrentWorld(page);
   } catch (e) {
     console.log(`[start-flow] ${(e as Error).message}`);
   }
 
-  // dismiss the "How to live here" onboarding modal (may be multi-step)
+  // dismiss the generic controls modal (the Rival guide is action-driven and non-modal)
   await page.waitForTimeout(1500);
-  for (let i = 0; i < 4; i += 1) {
-    const btn = page
-      .getByRole('button', { name: /got it|next|start|begin|continue|skip|close/i })
-      .first();
-    if (await btn.isVisible().catch(() => false)) {
-      await btn.click().catch(() => {});
-      await page.waitForTimeout(500);
-    } else break;
+  if (!RIVAL_GUIDE) {
+    for (let i = 0; i < 4; i += 1) {
+      const btn = page
+        .getByRole('button', { name: /got it|next|start|begin|continue|skip|close/i })
+        .first();
+      if (await btn.isVisible().catch(() => false)) {
+        await btn.click().catch(() => {});
+        await page.waitForTimeout(500);
+      } else break;
+    }
   }
 
   // wait for the canvas to render real content (assets stream in)
@@ -140,6 +164,13 @@ async function main(): Promise<void> {
   }
   await page.waitForTimeout(3000); // let buildings + characters finish
 
+  if (RIVAL_GUIDE) {
+    const guide = page.locator('.rival-guide');
+    await guide.waitFor({ state: 'visible', timeout: 10_000 });
+    await guide.getByText('Reach the saloon').waitFor({ state: 'visible' });
+    await page.screenshot({ path: join(OUT, '00-rival-guide-move-desktop.png') });
+  }
+
   await page.screenshot({ path: join(OUT, '01-spawn.png') });
 
   // walk forward into the town
@@ -148,7 +179,17 @@ async function main(): Promise<void> {
   await page.waitForTimeout(1600);
   await page.keyboard.up('w');
   await page.waitForTimeout(600);
+  if (RIVAL_GUIDE) {
+    await page.locator('.rival-guide').getByText('Face Kael').waitFor({ state: 'visible' });
+  }
   await page.screenshot({ path: join(OUT, '02-walked.png') });
+
+  if (RIVAL_GUIDE) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: join(OUT, '02b-rival-guide-talk-narrow.png') });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  }
 
   // orbit the camera (drag-orbit works when pointer isn't locked)
   await page.mouse.move(720, 450);
@@ -157,6 +198,35 @@ async function main(): Promise<void> {
   await page.mouse.up();
   await page.waitForTimeout(500);
   await page.screenshot({ path: join(OUT, '03-orbit.png') });
+
+  if (RIVAL_GUIDE) {
+    // Re-enter with consequence evidence persisted. Completion must remain
+    // paused until the acknowledgement, then start the actual Rival clock.
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'aliveville:rival-guide:v1:rival_duel',
+        JSON.stringify({ version: 1, step: 'complete' })
+      );
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await enterCurrentWorld(page);
+    const completed = page.locator('.rival-guide-complete');
+    await completed.waitFor({ state: 'visible', timeout: 10_000 });
+    if ((await readAgentLoopState(page)) === 'running') {
+      throw new Error('Rival agent loop advanced before guide acknowledgement');
+    }
+    await page.screenshot({ path: join(OUT, '04-rival-guide-complete.png') });
+    await completed.getByRole('button', { name: 'Continue the claim' }).click();
+    await completed.waitFor({ state: 'hidden', timeout: 10_000 });
+    let loopState: string | null = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      loopState = await readAgentLoopState(page);
+      if (loopState === 'running') break;
+      await page.waitForTimeout(100);
+    }
+    if (loopState !== 'running')
+      throw new Error('Rival agent loop did not start after acknowledgement');
+  }
 
   console.log(`\nnonblank canvas pixels (of 4096 sampled): ${pixels}`);
   console.log(`errors: ${errors.length ? '\n  ' + errors.slice(0, 12).join('\n  ') : 'none'}`);

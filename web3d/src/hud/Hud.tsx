@@ -28,6 +28,7 @@ import { Minimap } from './Minimap.tsx';
 import { PlatformControls } from './PlatformControls.tsx';
 import { QuestTracker } from './QuestTracker.tsx';
 import { Recap } from './Recap.tsx';
+import { browserRivalGuideStorage, shouldAutostartAgentLoop } from './rival-onboarding.ts';
 
 export function Hud() {
   const world = useWorldStore((state) => state.world);
@@ -175,6 +176,7 @@ export function Hud() {
     ? interiorForBuilding(world, cityModelFor(world), interiorBuildingId)?.label
     : null;
   const location = world.locations.find((entry) => entry.id === world.player.locationId);
+  const rivalGuideActive = !shouldAutostartAgentLoop(world.id, browserRivalGuideStorage());
 
   return (
     <div className="hud">
@@ -194,7 +196,7 @@ export function Hud() {
           ) : null}
           {/* the world is alive by default; the old pause chip read as a media
               stop button and players hit it by accident */}
-          {!agentLoopRunning ? (
+          {!agentLoopRunning && !rivalGuideActive ? (
             <button type="button" className="chip" onClick={() => void toggleAgentLoop()}>
               ▶ Resume world
             </button>

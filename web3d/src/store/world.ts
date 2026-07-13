@@ -15,6 +15,7 @@ import {
 import type { AgentLoopStatus } from '../../../src/agent-loop.ts';
 import { useBanterStore } from '../characters/banter.ts';
 import { useDirectorStore } from '../director/store.ts';
+import { browserRivalGuideStorage, shouldAutostartAgentLoop } from '../hud/rival-onboarding.ts';
 import { useUiStore } from './ui.ts';
 
 export interface WorldEvent {
@@ -174,7 +175,11 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       const world = await fetchState();
       set({ world, loading: false });
       const status = await fetchAgentLoopStatus();
-      if (status.state === 'running') {
+      const shouldRun = shouldAutostartAgentLoop(world.id, browserRivalGuideStorage());
+      if (!shouldRun) {
+        const stopped = status.state === 'running' ? await setAgentLoopRunning(false) : status;
+        set({ agentLoopRunning: false, agentLoopStatus: stopped });
+      } else if (status.state === 'running') {
         set({ agentLoopRunning: true, agentLoopStatus: status });
       } else {
         // the world is alive by default — the HUD chip is a pause override
