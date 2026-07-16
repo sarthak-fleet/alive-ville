@@ -12,7 +12,7 @@ Marketing site at aliveville.com. Game client and simulation code live in the ai
 
 ## Source
 
-- [GitHub — ai-game](https://github.com/sarthak-fleet/ai-game): Monorepo (simulation, web3d client, astro landing)
+- [GitHub — ai-game](https://github.com/sarthakagrawal927/alive-ville): Monorepo (simulation, web3d client, astro landing)
 
 ## Optional
 

@@ -8,7 +8,7 @@ Last updated: 2026-07-13
 
 **Aliveville** is a browser-playable AI world simulator at **aliveville.com/game**. The product thesis: a living town where autonomous NPC agents, quests, combat, and LLM dialogue make a small district feel alive — not a tech demo of frontier APIs.
 
-**Repository naming:** local checkout is `ai-game`; GitHub repository is `sarthak-fleet/alive-ville`; public product name is AliveVille.
+**Repository naming:** local checkout is `ai-game`; GitHub repository is `sarthakagrawal927/alive-ville`; public product name is AliveVille.
 
 **Users:** Players exploring a 3D anime-chibi town; fleet operators deploying the sim edge stack; future creators importing fandom/original worlds.
 
