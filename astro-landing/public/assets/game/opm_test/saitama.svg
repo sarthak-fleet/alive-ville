@@ -1,18 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="bald caped hero portrait">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f6d85f"/>
-      <stop offset="1" stop-color="#b41f2a"/>
-    </linearGradient>
-  </defs>
-  <rect width="256" height="256" rx="28" fill="url(#bg)"/>
-  <circle cx="128" cy="90" r="46" fill="#f0c08a" stroke="#2b1b15" stroke-width="6"/>
-  <path d="M64 226c8-54 36-78 64-78s56 24 64 78z" fill="#f5d84f" stroke="#2b1b15" stroke-width="6"/>
-  <path d="M54 224c9-45 29-70 58-78l16 42 16-42c29 8 49 33 58 78z" fill="#f3d33f"/>
-  <path d="M80 154c-32 13-50 38-58 72h70z" fill="#f2f2e8" stroke="#2b1b15" stroke-width="5"/>
-  <path d="M176 154c32 13 50 38 58 72h-70z" fill="#f2f2e8" stroke="#2b1b15" stroke-width="5"/>
-  <path d="M48 218c34-28 54-43 80-43s46 15 80 43v20H48z" fill="#b41f2a" opacity=".94"/>
-  <circle cx="111" cy="90" r="4" fill="#1e1511"/>
-  <circle cx="145" cy="90" r="4" fill="#1e1511"/>
-  <path d="M116 112h24" stroke="#1e1511" stroke-width="5" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-label="bald caped hero portrait" role="img" viewBox="0 0 256 256"><defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#f6d85f"/><stop offset="1" stop-color="#b41f2a"/></linearGradient></defs><rect width="256" height="256" fill="url(#bg)" rx="28"/><circle cx="128" cy="90" r="46" fill="#f0c08a" stroke="#2b1b15" stroke-width="6"/><path fill="#f5d84f" stroke="#2b1b15" stroke-width="6" d="M64 226c8-54 36-78 64-78s56 24 64 78z"/><path fill="#f3d33f" d="M54 224c9-45 29-70 58-78l16 42 16-42c29 8 49 33 58 78z"/><path fill="#f2f2e8" stroke="#2b1b15" stroke-width="5" d="M80 154c-32 13-50 38-58 72h70z"/><path fill="#f2f2e8" stroke="#2b1b15" stroke-width="5" d="M176 154c32 13 50 38 58 72h-70z"/><path fill="#b41f2a" d="M48 218c34-28 54-43 80-43s46 15 80 43v20H48z" opacity=".94"/><circle cx="111" cy="90" r="4" fill="#1e1511"/><circle cx="145" cy="90" r="4" fill="#1e1511"/><path stroke="#1e1511" stroke-linecap="round" stroke-width="5" d="M116 112h24"/></svg>
