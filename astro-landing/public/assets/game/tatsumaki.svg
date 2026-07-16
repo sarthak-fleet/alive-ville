@@ -1,12 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="green-haired psychic hero portrait">
-  <rect width="256" height="256" rx="28" fill="#1b2230"/>
-  <circle cx="128" cy="94" r="44" fill="#e7b07d" stroke="#0d151e" stroke-width="6"/>
-  <path d="M74 94c6-44 28-65 55-65 30 0 51 25 55 68-21-20-62-21-110-3z" fill="#66c26f" stroke="#0d151e" stroke-width="6"/>
-  <path d="M79 83c13 40 8 72-17 96 51-10 72-38 64-87z" fill="#66c26f" stroke="#0d151e" stroke-width="5"/>
-  <path d="M176 82c-14 40-9 73 17 97-52-11-74-39-64-88z" fill="#66c26f" stroke="#0d151e" stroke-width="5"/>
-  <circle cx="111" cy="98" r="5" fill="#101820"/>
-  <circle cx="145" cy="98" r="5" fill="#101820"/>
-  <path d="M116 120c8 5 17 5 25 0" stroke="#101820" stroke-width="5" stroke-linecap="round"/>
-  <path d="M62 235c12-59 39-91 66-91s54 32 66 91z" fill="#141b28" stroke="#0d151e" stroke-width="6"/>
-  <path d="M77 216c33 18 69 18 102 0" stroke="#66c26f" stroke-width="9" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" aria-label="green-haired psychic hero portrait" role="img" viewBox="0 0 256 256"><rect width="256" height="256" fill="#1b2230" rx="28"/><circle cx="128" cy="94" r="44" fill="#e7b07d" stroke="#0d151e" stroke-width="6"/><path fill="#66c26f" stroke="#0d151e" stroke-width="6" d="M74 94c6-44 28-65 55-65 30 0 51 25 55 68-21-20-62-21-110-3z"/><path fill="#66c26f" stroke="#0d151e" stroke-width="5" d="M79 83c13 40 8 72-17 96 51-10 72-38 64-87z"/><path fill="#66c26f" stroke="#0d151e" stroke-width="5" d="M176 82c-14 40-9 73 17 97-52-11-74-39-64-88z"/><circle cx="111" cy="98" r="5" fill="#101820"/><circle cx="145" cy="98" r="5" fill="#101820"/><path stroke="#101820" stroke-linecap="round" stroke-width="5" d="M116 120c8 5 17 5 25 0"/><path fill="#141b28" stroke="#0d151e" stroke-width="6" d="M62 235c12-59 39-91 66-91s54 32 66 91z"/><path stroke="#66c26f" stroke-linecap="round" stroke-width="9" d="M77 216c33 18 69 18 102 0"/></svg>
