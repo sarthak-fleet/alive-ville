@@ -31,3 +31,11 @@ unreal/**/.vs/
 .claude/
 .codex/
 modal/__pycache__/
+
+# Blume generated docs output (presentation layer; Markdown under docs/ is source of truth)
+docs-dist/
+.blume/
+
+# Local agent logs / scratch
+.agent-logs/
+.devin/
