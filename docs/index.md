@@ -25,6 +25,7 @@ repository. The committed Markdown here is the source of truth;
 
 ## Architecture
 
+- [how-it-works.md](./architecture/how-it-works.md) — end-to-end runtime tour: tick loop, agent brains, LLM routing, fandom ingest.
 - [overview.md](./architecture/overview.md) — layers, runtime surfaces, critical invariants.
 - [web3d-client.md](./architecture/web3d-client.md) — 3D browser client (R3F + Three + Rapier) module map.
 - [llm-routing.md](./architecture/llm-routing.md) — local-LLM backends, env vars, precedence.
