@@ -24,7 +24,7 @@ top of the same `World` types and `/api/*` endpoints.
   polylines, Dijkstra) instead of a recast navmesh — the approved fallback; the
   belt layout keeps paths clear, and it is deterministic with zero WASM risk.
 
-Run it: `pnpm dev:server` (sim server :5174) + `pnpm dev:3d` (Vite :5175).
+Run it: `pnpm dev:server` (sim server :5174) + `pnpm dev` (Vite :5175).
 Build: `pnpm build:3d`. Tests: `tests/web3d-worldgen.test.ts`.
 
 ## Module map (`web3d/src/`)

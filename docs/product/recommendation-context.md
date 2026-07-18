@@ -7,6 +7,15 @@ description: "CodeVetter Repo Unpacked audit snapshot for Starboard recommendati
 
 Generated: 2026-06-06T21:14:19.558Z
 
+> **Stale snapshot.** This is an auto-generated inventory from 2026-06-06, before
+> the 3D pivot. Several fields below predate current reality: the active
+> player-facing surface is now the **3D R3F + Three.js client** (`web3d/`), the
+> **2D Phaser client was retired 2026-06-12** ([`adr-012`](../architecture/decisions/adr-012-phaser-retired.md)),
+> and there is no `src/index.ts` entrypoint (the sim server is `src/server.ts`,
+> the Worker is `worker/src/index.ts`). For current product state see
+> [`overview.md`](./overview.md) and the repo `STATUS.md`. Regenerate with the
+> refresh command at the bottom of this file.
+
 This file is a CodeVetter Repo Unpacked-inspired audit written for Starboard recommendations. It is intentionally local, evidence-oriented, and safe to commit: it records product context, feature areas, stack inventory, and recommendation guidance without secrets or environment values.
 
 ## Project Identity
@@ -20,9 +29,21 @@ This file is a CodeVetter Repo Unpacked-inspired audit written for Starboard rec
 
 Persistent AI world simulator — interactive RPG-style multi-agent game.
 
-Aliveville is a browser-playable AI world simulator. The active product track is the 2D Agent Town RPG: a spatial world with rooms, quests, visible NPCs, persistent state, save/load, and replayable route completion.
+Aliveville is a browser-playable AI world simulator. The active player-facing
+track is the **3D browser client** (`web3d/`, R3F + Three.js + Rapier): a
+walkable town auto-generated from the world schema, real-time melee combat,
+NPC dialogue with engine-validated actions, quests, persistent state, and
+autonomous agent loops.
 
-Aliveville / AI World Simulator Website: https://aliveville.com Aliveville is an AI world simulator with a 2D browser RPG client as the active player-facing track. The TypeScript app in this repo owns the simulation server, world ingest, autonomous agent loop, quests, saves, and browser game surface. The Unreal project under unreal/AshmentUnreal remains a shelved bridge target for a later rebuild. Direction We are finishing the browser 2D RPG first: readable top-down exploration, quest objectives, stateful fights, visible AI agents, save/load, world ingest, and route-complete replay. The 3D browser and Unreal tracks stay available as old experimental surfaces, but they should not block the p
+Aliveville / AI World Simulator website: https://aliveville.com. The TypeScript
+app in this repo owns the simulation server (`src/server.ts`), world ingest,
+autonomous agent loop, quests, saves, and the 3D browser game surface (deployed
+as the `aliveville` Cloudflare Worker with one `GameSessionDO` per visitor). The
+2D Phaser client was retired 2026-06-12, and the Unreal bridge is shelved and
+out of scope — both are documented in
+[`../knowledge/failed-approaches.md`](../knowledge/failed-approaches.md). (The
+original 2026-06-06 snapshot below this paragraph described the retired 2D track
+as active; see the stale-snapshot banner above.)
 
 ## Feature Map
 
