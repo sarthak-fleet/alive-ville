@@ -87,7 +87,7 @@ output (`docs-dist/`, `.blume/`) is gitignored and never committed.
 
 ## Fleet Blume context
 
-See [`../../../fleet-ops/docs/blume-docs.md`](../../../fleet-ops/docs/blume-docs.md)
+See the [fleet-wide Blume install pattern](https://github.com/sass-maker/fleet-workspace/blob/main/fleet-ops/docs/blume-docs.md)
 for the fleet-wide Blume install pattern. Aliveville does not yet have a
 published docs domain; set `deployment.site` in `blume.config.ts` when one is
 chosen.
