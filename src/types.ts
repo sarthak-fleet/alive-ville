@@ -453,11 +453,7 @@ interface Story {
   beats?: string[];
 }
 
-type StoryPhase =
-  | 'starter'
-  | 'nightfall_warning'
-  | 'shadow_confrontation'
-  | 'dawn_after_tasks';
+type StoryPhase = 'starter' | 'nightfall_warning' | 'shadow_confrontation' | 'dawn_after_tasks';
 export interface StoryProgress {
   phase: StoryPhase;
   unlockedCutsceneIds: string[];

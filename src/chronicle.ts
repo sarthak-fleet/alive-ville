@@ -46,5 +46,3 @@ export function recordChronicle(world: World, partial: ChroniclePartial): Chroni
   world.chronicle.push(event);
   return event;
 }
-
-

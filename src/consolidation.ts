@@ -52,5 +52,3 @@ export function consolidatePlayerImpressionScripted(world: World, npc: Npc): str
   npc.plan = { ...(npc.plan ?? {}), lastImpressionTick: world.tick };
   return impression;
 }
-
-

@@ -8,7 +8,7 @@
  * returns null and callers fall back to keyword relevance — zero regression.
  */
 
-let llmFetch: (url: string, init: RequestInit) => Promise<Response> = (url, init) =>
+const llmFetch: (url: string, init: RequestInit) => Promise<Response> = (url, init) =>
   fetch(url, init);
 
 // After one failure (e.g. the gateway has no /embeddings route) stop retrying
