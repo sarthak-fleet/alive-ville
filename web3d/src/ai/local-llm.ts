@@ -16,7 +16,7 @@ import { create } from 'zustand';
 
 import { type Capabilities, detectCapabilities } from './capabilities.ts';
 
-export type LocalBrainStatus =
+type LocalBrainStatus =
   | 'unknown'
   | 'unsupported'
   | 'idle'

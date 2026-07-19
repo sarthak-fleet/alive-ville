@@ -17,7 +17,7 @@ import type { World } from './types.ts';
 export type SessionOutcome = 'won' | 'lost' | 'ongoing';
 
 /** Director pressure at which the session is considered lost (pressure is 0–100). */
-export const PRESSURE_LOSE_THRESHOLD = 100;
+const PRESSURE_LOSE_THRESHOLD = 100;
 
 export function sessionOutcome(world: World): SessionOutcome {
   const arcComplete = world.arc?.stage === 'complete';

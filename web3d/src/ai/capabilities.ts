@@ -42,7 +42,7 @@ function detectWasmSimd(): boolean {
 }
 
 /** Synchronous probes that need no GPU adapter. */
-export function detectSyncCapabilities(): Omit<
+function detectSyncCapabilities(): Omit<
   Capabilities,
   'webgpu' | 'shaderF16' | 'timestampQuery'
 > {

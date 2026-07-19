@@ -1,13 +1,12 @@
 import { create } from 'zustand';
 
 import { combatMovesFor } from '../../../src/combat.ts';
-import type { World } from '../../../src/types.ts';
 import { api } from '../api/client.ts';
 import { deathThud, hitImpact, hurt, victorySting } from '../audio/sfx.ts';
 import { addCameraShake, combatToastHook, hitstop, playerFlashHook } from '../controls/runtime.ts';
 import { useWorldStore } from '../store/world.ts';
 
-export interface EnemyCombat {
+interface EnemyCombat {
   hp: number;
   maxHp: number;
   hostile: boolean;
@@ -318,20 +317,4 @@ async function reportDefeatToSim(npcId: string): Promise<void> {
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>)['__combat'] = useCombatStore;
-}
-
-export function enemyStateFor(world: World | null, npcId: string): EnemyCombat | null {
-  const client = useCombatStore.getState().enemies[npcId];
-  if (client) return client;
-  const npc = world?.npcs.find((entry) => entry.id === npcId);
-  if (npc?.combat?.defeated)
-    return {
-      hp: 0,
-      maxHp: npc.combat.maxHp,
-      hostile: false,
-      defeated: true,
-      spar: false,
-      reported: true,
-    };
-  return null;
 }

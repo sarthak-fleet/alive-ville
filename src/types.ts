@@ -1,9 +1,9 @@
 export type ActorId = string;
 export type HolderId = ActorId | 'player';
-export type LocationId = string;
-export type QuestId = string;
-export type ItemId = string;
-export type TickIndex = number;
+type LocationId = string;
+type QuestId = string;
+type ItemId = string;
+type TickIndex = number;
 
 export type ActionType =
   | 'move'
@@ -25,90 +25,90 @@ export type ActionType =
   | 'buy'
   | 'sell';
 
-export interface BaseAction {
+interface BaseAction {
   type: ActionType;
   actorId: ActorId;
 }
-export interface MoveAction extends BaseAction {
+interface MoveAction extends BaseAction {
   type: 'move';
   locationId: LocationId;
 }
-export interface TalkAction extends BaseAction {
+interface TalkAction extends BaseAction {
   type: 'talk';
   targetId: ActorId;
   text: string;
 }
-export interface GossipAction extends BaseAction {
+interface GossipAction extends BaseAction {
   type: 'gossip';
   targetId: ActorId;
   aboutId: ActorId;
   text: string;
 }
-export interface ConfrontAction extends BaseAction {
+interface ConfrontAction extends BaseAction {
   type: 'confront';
   targetId: ActorId;
   text: string;
 }
-export interface FightAction extends BaseAction {
+interface FightAction extends BaseAction {
   type: 'fight';
   targetId: ActorId;
   moveId?: string;
   text?: string;
 }
-export interface ChooseCharacterAction extends BaseAction {
+interface ChooseCharacterAction extends BaseAction {
   type: 'choose_character';
   targetId?: ActorId;
   appearance?: CharacterAppearance;
 }
-export interface SetNameAction extends BaseAction {
+interface SetNameAction extends BaseAction {
   type: 'set_name';
   name: string;
   appearance?: CharacterAppearance;
 }
-export interface InspectAction extends BaseAction {
+interface InspectAction extends BaseAction {
   type: 'inspect';
   propId: string;
 }
-export interface RememberAction extends BaseAction {
+interface RememberAction extends BaseAction {
   type: 'remember';
   text: string;
 }
-export interface PickupAction extends BaseAction {
+interface PickupAction extends BaseAction {
   type: 'pickup';
   itemId: ItemId;
 }
-export interface DropAction extends BaseAction {
+interface DropAction extends BaseAction {
   type: 'drop';
   itemId: ItemId;
 }
-export interface GiveAction extends BaseAction {
+interface GiveAction extends BaseAction {
   type: 'give';
   itemId: ItemId;
   targetId: ActorId;
 }
-export interface OfferQuestAction extends BaseAction {
+interface OfferQuestAction extends BaseAction {
   type: 'offer_quest';
   questId: QuestId;
   targetId: ActorId;
 }
-export interface AcceptQuestAction extends BaseAction {
+interface AcceptQuestAction extends BaseAction {
   type: 'accept_quest';
   questId: QuestId;
 }
-export interface CompleteQuestAction extends BaseAction {
+interface CompleteQuestAction extends BaseAction {
   type: 'complete_quest';
   questId: QuestId;
 }
-export interface FailQuestAction extends BaseAction {
+interface FailQuestAction extends BaseAction {
   type: 'fail_quest';
   questId: QuestId;
 }
-export interface BuyAction extends BaseAction {
+interface BuyAction extends BaseAction {
   type: 'buy';
   itemId: ItemId;
   fromId: ActorId;
 }
-export interface SellAction extends BaseAction {
+interface SellAction extends BaseAction {
   type: 'sell';
   itemId: ItemId;
   toId: ActorId;
@@ -155,8 +155,8 @@ export type PlayerAction =
   | WithoutActor<BuyAction>
   | WithoutActor<SellAction>;
 
-export type MemoryVisibility = 'private' | 'shared' | 'public';
-export interface MemoryMeta {
+type MemoryVisibility = 'private' | 'shared' | 'public';
+interface MemoryMeta {
   importance?: number;
   tags?: string[];
   sourceActorId?: ActorId | 'world' | 'director';
@@ -189,8 +189,8 @@ export type AgentGoalKind =
   | 'help'
   | 'harm'
   | 'gain_status';
-export type AgentGoalStatus = 'active' | 'blocked' | 'satisfied' | 'abandoned';
-export type AgentIntentKind =
+type AgentGoalStatus = 'active' | 'blocked' | 'satisfied' | 'abandoned';
+type AgentIntentKind =
   | 'wait'
   | 'help'
   | 'ask'
@@ -203,7 +203,7 @@ export type AgentIntentKind =
   | 'hide'
   | 'escalate';
 
-export interface AgentTraits {
+interface AgentTraits {
   personality?: string[];
   values?: string[];
   flaws?: string[];
@@ -230,14 +230,14 @@ export interface AgentGoal {
   chronicleId?: string;
 }
 
-export interface AgentSecret {
+interface AgentSecret {
   id: string;
   text: string;
   risk: number;
   knownBy?: Array<ActorId | 'player'>;
 }
 
-export interface CombatMove {
+interface CombatMove {
   id: string;
   name: string;
   damage: number;
@@ -268,7 +268,7 @@ export interface ScheduleBlock {
   intent: string;
 }
 
-export interface AgentPlan {
+interface AgentPlan {
   currentIntent?: AgentIntent;
   nextActionHint?: string;
   schedule?: ScheduleBlock[];
@@ -288,7 +288,7 @@ export interface CharacterAppearance {
   spriteSheet?: string;
 }
 
-export interface LocationVisualDesign {
+interface LocationVisualDesign {
   role?: string;
   description?: string;
   palette?: {
@@ -414,12 +414,12 @@ export interface Quest {
   consequences?: { relationshipDelta?: Record<ActorId, number> };
 }
 
-export interface PlayerGrowth {
+interface PlayerGrowth {
   xp: number;
   level: number;
 }
 
-export interface Player {
+interface Player {
   locationId: LocationId;
   name?: string;
   characterId?: ActorId;
@@ -444,7 +444,7 @@ export interface WorldArc {
   stageTexts: Record<ArcStage, string>;
 }
 
-export interface Story {
+interface Story {
   title: string;
   premise: string;
   opening: string;
@@ -453,7 +453,7 @@ export interface Story {
   beats?: string[];
 }
 
-export type StoryPhase =
+type StoryPhase =
   | 'starter'
   | 'nightfall_warning'
   | 'shadow_confrontation'
@@ -521,12 +521,12 @@ export interface RejectedAction {
 }
 export type ActionResult = AppliedAction | RejectedAction;
 
-export interface TickActionEntry {
+interface TickActionEntry {
   action: Action;
   text: string;
   fromDirector?: boolean;
 }
-export interface TickRejectedEntry {
+interface TickRejectedEntry {
   action: Action;
   reason: string;
 }

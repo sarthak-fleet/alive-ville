@@ -47,19 +47,4 @@ export function recordChronicle(world: World, partial: ChroniclePartial): Chroni
   return event;
 }
 
-/** walk cause edges from `event` back to roots (DFS, no cycles). */
-export function chronicleAncestry(world: World, event: ChronicleEvent): ChronicleEvent[] {
-  const result: ChronicleEvent[] = [];
-  const seen = new Set<string>();
-  const stack = [...event.causeIds];
-  while (stack.length > 0) {
-    const id = stack.pop()!;
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const ancestor = (world.chronicle ?? []).find((entry) => entry.id === id);
-    if (!ancestor) continue;
-    result.push(ancestor);
-    stack.push(...ancestor.causeIds);
-  }
-  return result;
-}
+

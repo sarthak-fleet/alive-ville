@@ -68,7 +68,7 @@ const ACTION_TYPES: Set<ActionType> = new Set([
 ]);
 
 /** Coins the player begins with on entering a world. */
-export const STARTING_COINS = 20;
+const STARTING_COINS = 20;
 /** Default coin reward for completing a quest with no explicit reward. */
 const QUEST_COIN_REWARD = 25;
 /** Coins looted from an NPC the player defeats (clamped to their balance). */
@@ -93,14 +93,14 @@ function setCoins(world: World, actorId: ActorId | 'player', value: number): voi
 }
 
 /** Add (or subtract) coins for an actor, floored at zero. */
-export function addCoins(world: World, actorId: ActorId | 'player', delta: number): void {
+function addCoins(world: World, actorId: ActorId | 'player', delta: number): void {
   setCoins(world, actorId, coinsOf(world, actorId) + delta);
 }
 
 /** ticks of inactivity before a following NPC stops following the player */
 const FOLLOW_TIMEOUT_TICKS = 60;
 
-export function cloneWorld(world: World): World {
+function cloneWorld(world: World): World {
   return JSON.parse(JSON.stringify(world)) as World;
 }
 
@@ -1182,7 +1182,7 @@ function mustItem(world: World, id: string): Item {
   return item;
 }
 
-export function locationOf(world: World, actorId: string): string | undefined {
+function locationOf(world: World, actorId: string): string | undefined {
   if (actorId === 'player') return world.player?.locationId;
   if (actorId === world.player?.characterId) return world.player?.locationId;
   return getNpc(world, actorId)?.locationId;
@@ -1190,10 +1190,6 @@ export function locationOf(world: World, actorId: string): string | undefined {
 
 export function itemsHeldBy(world: World, holderId: string): Item[] {
   return (world.items ?? []).filter((item) => item.holderId === holderId);
-}
-
-export function itemsAt(world: World, locationId: string): Item[] {
-  return (world.items ?? []).filter((item) => item.locationId === locationId);
 }
 
 export function hasExit(world: World, fromId: string, toId: string): boolean {
@@ -1827,7 +1823,7 @@ export function getNpc(world: World, id: string): Npc | undefined {
   return world.npcs.find((npc) => npc.id === id);
 }
 
-export function getProp(world: World, id: string) {
+function getProp(world: World, id: string) {
   return (world.interactables ?? []).find((prop) => prop.id === id);
 }
 
@@ -1843,7 +1839,7 @@ function mustNpc(world: World, id: string): Npc {
   return npc;
 }
 
-export function nameOf(world: World, id: string): string {
+function nameOf(world: World, id: string): string {
   if (id === 'player') return world.player?.name ?? 'Player';
   return getNpc(world, id)?.name ?? id;
 }

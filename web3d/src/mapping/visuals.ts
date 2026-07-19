@@ -15,7 +15,7 @@ export function locationPalette(location: Location): Palette {
   };
 }
 
-export function paletteForText(text: string): Palette {
+function paletteForText(text: string): Palette {
   // Warmer, lighter, more saturated than before — the old grounds were near-black
   // slate which read as flat/dead flooring. Buildings add per-building hue on top.
   if (/forge|training|engine|repair/i.test(text))
@@ -50,7 +50,7 @@ export function actorVisualFor(appearance: Appearance, fallbackColor: string): A
   };
 }
 
-export function actorBodyShapeFor(appearance: Appearance): BodyShape {
+function actorBodyShapeFor(appearance: Appearance): BodyShape {
   const text =
     `${appearance?.sourceLook ?? ''} ${appearance?.bodyType ?? ''} ${appearance?.silhouette ?? ''} ${appearance?.outfit ?? ''} ${(appearance?.visualTags ?? []).join(' ')}`.toLowerCase();
   if (/cyborg|mechanical|robot|armor|armored/.test(text)) return 'mechanical';

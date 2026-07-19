@@ -8,21 +8,14 @@
  * returns null and callers fall back to keyword relevance — zero regression.
  */
 
-import { cosineSimilarity } from './cosine.ts';
-
-export { cosineSimilarity };
-
 let llmFetch: (url: string, init: RequestInit) => Promise<Response> = (url, init) =>
   fetch(url, init);
-export function setEmbeddingFetch(fn: (url: string, init: RequestInit) => Promise<Response>): void {
-  llmFetch = fn;
-}
 
 // After one failure (e.g. the gateway has no /embeddings route) stop retrying
 // so we don't add a doomed network call to every dialogue turn.
 let embeddingsDisabled = false;
 
-export function embeddingsAvailable(): boolean {
+function embeddingsAvailable(): boolean {
   return !embeddingsDisabled && Boolean(process.env['LLM_BASE_URL']);
 }
 

@@ -10,20 +10,10 @@
  * offline catch-up (the literal "sleep"), and optionally via the LLM in the loop.
  */
 
-import { completeText, type CompleteTextResult } from './llm/router.ts';
 import type { Memory, Npc, World } from './types.ts';
 
 /** Don't refresh the impression more often than this many ticks. */
 const IMPRESSION_REFRESH_TICKS = 12;
-const IMPRESSION_MEMORY_WINDOW = 15;
-
-type CompleteTextFn = (req: {
-  tier: 'normal' | 'quest' | 'background';
-  system: string;
-  user: string;
-  timeoutMs?: number;
-  model?: string;
-}) => Promise<CompleteTextResult>;
 
 function playerMemories(npc: Npc): Memory[] {
   return npc.memories.filter(
@@ -63,35 +53,4 @@ export function consolidatePlayerImpressionScripted(world: World, npc: Npc): str
   return impression;
 }
 
-/** LLM consolidation — distils player memories into one standing impression. Null on failure. */
-export async function consolidatePlayerImpression(
-  world: World,
-  npc: Npc,
-  complete: CompleteTextFn = completeText
-): Promise<string | null> {
-  const memories = playerMemories(npc).slice(-IMPRESSION_MEMORY_WINDOW);
-  if (memories.length === 0) return null;
-  const playerName = world.player.name ?? 'the player';
-  const system =
-    `In ONE first-person sentence, state your current standing impression of ${playerName} — ` +
-    `how you regard them going forward — grounded ONLY in the memories. Return only the sentence.`;
-  const identity = [npc.name, npc.role ? `(${npc.role})` : ''].filter(Boolean).join(' ');
-  const user = `${identity}\nMemories about ${playerName}:\n${memories.map((memory) => `- ${memory.text}`).join('\n')}`;
 
-  const result = await complete({
-    tier: 'normal',
-    system,
-    user,
-    timeoutMs: 20_000,
-    model: process.env['LLM_MODEL_PROPOSE'] ?? undefined,
-  });
-  if ('skipped' in result && result.skipped) return null;
-  if ('error' in result && result.error) return null;
-  if (!('text' in result) || !result.text) return null;
-  const impression = result.text.trim();
-  if (!impression) return null;
-
-  npc.playerImpression = impression;
-  npc.plan = { ...(npc.plan ?? {}), lastImpressionTick: world.tick };
-  return impression;
-}

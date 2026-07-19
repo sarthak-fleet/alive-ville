@@ -10,7 +10,7 @@ import type { JudgeFn } from './judge.ts';
 import { runMemoryProbe } from './memory.ts';
 import { runSycophancyProbe } from './sycophancy.ts';
 
-export type ProbeStatus = 'pass' | 'warn' | 'fail' | 'skip';
+type ProbeStatus = 'pass' | 'warn' | 'fail' | 'skip';
 
 export interface ProbeResult {
   id: string;
@@ -27,13 +27,6 @@ export interface ProbeReport {
   totalTokenSpend: number;
   summary: string;
 }
-
-export { runDivergenceProbe } from './divergence.ts';
-export { runGroundingProbe } from './grounding.ts';
-export { runIdentityProbe } from './identity.ts';
-export type { JudgeFn } from './judge.ts';
-export { runMemoryProbe } from './memory.ts';
-export { runSycophancyProbe } from './sycophancy.ts';
 
 export interface ProbeOpts {
   /** dependency-injected completer — real gateway in CLI, mock in tests */

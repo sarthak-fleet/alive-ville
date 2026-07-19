@@ -1,11 +1,9 @@
 import { storyPhaseLocations } from './story-context.ts';
 import type { Quest, StoryProgress, World } from './types.ts';
 
-export const ASHMENT_STORY_ID = 'ember_beneath_ashment';
-
 export const STARTER_QUEST_IDS = ['return_shears', 'rekindle_forge', 'bridge_whisper'] as const;
 
-export const STORY_CUTSCENES = {
+const STORY_CUTSCENES = {
   intro: 'ashment_intro_square',
   shears: 'garden_morning',
   forge: 'forge_rekindled',
@@ -61,11 +59,6 @@ export function resolveShadowConfrontation(world: World): void {
   unlockPhaseCutscenes(world);
 }
 
-export function markCutscenePlayed(world: World, cutsceneId: string): void {
-  const progress = ensureStoryProgress(world);
-  addUnique(progress.playedCutsceneIds, cutsceneId);
-}
-
 export function isCutsceneUnlocked(world: World | null | undefined, cutsceneId: string): boolean {
   if (!world) return cutsceneId === STORY_CUTSCENES.intro;
   const progress = ensureStoryProgress(world);
@@ -80,7 +73,7 @@ export function isCutsceneUnlocked(world: World | null | undefined, cutsceneId: 
   );
 }
 
-export function starterPathComplete(world: World): boolean {
+function starterPathComplete(world: World): boolean {
   const starterQuests = STARTER_QUEST_IDS.map((questId) => questById(world, questId)).filter(
     (quest): quest is Quest => Boolean(quest)
   );

@@ -29,14 +29,14 @@ function shade(hex: string, amount: number): string {
 // ---------------------------------------------------------------------------
 // Building facades
 
-export interface FacadeMaps {
+interface FacadeMaps {
   map: THREE.CanvasTexture;
   emissiveMap: THREE.CanvasTexture;
 }
 
 const facadeCache = new Map<string, FacadeMaps>();
 
-export function facadeMaps(
+function facadeMaps(
   bodyColor: string,
   accentColor: string,
   floors: number,

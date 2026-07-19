@@ -9,7 +9,7 @@ import {
 import { syncStoryProgress } from './story-progress.ts';
 import type { Item, Npc, Quest, QuestStatus, World } from './types.ts';
 
-export type ObjectiveTargetType = 'location' | 'item' | 'npc';
+type ObjectiveTargetType = 'location' | 'item' | 'npc';
 
 export interface Objective {
   questId: string;
@@ -39,7 +39,7 @@ export function activeObjectives(world: World): Objective[] {
   return storyObjective ? [storyObjective] : [];
 }
 
-export function objectiveForStoryProgress(world: World): Objective | null {
+function objectiveForStoryProgress(world: World): Objective | null {
   const progress = syncStoryProgress(world);
   const labels = storyLabelsFor(world);
   const { hubId, reportId } = storyPhaseLocations(world);

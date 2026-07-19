@@ -30,15 +30,6 @@ export function ensureAudio(): void {
   master.connect(context.destination);
 }
 
-/** shared context for the music layer */
-export function audioContext(): AudioContext | null {
-  return context;
-}
-
-export function masterBus(): GainNode | null {
-  return master;
-}
-
 function now(): number {
   return context?.currentTime ?? 0;
 }

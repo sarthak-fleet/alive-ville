@@ -78,7 +78,7 @@ const ROLE_PROFILES: Array<{ pattern: RegExp; profile: RoleProfile }> = [
 
 const FOLIAGE_COLORS = ['#4e8f4a', '#5da55a', '#3f7e44', '#6fae5c'];
 
-export function roleTextFor(location: Location): string {
+function roleTextFor(location: Location): string {
   return `${location.name} ${location.visual?.role ?? ''} ${(location.visual?.visualTags ?? []).join(' ')}`;
 }
 
@@ -498,7 +498,7 @@ export function shiftColor(hex: string, amount: number): string {
 }
 
 /** Rotate hue (degrees) and scale saturation in HSL — pure, for per-building variety. */
-export function hueShift(hex: string, degrees: number, satMul = 1): string {
+function hueShift(hex: string, degrees: number, satMul = 1): string {
   const value = Number.parseInt(hex.replace('#', ''), 16);
   const r = ((value >> 16) & 0xff) / 255;
   const g = ((value >> 8) & 0xff) / 255;

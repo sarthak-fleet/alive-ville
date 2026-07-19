@@ -4,9 +4,9 @@ import { knockback, npcRegistry, playerPosition } from '../controls/runtime.ts';
 import { chipDamageAllowed } from './pacing.ts';
 import { useCombatStore } from './store.ts';
 
-export type PlayerCombatStateKind = 'free' | 'attack' | 'dodge' | 'hitstun' | 'dead';
+type PlayerCombatStateKind = 'free' | 'attack' | 'dodge' | 'hitstun' | 'dead';
 
-export interface AttackSpec {
+interface AttackSpec {
   kind: 'attack1' | 'attack2' | 'attack3';
   durationMs: number;
   activeAtMs: number;
@@ -40,7 +40,7 @@ export interface PlayerCombatState {
   diedAt: number;
 }
 
-export function createPlayerCombatState(): PlayerCombatState {
+function createPlayerCombatState(): PlayerCombatState {
   return {
     kind: 'free',
     stateStartedAt: 0,

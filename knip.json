@@ -1,0 +1,72 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "web3d/index.html",
+    "src/server.ts",
+    "worker/src/index.ts",
+    "vitest.config.ts",
+    "vite.web3d.config.ts"
+  ],
+  "project": ["**/*.{ts,tsx,js,jsx,mjs,cjs,mts}"],
+  "ignore": [
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/.astro/**",
+    "**/.output/**",
+    "**/node_modules/**",
+    "**/coverage/**",
+    "**/public/**",
+    "**/*.config.{js,ts,mjs,cjs}",
+    "**/eslint.config.*",
+    "**/blume.config.*",
+    "**/docs-blume/**",
+    "scripts/**",
+    "tests/e2e/**",
+    "test/**",
+    "**/*.test.{ts,tsx,js,mjs}",
+    "**/*.spec.{ts,tsx,js,mjs}",
+    "**/*.d.mts",
+    "**/*.d.ts",
+    "**/__tests__/**",
+    "**/playground/**",
+    "**/examples/**"
+  ],
+  "ignoreDependencies": [
+    "typescript",
+    "@types/*",
+    "biome",
+    "@biomejs/biome",
+    "vitest",
+    "@vitest/*",
+    "playwright",
+    "@playwright/test",
+    "wrangler",
+    "tailwindcss",
+    "@tailwindcss/*",
+    "lightningcss",
+    "tsx",
+    "size-limit",
+    "knip",
+    "blume",
+    "@blume/*",
+    "astro",
+    "@astrojs/*"
+  ],
+  "ignoreBinaries": [
+    "astro",
+    "vite",
+    "wrangler",
+    "tsx",
+    "biome",
+    "playwright",
+    "vitest",
+    "knip",
+    "blume"
+  ],
+  "ignoreIssues": {
+    "**/schema.ts": ["exports", "types"],
+    "**/foundry-monitoring.ts": ["exports", "types"],
+    "**/api-timing.ts": ["exports", "types"]
+  }
+}

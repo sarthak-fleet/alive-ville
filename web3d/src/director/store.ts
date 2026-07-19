@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import type { TickSummary, World } from '../../../src/types.ts';
 import { useUiStore } from '../store/ui.ts';
 
-export interface Cutscene {
+interface Cutscene {
   id: number;
   /** actor to frame; camera follows their live position */
   actorId: string;
@@ -18,7 +18,7 @@ const CUTSCENE_MAX_MS = 12_000;
 const CUTSCENE_MS_PER_CHAR = 55;
 const COOLDOWN_MS = 25_000;
 
-export interface IntroCinema {
+interface IntroCinema {
   worldId: string;
   startedAt: number;
   durationMs: number;

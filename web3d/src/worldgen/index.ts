@@ -23,12 +23,8 @@ export function generateWorldModel(world: World): WorldModel {
 export type {
   BuildingModel,
   DistrictModel,
-  GateModel,
   ItemPlacement,
-  NavGraph,
-  NpcSpawn,
   PropModel,
-  StreetModel,
   WorldModel,
 } from './model.ts';
 export { findDistrictPath } from './navgraph.ts';

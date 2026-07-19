@@ -55,7 +55,7 @@ export function sttSupported(): boolean {
 }
 
 /** Speak a line. No-op if TTS is unavailable. Cancels any in-flight utterance. */
-export function speak(text: string): void {
+function speak(text: string): void {
   if (!ttsSupported() || !text.trim()) return;
   const synth = globalThis.speechSynthesis;
   synth.cancel();
@@ -65,7 +65,7 @@ export function speak(text: string): void {
   synth.speak(utterance);
 }
 
-export function stopSpeaking(): void {
+function stopSpeaking(): void {
   kokoroStop();
   if (ttsSupported()) globalThis.speechSynthesis.cancel();
 }

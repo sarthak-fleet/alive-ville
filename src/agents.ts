@@ -176,7 +176,7 @@ function advanceTensions(world: World): void {
   }
 }
 
-export function counterplayForTension(worldId: string, tensionId: string): string {
+function counterplayForTension(worldId: string, tensionId: string): string {
   const hints: Record<string, Record<string, string>> = {
     ashment: {
       missing_metal:

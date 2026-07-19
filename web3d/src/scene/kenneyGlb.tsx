@@ -41,7 +41,7 @@ function getBounds(
  * Results are memoized per (url) so each scene placement gets its own cloned
  * scene + materials (callers may scale/tint per-instance).
  */
-export function useToonGlb(
+function useToonGlb(
   url: string
 ): { scene: THREE.Group; size: THREE.Vector3; min: THREE.Vector3 } | null {
   // useGLTF caches the parsed gltf by url, so this is a single network/parse.
