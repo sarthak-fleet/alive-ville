@@ -1,5 +1,5 @@
 ---
-title: ADR-009 — Prompt format: system+user turns, no tool-calling API
+title: "ADR-009 — Prompt format: system+user turns, no tool-calling API"
 description: JSON-in-reply parsing instead of OpenAI function-calling, for backend portability.
 ---
 

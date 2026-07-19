@@ -57,9 +57,11 @@ LLM_MODEL_PROPOSE=cerebras-llama-8b   # high-volume ambient NPC proposals
 LLM_TIMEOUT_MS=20000
 ```
 
-The gateway treats `body.model` as advisory; the router pins the model via
-the `x-gateway-force-model` header. Pick healthy ids from
-`GET /v1/routing/status`. Other backends ignore the extra header.
+By default the router leaves `body.model` advisory so the gateway can route
+around a rate-limited/exhausted model (health-aware fallback). Set
+`LLM_FORCE_MODEL=1` to strictly pin the model via the `x-gateway-force-model`
+header. Pick healthy ids from `GET /v1/routing/status`. Other backends ignore
+the extra header.
 
 ## Smart-local mode
 
