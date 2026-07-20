@@ -20,13 +20,13 @@ export interface AnimeIngestSource {
   artifacts?: AnimeArtifactDraft[];
 }
 
-export interface AnimeLocationDraft {
+interface AnimeLocationDraft {
   name: string;
   role?: string;
   description?: string;
 }
 
-export interface AnimeCharacterDraft {
+interface AnimeCharacterDraft {
   name: string;
   role: string;
   faction?: string;
@@ -42,14 +42,14 @@ export interface AnimeCharacterDraft {
   memories?: string[];
 }
 
-export interface AnimeFactionDraft {
+interface AnimeFactionDraft {
   name: string;
   goals?: string[];
   resources?: string[];
   reputation?: number;
 }
 
-export interface AnimeConflictDraft {
+interface AnimeConflictDraft {
   title: string;
   involved?: string[];
   pressure?: number;
@@ -58,7 +58,7 @@ export interface AnimeConflictDraft {
   clue?: string;
 }
 
-export interface AnimeArtifactDraft {
+interface AnimeArtifactDraft {
   name: string;
   description: string;
   location?: string;

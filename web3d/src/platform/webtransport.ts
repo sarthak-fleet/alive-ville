@@ -21,12 +21,3 @@ function ctor(): WebTransportCtor | null {
 export function webTransportSupported(): boolean {
   return ctor() !== null;
 }
-
-/** Open a WebTransport session and resolve once it is ready. Caller handles errors. */
-export async function connectWebTransport(url: string): Promise<WebTransportLike> {
-  const Ctor = ctor();
-  if (!Ctor) throw new Error('WebTransport unavailable.');
-  const transport = new Ctor(url);
-  await transport.ready;
-  return transport;
-}

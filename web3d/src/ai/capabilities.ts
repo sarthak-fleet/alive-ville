@@ -42,10 +42,7 @@ function detectWasmSimd(): boolean {
 }
 
 /** Synchronous probes that need no GPU adapter. */
-export function detectSyncCapabilities(): Omit<
-  Capabilities,
-  'webgpu' | 'shaderF16' | 'timestampQuery'
-> {
+function detectSyncCapabilities(): Omit<Capabilities, 'webgpu' | 'shaderF16' | 'timestampQuery'> {
   const coi =
     typeof globalThis !== 'undefined' &&
     Boolean((globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated);

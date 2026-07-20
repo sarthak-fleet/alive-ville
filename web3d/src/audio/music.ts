@@ -164,22 +164,6 @@ export function playTrack(key: MusicKey): void {
   }, 0);
 }
 
-/** Stops all music. Used on teardown / explicit silence. */
-export function stopMusic(): void {
-  if (current) {
-    if (current.fader !== null) window.clearInterval(current.fader);
-    current.el.pause();
-    current.el.src = '';
-    current = null;
-  }
-  if (pending) {
-    if (pending.fader !== null) window.clearInterval(pending.fader);
-    pending.el.pause();
-    pending.el.src = '';
-    pending = null;
-  }
-}
-
 // visibility: pause when tab is hidden, resume when shown (and not muted)
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {

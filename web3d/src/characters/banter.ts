@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /** live NPC↔NPC exchanges, rendered as speech bubbles in the 3D town */
-export interface BanterEntry {
+interface BanterEntry {
   partnerId: string;
   text: string;
   until: number;

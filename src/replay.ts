@@ -1,6 +1,6 @@
 import type { TickSummary, World } from './types.ts';
 
-export interface ReplayFrame {
+interface ReplayFrame {
   tick: number;
   checksum: string;
   clock: string;

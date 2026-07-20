@@ -17,7 +17,7 @@ type KokoroAudio = { toBlob: () => Blob };
 type KokoroEngine = { generate: (text: string, opts: { voice: string }) => Promise<KokoroAudio> };
 
 /** Download/readiness status for the in-browser Kokoro voice model. */
-export type KokoroStatus = 'idle' | 'loading' | 'ready' | 'error';
+type KokoroStatus = 'idle' | 'loading' | 'ready' | 'error';
 interface KokoroDownloadState {
   status: KokoroStatus;
   /** 0..1 of the file currently transferring */
@@ -31,11 +31,6 @@ export const useKokoroDownload = create<KokoroDownloadState>(() => ({
 let enginePromise: Promise<KokoroEngine> | null = null;
 let current: HTMLAudioElement | null = null;
 let disabled = false;
-
-/** True until a load/generate failure flips it off (then callers use Web Speech). */
-export function kokoroAvailable(): boolean {
-  return !disabled;
-}
 
 async function loadEngine(): Promise<KokoroEngine> {
   enginePromise ??= (async () => {

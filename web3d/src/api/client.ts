@@ -11,7 +11,7 @@ const SESSION_KEY = 'aliveville_session';
 let cachedSessionId: string | null = null;
 
 /** stable per-browser session id — the server keeps an isolated world per session */
-export function sessionId(): string {
+function sessionId(): string {
   if (cachedSessionId) return cachedSessionId;
   try {
     let id = localStorage.getItem(SESSION_KEY);
@@ -50,7 +50,7 @@ export async function postTick(action: PlayerAction | null): Promise<TickRespons
   return data;
 }
 
-export interface DialogueRelationship {
+interface DialogueRelationship {
   score: number;
   label: string;
 }

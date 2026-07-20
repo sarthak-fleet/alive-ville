@@ -41,7 +41,7 @@ export type ArchetypeKey = keyof typeof ARCHETYPES;
  * `king` and not `businessman`. Female-coded keywords steer toward the
  * women-pack archetypes so silhouettes read correctly.
  */
-export function pickArchetype(
+function pickArchetype(
   personaText: string,
   role: string,
   visualTags: string[]

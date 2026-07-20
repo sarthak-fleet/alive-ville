@@ -124,10 +124,6 @@ export const FURNITURE_ASSETS = {
   ],
 } as const;
 
-export type NatureKind = keyof typeof NATURE_ASSETS;
-export type BuildingKind = keyof typeof BUILDING_ASSETS;
-export type FurnitureAssetKind = keyof typeof FURNITURE_ASSETS;
-
 /**
  * Deterministically pick one entry from an asset list using a stable hash.
  * Mirrors the pattern in scene code that uses `stableHash(prop.id)`.

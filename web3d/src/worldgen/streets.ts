@@ -2,7 +2,7 @@ import type { Exit, Location } from '../../../src/types.ts';
 import type { GateModel, StreetModel } from './model.ts';
 import { WORLD_SCALE } from './model.ts';
 
-export const STREET_WIDTH = 5;
+const STREET_WIDTH = 5;
 const GRID_STEP = 3;
 const PLOT_MARGIN = 1.5;
 
@@ -215,7 +215,7 @@ function heuristic(a: { col: number; row: number }, b: { col: number; row: numbe
 }
 
 /** Drop collinear points so street ribbons render as few long quads. */
-export function simplify(points: Array<{ x: number; z: number }>): Array<{ x: number; z: number }> {
+function simplify(points: Array<{ x: number; z: number }>): Array<{ x: number; z: number }> {
   const result: Array<{ x: number; z: number }> = [];
   for (const point of points) {
     const last = result[result.length - 1];

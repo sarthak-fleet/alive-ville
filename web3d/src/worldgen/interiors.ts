@@ -38,9 +38,9 @@ export interface InteriorDoor {
   outsideZ: number;
 }
 
-export type RoomRole = 'tavern' | 'forge' | 'home' | 'abandoned' | 'default';
+type RoomRole = 'tavern' | 'forge' | 'home' | 'abandoned' | 'default';
 
-export interface RoomPreset {
+interface RoomPreset {
   role: RoomRole;
   ceilingHeight: number;
   wallTexture: 'plaster' | 'wood' | 'brick' | 'broken';
@@ -139,7 +139,7 @@ function planFor(district: DistrictModel): FurniturePlan {
 }
 
 /** Per-role visual preset. The preset drives ceiling height, textures, lighting, and wall dressing. */
-export function roomVisualFor(role: RoomRole): RoomPreset {
+function roomVisualFor(role: RoomRole): RoomPreset {
   switch (role) {
     case 'forge':
       return {

@@ -1,7 +1,7 @@
 import type { Engine } from './simulation.ts';
 import type { TickSummary, World } from './types.ts';
 
-export type AgentLoopState = 'idle' | 'running' | 'stopped' | 'error';
+type AgentLoopState = 'idle' | 'running' | 'stopped' | 'error';
 
 export interface AgentLoopCheckpoint {
   tick: number;

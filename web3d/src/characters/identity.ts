@@ -18,9 +18,9 @@ import { toonMaterial } from '../scene/toon.ts';
 // Axis 1 — Face variants
 // ---------------------------------------------------------------------------
 
-export type EyeShape = 'round' | 'sharp' | 'sleepy' | 'wide';
-export type BrowAngle = 'flat' | 'raised' | 'angry' | 'worried';
-export type MouthShape = 'neutral' | 'smile' | 'frown' | 'grit';
+type EyeShape = 'round' | 'sharp' | 'sleepy' | 'wide';
+type BrowAngle = 'flat' | 'raised' | 'angry' | 'worried';
+type MouthShape = 'neutral' | 'smile' | 'frown' | 'grit';
 
 export interface FaceVariant {
   eyes: EyeShape;
@@ -58,7 +58,7 @@ export function faceVariantFor(seedId: string, personaText: string): FaceVariant
 const faceTextureCache = new Map<string, THREE.CanvasTexture>();
 
 /** Build a canvas face texture for the given variant. Cached by variant key. */
-export function buildFaceTexture(variant: FaceVariant): THREE.CanvasTexture {
+function buildFaceTexture(variant: FaceVariant): THREE.CanvasTexture {
   const key = `${variant.eyes}:${variant.brow}:${variant.mouth}`;
   const cached = faceTextureCache.get(key);
   if (cached) return cached;

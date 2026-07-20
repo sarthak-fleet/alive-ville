@@ -1,8 +1,8 @@
 export const RIVAL_WORLD_ID = 'rival_duel';
-export const RIVAL_GUIDE_VERSION = 1;
+const RIVAL_GUIDE_VERSION = 1;
 
-export const RIVAL_GUIDE_ACTION_STEPS = ['move', 'talk', 'fight', 'consequence'] as const;
-export type RivalGuideActionStep = (typeof RIVAL_GUIDE_ACTION_STEPS)[number];
+const RIVAL_GUIDE_ACTION_STEPS = ['move', 'talk', 'fight', 'consequence'] as const;
+type RivalGuideActionStep = (typeof RIVAL_GUIDE_ACTION_STEPS)[number];
 export type RivalGuideStep = RivalGuideActionStep | 'complete' | 'dismissed';
 
 export interface RivalGuideSignals {

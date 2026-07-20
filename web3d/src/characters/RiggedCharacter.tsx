@@ -62,7 +62,7 @@ interface RiggedCharacterProps {
   protagonist?: boolean;
 }
 
-export function isFemalePresenting(
+function isFemalePresenting(
   appearance: CharacterAppearance | undefined,
   personaText: string
 ): boolean {
